@@ -1,0 +1,5 @@
+.idea/
+htmls
+logs
+__pycache__
+*.csv
