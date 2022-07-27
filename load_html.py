@@ -5,7 +5,7 @@ from pyquery import PyQuery as pq
 
 from logger import logger
 
-htmls = Path("htmls").rglob("*.html")
+htmls = sorted(list(Path("htmls").rglob("*.html")), key=lambda x: int(x.stem.split("_")[1]))
 
 titles = []
 urls = []
@@ -18,11 +18,14 @@ for html_file in htmls:
     doc = pq(html)
     records = doc('app-record').items()
 
+    count = 0
     for record in records:
         title = " ".join(record('app-summary-title a').text().split())
         url = record('app-summary-record-links a').attr("href")
         titles.append(title)
         urls.append(url)
+        count += 1
+    logger.info(f"Page {page}, record: {count}")
 
 logger.info(f"Total titles: {len(titles)} urls: {len(urls)}")
 
