@@ -11,7 +11,11 @@ from logger import logger
 with open("datafile.1.csv", encoding='utf-8') as f:
     content = f.readlines()
 
-driver = webdriver.Chrome()
+options = webdriver.ChromeOptions()
+options.add_argument(r"user-data-dir=C:\Users\hui_zhou\AppData\Local\Google\Chrome\User Data")
+options.add_argument("blink-settings=imagesEnabled=false")
+
+driver = webdriver.Chrome(options=options)
 driver.set_window_position(1200, 10)
 
 for line in content[:5]:
