@@ -19,7 +19,7 @@ for literature in literatures:
     with open(literature, "r", encoding="utf-8") as f:
         html = f.read()
     doc = pq(html)
-    conclusion = re.findall("[Cc]onclusion|[Ss]ummary|[Oo]utlook", doc.text())
+    conclusion = re.findall("[Cc]onclusion|[Ss]ummary|[Oo]utlook|[Dd]iscussion|[Ee]xperiment|总结", doc.text())
     if not len(conclusion) and literature.stem not in exclude:
         logger.info(f"{literature}: Search keyword `conclusion` failed, prepare check")
         failed.append(literature.stem)

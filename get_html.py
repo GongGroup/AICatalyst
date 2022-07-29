@@ -51,8 +51,8 @@ if start_page > tot_pages:
     raise ValueError(f"start_page = {start_page} over total_pages({tot_pages})")
 
 if end_page > tot_pages:
-    end_page = tot_pages
     logger.warning(f"end_page = {end_page} over total_pages({tot_pages}), reset end_page = {tot_pages}")
+    end_page = tot_pages
 
 cur_page = start_page
 

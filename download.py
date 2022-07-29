@@ -23,33 +23,46 @@ if __name__ == '__main__':
     options.page_load_strategy = 'none'
     driver = uc.Chrome(options=options)
     driver.set_window_position(1200, 10)
-    wait = WebDriverWait(driver, 60)
+    wait = WebDriverWait(driver, 120)
 
-    for line in content[:45]:
+    for line in content[:120]:
         url, doi = line.strip().split(",")[-2:]
         md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
         if Path(f"literature/{md5_name}.html").exists():
-            logger.info(f"{md5_name}.html exists, continue")
+            logger.debug(f"{md5_name}.html exists, continue")
             continue
         new_url = "http://dx.doi.org/" + doi if doi else url
 
         driver.get(new_url)
+        retry_num = 1
         while True:
-            count = 1
             time.sleep(10)
             if url.split("=")[-1] == "Elsevier":
-                time.sleep(random.random() * 30)
                 wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#gh-branding > svg')))
-                time.sleep(random.random() * 3)
+                time.sleep((random.random() + 1) * 3)
+            elif "Wiley" in url.split("=")[-1]:
+                wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '#mainLogo')))
+            elif "Thieme" in url.split("=")[-1]:
+                full_text = wait.until(
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, '#articleTabs > li:nth-child(2) > a')))
+                full_text.click()
+            elif url.split("=")[-1] == "CHEMICAL+JOURNAL+OF+CHINESE+UNIVERSITIES-CHINESE":
+                full_text = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,
+                                                                   "#goTop > div.container.whitebg > div.abs-con > div "
+                                                                   "> div > div.group.clearfix > div > div:nth-child(1) "
+                                                                   "> span > a")))
+                full_text.click()
+            time.sleep((random.random() + 1) * 3)
             try:
                 scrollHeight = driver.execute_script("var q=document.body.scrollHeight; return(q)")
             except JavascriptException:
-                logger.info(f"Loading html failed, retry {count}")
-                count += 1
+                logger.info(f"Loading {md5_name}.html failed, retry {retry_num}")
+                retry_num += 1
                 continue
             else:
                 break
 
+        time.sleep((random.random() + 1))
         # generate random scroll distance, total scroll_t times, sum is scrollHeight
         scroll_t = random.randint(20, 40)
         loop_height = np.random.dirichlet(np.ones(scroll_t)) * scrollHeight
