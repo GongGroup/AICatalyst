@@ -29,7 +29,7 @@ if __name__ == '__main__':
     wait = WebDriverWait(driver, 120)
     scrollHeight = 1000
 
-    for line in content[:350]:
+    for line in content[:800]:
         url, doi = line.strip().split(",")[-2:]
         md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
         if Path(f"literature/{md5_name}.html").exists():
@@ -52,7 +52,8 @@ if __name__ == '__main__':
                         EC.element_to_be_clickable((By.CSS_SELECTOR, '#articleTabs > li:nth-child(2) > a')))
                     full_text.click()
                 elif url.split("=")[-1] in ["CHEMICAL+JOURNAL+OF+CHINESE+UNIVERSITIES-CHINESE",
-                                            "Shaghai+Institute+of+Organic+Chemistry"]:
+                                            "Shaghai+Institute+of+Organic+Chemistry",
+                                            "CHEMICAL+JOURNAL+OF+CHINESE+UNIVERSITIES-CHINESE"]:
                     full_text = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,
                                                                        "#goTop > div.container.whitebg > div.abs-con > div "
                                                                        "> div > div.group.clearfix > div > div:nth-child(1) "

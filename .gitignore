@@ -8,3 +8,4 @@ md5_name.json
 config.json
 exclude
 checked
+*.json

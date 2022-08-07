@@ -30,7 +30,8 @@ for literature in literatures:
         html = f.read()
     try:
         doc = pq(html)
-        conclusion = re.findall("[Cc]onclusion|[Ss]ummary|[Oo]utlook|[Dd]iscussion|[Ee]xperiment|总结|结论", doc.text())
+        conclusion = re.findall("[Cc]onclusion|CONCLUSION|[Ss]ummary|[Oo]utlook|[Dd]iscussion|[Ee]xperiment|总结|结论|综上",
+                                doc.text())
     except ParserError:
         pass
 
