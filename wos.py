@@ -1,9 +1,11 @@
 import csv
+import hashlib
 import json
 import random
 import re
 import time
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 from pyquery import PyQuery
@@ -15,6 +17,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from logger import logger
 
 WOSRoot = "https://www.webofscience.com/wos/alldb/basic-search"
+DataDir = Path("./data")
 
 
 class WOSCrawler(object):
@@ -129,7 +132,7 @@ class WOSParser(object):
     Load database from htmls/ directory, parse title, url and doi field, output to a csv file
     """
 
-    def __init__(self, htmls_dir: str, datafile: str, with_url: bool = True):
+    def __init__(self, htmls_dir: str, datafile: Union[str, Path], with_url: bool = True, md5_flag: bool = True):
         """
         Initialize the WOSCrawler
 
@@ -141,6 +144,7 @@ class WOSParser(object):
         self.htmls_dir = sorted(list(Path(htmls_dir).rglob("*.html")), key=lambda x: int(x.stem.split("_")[1]))
         self.datafile = datafile
         self.with_url = with_url
+        self.md5_flag = md5_flag
 
     def __call__(self):
         self.parse()
@@ -179,6 +183,12 @@ class WOSParser(object):
 
         data = list(zip(titles, urls, dois))
 
+        if self.md5_flag:
+            md5_dict = {hashlib.md5(url.encode(encoding='utf-8')).hexdigest(): url for title, url, doi in data}
+            with open("data/md5_name.json", "w", encoding="utf-8") as f:
+                json.dump(md5_dict, f)
+            logger.info("url~md5 mapping has been wrote to md5_name.json")
+
         with open(f"{self.datafile}", "w", encoding="utf-8", newline="") as f:
             head = ["title", 'url', 'doi']
             writer = csv.writer(f)
@@ -187,8 +197,8 @@ class WOSParser(object):
 
 
 if __name__ == '__main__':
-    crawler = WOSCrawler(config_file="config.json", output="htmls")
-    crawler.get_htmls()
-    
-    parser = WOSParser(htmls_dir="htmls", datafile="datafile.csv")
+    # crawler = WOSCrawler(config_file="config.json", output="htmls")
+    # crawler.get_htmls()
+
+    parser = WOSParser(htmls_dir="htmls", datafile=DataDir / "datafile.csv")
     parser()

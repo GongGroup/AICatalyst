@@ -4,8 +4,8 @@ logs
 __pycache__
 *.csv
 literature
-md5_name.json
+data/md5_name.json
 config.json
-exclude
-checked
+data/exclude
+data/checked
 *.json
