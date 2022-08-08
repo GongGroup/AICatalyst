@@ -4,21 +4,18 @@ import logging
 import random
 import re
 import time
-
 from pathlib import Path
 from typing import Union
 
+import numpy as np
 from lxml.etree import ParserError
 from pyquery import PyQuery
-import numpy as np
-from selenium import webdriver
-import undetected_chromedriver as uc
 from selenium.common import JavascriptException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.support.wait import WebDriverWait
 
+from driver import ChromeDriver
 from logger import logger
 
 DataDir = Path("./data")
@@ -45,12 +42,8 @@ class PublisherCrawler(object):
         with open(f"{self.index_file}", encoding='utf-8') as f:
             content = f.readlines()
 
-        options = uc.ChromeOptions()
-        options.add_argument(r"user-data-dir=C:\Users\hui_zhou\AppData\Local\Google\Chrome\User Data")
-        options.page_load_strategy = 'none'
-        driver = uc.Chrome(options=options)
-        driver.set_window_position(1200, 10)
-        wait = WebDriverWait(driver, 120)
+        chrome = ChromeDriver()
+        driver, wait = chrome.driver, chrome.wait
         scroll_height = 1000
 
         for line in content[:800]:

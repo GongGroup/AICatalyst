@@ -14,6 +14,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.support.wait import WebDriverWait
 
+from driver import ChromeDriver
 from logger import logger
 
 WOSRoot = "https://www.webofscience.com/wos/alldb/basic-search"
@@ -50,9 +51,9 @@ class WOSCrawler(object):
 
     def get_htmls(self):
         # start driver
-        driver = webdriver.Chrome()
-        driver.set_window_position(1200, 10)
-        wait = WebDriverWait(driver, 60)
+
+        chrome = ChromeDriver(timeout=60)
+        driver, wait = chrome.driver, chrome.wait
         driver.get(WOSRoot)
 
         logger.info("prepare to accept cookie")

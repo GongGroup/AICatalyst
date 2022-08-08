@@ -1,14 +1,18 @@
-## WOSCrawlel
+# WOSCrawler Manual
 
-This package mainly services for obtaining literatures from [`Web of Science`](https://www.webofscience.com)
+## About WOSCrawler
 
-- get_html: obtain the *.html by **selenium**
+This package mainly services for obtaining literatures from [Web of Science](https://www.webofscience.com) (WOS).
 
-- load_html: parse *.html by **pyquery** and generate the datafile.csv including `title` and `url` fields
+## Code Structure
 
-- download: download literature from url
+- [driver](driver.py): customized selenium-driver
 
-- download_check: check effectivity of download literature
+- [wos](wos.py): crawler and parse `*.html` from WOS
+
+- [publisher](publisher.py): according the url to crawler and check paper in `html` format
+
+- [parse_reaxys](parse_reaxys.py): in charge to parse [reaxys](https://www.reaxys.com/) database
 
 ## Requirements
 
@@ -16,3 +20,5 @@ This package mainly services for obtaining literatures from [`Web of Science`](h
 - pyquery
 - selenium
 - chromedriver
+- Beautiful Soup
+- undetected_chromedriver
