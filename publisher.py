@@ -46,7 +46,7 @@ class PublisherCrawler(object):
         driver, wait = chrome.driver, chrome.wait
         scroll_height = 1000
 
-        for line in content[:800]:
+        for line in content[:900]:
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
             if Path(f"{self.output}/{md5_name}.html").exists():
@@ -116,10 +116,10 @@ class PublisherCrawler(object):
         """
         Check the htmls crawled effectivity, maintain three files: exclude, checked and md5_name.json (from WOSParser)
 
-        --------------------------------------------------------------------
+        ----------------------------------------------------------------------
         md5_name.json  |   a mapping dict from html's name to its url
-        exclude:       |   the html in which is invalid but the inner error
-        checked:       |   the html is effective
+        exclude        |   the html in which is invalid but the inner error
+        checked        |   the html is effective
         ----------------------------------------------------------------------
         """
 
@@ -163,4 +163,5 @@ class PublisherCrawler(object):
 
 if __name__ == '__main__':
     crawler = PublisherCrawler(index_file=DataDir / "datafile.csv", output="literature")
-    crawler.check_htmls()
+    crawler.get_htmls()
+    # crawler.check_htmls()

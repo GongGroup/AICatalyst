@@ -1,5 +1,11 @@
 # WOSCrawler Manual
 
+## Table of Contents
+
+- [About WOSCrawler](#about-woscrawler)
+- [Code Structure](#code-structure)
+- [Requirements](#requirements)
+
 ## About WOSCrawler
 
 This package mainly services for obtaining literatures from [Web of Science](https://www.webofscience.com) (WOS).
