@@ -1,4 +1,5 @@
 import json
+from typing import Iterable
 
 
 def list_float(values):
@@ -43,19 +44,19 @@ class ReaxysRecord(object):
                 setattr(self, key, value)
 
 
-class ReaxysRecords(object):
-    def __init__(self, records_file: str):
-        self.records_file = records_file
-        self.records = None
+class ReaxysRecords(list):
+    def __init__(self, seq: Iterable):
+        super(ReaxysRecords, self).__init__(seq)
 
+
+class Reaxys(object):
+    def __init__(self, file):
+        self.file = file
         self._records = None
-
-        self.flatten()
-        self.register()
 
     def flatten(self):
         records = []
-        with open(self.records_file, "r", encoding="utf-8") as f:
+        with open(self.file, "r", encoding="utf-8") as f:
             original_records = json.load(f)
 
         for reaction in original_records:
@@ -65,10 +66,15 @@ class ReaxysRecords(object):
                 records.append(record)
         self._records = records
 
-    def register(self):
-        self.records = [ReaxysRecord(item) for item in self._records]
+    @property
+    def records(self):
+        if self._records is None:
+            self.flatten()
+        seq = [ReaxysRecord(item) for item in self._records]
+
+        return ReaxysRecords(seq)
 
 
 if __name__ == '__main__':
-    reaxys = ReaxysRecords("reaxys_json.json")
+    reaxys = Reaxys("reaxys_json.json")
     print()
