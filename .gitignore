@@ -9,3 +9,4 @@ config.json
 data/exclude
 data/checked
 *.json
+chemical/*

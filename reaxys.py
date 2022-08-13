@@ -1,5 +1,8 @@
 import json
+from pathlib import Path
 from typing import Iterable
+
+ChemDir = Path("./chemical")
 
 
 def list_float(values):
@@ -74,7 +77,16 @@ class Reaxys(object):
 
         return ReaxysRecords(seq)
 
+    def output_chemicals(self, name=ChemDir / "chemical.json"):
+        chemicals = []
+        for record in self.records:
+            chemicals.append([record.PRO, record.product, record.reactant, record.reagent])
+        total_chemicals = list(set(sum(sum(chemicals, []), [])))
+        with open(name, "w", encoding='utf-8') as f:
+            json.dump(total_chemicals, f)
+
 
 if __name__ == '__main__':
     reaxys = Reaxys("reaxys_json.json")
+    reaxys.output_chemicals()
     print()
