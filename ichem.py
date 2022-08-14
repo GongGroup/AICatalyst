@@ -13,7 +13,8 @@ ChemDir = Path("./chemical")
 IChemRoot = "http://www.ichemistry.cn/structure.asp"
 IChemSearch = "http://www.ichemistry.cn/ketcher/Name2Structure/?action=mol&input="
 headers = {
-    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
 
 class IChemCrawler(object):

@@ -20,6 +20,8 @@ This package mainly services for obtaining literatures from [Web of Science](htt
 
 - [parse_reaxys](parse_reaxys.py): in charge to parse [reaxys](https://www.reaxys.com/) database
 
+- [ichem](ichem.py): obtain structure in `sdf` format according to chemical name
+
 ## Requirements
 
 - numpy

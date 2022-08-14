@@ -10,3 +10,4 @@ data/exclude
 data/checked
 *.json
 chemical/*
+opsin.js

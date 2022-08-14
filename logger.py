@@ -61,7 +61,7 @@ class ColoredLogger(logging.Logger):
         file_formatter = ColoredFormatter(self.FILE_FORMAT, False)
         color_formatter = ColoredFormatter(self.COLOR_FORMAT, True)
 
-        fh = logging.FileHandler(f"{LogDir}/{Date}.txt")
+        fh = logging.FileHandler(f"{LogDir}/{Date}.txt", encoding='utf-8')
         fh.setFormatter(file_formatter)
 
         ch = logging.StreamHandler()
