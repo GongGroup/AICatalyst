@@ -7,36 +7,40 @@ from pathlib import Path
 import execjs
 import requests
 
+from fio import JsonIO, temp
 from logger import logger
 
-ChemDir = Path("./chemical")
+# Net const
 OPSINRoot = 'https://opsin.ch.cam.ac.uk/'
-
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
+# Directory const
+ChemDir = Path("./chemical")
+
+# File const
+FJSFunc = "func.js"
+FRecord = ChemDir / "opsin_record.json"
+FIChemRecord = ChemDir / "record.json"
+
 
 class OPSINCrawler(object):
     def __init__(self, file):
+        self.io = JsonIO
         self.file = file
-        self.chemicals = None
-        self.encode = partial(execjs.compile(OPSINCrawler.js_from_file("func.js")).call, "encode")
-        self.load()
-
-    def load(self):
-        with open(self.file, "r") as f:
-            self.chemicals = json.load(f)
+        self.chemicals = self.io.read(self.file)
+        self.encode = partial(execjs.compile(OPSINCrawler.load_js(FJSFunc)).call, "encode")
 
     def get_htmls(self):
+        """
+        According to the chemical.json [list] obtain the smiles, inchi, inchi-key and so on
+        """
 
-        if not Path(ChemDir / "opsin_record.json").exists():
-            with open(ChemDir / "opsin_record.json", "w", encoding='utf-8') as f:
-                json.dump([], f)
+        if not Path(FRecord).exists():
+            self.io.write([], FRecord)
 
-        with open(ChemDir / "opsin_record.json", "r", encoding="utf-8") as f:
-            records = json.load(f)
-
+        records = self.io.read(FRecord)
         records_name = [item['name'] for item in records]
 
         for index, chemical in enumerate(self.chemicals):
@@ -57,27 +61,35 @@ class OPSINCrawler(object):
                 logger.warning(f"`{chemical}` : Response != 200, please check")
 
             if index % 20 == 0 or index == len(self.chemicals) - 1:
-                with open(ChemDir / f"_record.json", "w", encoding="utf-8") as f:
-                    json.dump(records, f, indent=2)
-
-                shutil.move(ChemDir / "_record.json", ChemDir / "opsin_record.json")
+                self.io.write(records, temp(FRecord))
+                shutil.move(temp(FRecord), FRecord)
 
         logger.info("Successfully update the opsin_record.json")
 
-    @staticmethod
-    def failure():
-        with open(ChemDir / "opsin_record.json", "r", encoding="utf-8") as f:
-            result = json.load(f)
+    def failure(self):
+        """
+        chemicals in opsin site failure but success in ichem
+        """
 
+        result = self.io.read(FRecord)
         failure = [item['name'] for item in result if len(item) == 2]
 
-        with open(ChemDir / "record.json", "r", encoding="utf-8") as f:
-            ichem = list(json.load(f).keys())
+        ichem = list(self.io.read(FIChemRecord).keys())
 
         return [item for item in failure if item in ichem]
 
     @staticmethod
-    def js_from_file(file):
+    def load_js(file):
+        """
+        Js func library
+
+        Args:
+            file: .js file
+
+        Returns:
+            content: .js file in string format
+
+        """
         with open(file, 'r', encoding='UTF-8') as f:
             content = f.read()
 
@@ -88,26 +100,29 @@ if __name__ == '__main__':
     # opsin = OPSINCrawler("chemical_new.json")
     # opsin.get_htmls()
 
-    with open("name_name.json", "r", encoding='utf-8') as f:
+    with open("chemical/name_name.json", "r", encoding='utf-8') as f:  # old_name ~ new_name mapping
         name2name = json.load(f)
 
-    with open("chemical/opsin_record_old.json", "r", encoding='utf-8') as f:
+    with open("chemical/opsin_record_old.json", "r", encoding='utf-8') as f:  # last opsin_record
         opsin_record = json.load(f)
 
-    with open("chemical/opsin_record.json", "r", encoding='utf-8') as f:
+    with open("chemical/opsin_record.json", "r", encoding='utf-8') as f:  # newly succeed opsin_record
         opsin_record_new = json.load(f)
 
     new_records = []
+
+    # transform the list to dict for the subsequent quickly mapping
     name2name_dict = {item['old_name']: item['new_name'] for item in name2name}
     opsin_record_new_dict = {item['name']: {key: item[key] for key in item.keys() if key != "name"} for item in
                              opsin_record_new}
     for item in copy.deepcopy(opsin_record):
         if item['name'] in list(name2name_dict.keys()):
+            # obtain new_name from old_name
             new_name = name2name_dict[item['name']].replace('<i>', '').replace('</i>', '')
             if new_name != "FAILURE":
                 for key in opsin_record_new_dict[new_name].keys():
-                    item[key] = opsin_record_new_dict[new_name][key]
-                    item['new_name'] = new_name
+                    item[key] = opsin_record_new_dict[new_name][key]  # substitute old_info with new_info
+                    item['new_name'] = new_name  # add `new_name` key
             else:
                 item['new_name'] = "FAILURE"
         else:
@@ -119,5 +134,3 @@ if __name__ == '__main__':
 
     with open("chemical/opsin_record_new.json", "w", encoding='utf-8') as f:
         json.dump(new_records_sort, f, indent=2)
-
-    print()

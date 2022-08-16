@@ -3,18 +3,14 @@ import random
 import shutil
 import time
 from pathlib import Path
-from requests_html import HTMLSession
+
 import requests
-from pyquery import PyQuery
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as ec
+from requests_html import HTMLSession
 
-from driver import ChromeDriver
+from fio import JsonIO, temp
 from logger import logger
-from opsin import OPSINCrawler
 
-ChemDir = Path("./chemical")
-
+# Net const
 IChemRoot = "http://www.ichemistry.cn/structure.asp"
 IChemStructure = "http://www.ichemistry.cn/ketcher/Name2Structure/?action=mol&input="
 IChemName = "http://www.ichemistry.cn/ketcher/Name2Structure/?action=ename&input="
@@ -22,23 +18,29 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
+# Directory const
+ChemDir = Path("./chemical")
+
+# file const
+FRecord = ChemDir / "record.json"  # success structure in sdf
+FError = ChemDir / "error"  # error chemical
+FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping
+FNameName = ChemDir / "name_name.json"  # name~name mapping
+
 
 class IChemCrawler(object):
     def __init__(self, file):
+        self.io = JsonIO
         self.file = file
-        self.chemicals = None
-
-        self.load()
-
-    def load(self):
-        with open(self.file, "r") as f:
-            self.chemicals = json.load(f)
+        self.chemicals = self.io.read(self.file)
 
     def get_htmls(self):
-        with open(ChemDir / "record.json", "r", encoding="utf-8") as f:
-            records = json.load(f)
+        """
+        According to the chemical.json [list] crawler the sdf structure
+        """
+        records = self.io.read(FRecord)
 
-        with open(ChemDir / "error", "r", encoding="utf-8") as f:
+        with open(FError, "r", encoding="utf-8") as f:
             exclude = [line.rstrip() for line in f.readlines()]
 
         for chemical in self.chemicals:
@@ -60,38 +62,25 @@ class IChemCrawler(object):
                 logger.warning(f"`{chemical}` search error")
 
         # update record.json
-        try:
-            with open(ChemDir / "_record.json", "w", encoding="utf-8") as f:
-                json.dump(records, f)
-        except Exception as error:
-            raise error
-        else:
-            shutil.move(ChemDir / "_record.json", ChemDir / "record.json")
+        self.io.write(records, temp(FRecord))
+        shutil.move(temp(FRecord), FRecord)
 
         # update error
-        try:
-            with open(ChemDir / "_error", "w", encoding="utf-8") as f:
-                f.write('\n'.join(exclude))
-        except Exception as error:
-            raise error
-        else:
-            shutil.move(ChemDir / "_error", ChemDir / "error")
+        with open(FError, "w", encoding="utf-8") as f:
+            f.write('\n'.join(exclude))
 
         logger.info("Update record.json successfully")
 
-    @staticmethod
-    def smile_name():
+    def smile_name(self):
+        """
+        According to the smile obtain the name
+        """
+        data = self.io.read(FNameSmile)
 
-        with open("name_smile.json", "r", encoding='utf-8') as f:
-            data = json.load(f)
+        if not Path(FNameName).exists():
+            self.io.write([], FNameName)
 
-        if not Path("name_name.json").exists():
-            with open("name_name.json", "w", encoding="utf-8") as f:
-                json.dump([], f, indent=2)
-
-        with open("name_name.json", "r", encoding="utf-8") as f:
-            records = json.load(f)
-
+        records = self.io.read(FNameName)
         searched = [item['old_name'] for item in records]
         for index, item in enumerate(data):
             if item['old_name'] in searched:
@@ -109,20 +98,23 @@ class IChemCrawler(object):
             searched.append(item)
 
             if index % 20 == 0 or index == len(data) - 1:
-                with open("_name_name.json", "w", encoding="utf-8") as f:
-                    json.dump(searched, f, indent=2)
+                self.io.write(searched, temp(FNameName))
 
-        shutil.move("_name_name.json", "name_name.json")
+        shutil.move(temp(FNameName), FNameName)
 
-    @staticmethod
-    def name_smile(names):
-        url = 'http://127.0.0.1:5500/structure.html?input='
+    def name_smile(self, names):
+        """
+        According to the name obtain the smile
 
-        with open('name_smile.json', 'r', encoding='utf-8') as f:
-            result = json.load(f)
+        Args:
+            names: chemicals' name, list
 
-        searched = [list(item.keys())[0] for item in result]
+        """
+        url = 'http://127.0.0.1:5500/structure.html?input='  # local net, need structure.html && ketcher && ketcher.js
         session = HTMLSession()
+
+        results = self.io.read(FNameSmile)
+        searched = [list(item.keys())[0] for item in results]
         for name in names:
             if name in searched:
                 continue
@@ -131,15 +123,14 @@ class IChemCrawler(object):
             response.html.render(wait=2, sleep=2)
             smiles = response.html.find('#iename')[0].text
             logger.info(f"{name} : {smiles}")
-            result.append({name: smiles})
+            results.append({name: smiles})
 
         try:
-            with open('_smile.json', 'w', encoding='utf-8') as f:
-                json.dump(result, f, indent=2)
+            self.io.write(results, temp(FNameSmile))
         except:
             logger.error("Error!")
         else:
-            shutil.move('_smile.json', 'name_smile.json')
+            shutil.move(temp(FNameSmile), FNameSmile)
 
 
 if __name__ == '__main__':
@@ -148,12 +139,12 @@ if __name__ == '__main__':
     # failures = OPSINCrawler.failure()
     # IChemCrawler.name_smile(failures)
     # IChemCrawler.smile_name()
-    with open("chemical_new.json", "r", encoding='utf-8') as f:
+    with open("chemical/chemical_new.json", "r", encoding='utf-8') as f:
         data = json.load(f)
 
     new_data = [item['new_name'] for item in data]
 
-    with open("chemical_new.json", "w", encoding='utf-8') as f:
+    with open("chemical/chemical_new.json", "w", encoding='utf-8') as f:
         json.dump(new_data, f)
 
     print()
