@@ -11,3 +11,5 @@ data/checked
 *.json
 chemical/*
 opsin.js
+ketcher
+node_modules/

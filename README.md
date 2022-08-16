@@ -22,9 +22,12 @@ This package mainly services for obtaining literatures from [Web of Science](htt
 
 - [ichem](ichem.py): obtain structure in `sdf` format according to chemical name
 
+- [opsin](opsin.py): according to chemical name obtain inchi, smiles and so on
+
 ## Requirements
 
 - numpy
+- execjs
 - pyquery
 - selenium
 - chromedriver
