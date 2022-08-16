@@ -134,17 +134,17 @@ class IChemCrawler(object):
 
 
 if __name__ == '__main__':
-    # ichem = IChemCrawler(ChemDir / "chemical.json")
+    ichem = IChemCrawler(ChemDir / "chemical.json")
     # ichem.get_htmls()
     # failures = OPSINCrawler.failure()
     # IChemCrawler.name_smile(failures)
     # IChemCrawler.smile_name()
-    with open("chemical/chemical_new.json", "r", encoding='utf-8') as f:
-        data = json.load(f)
-
-    new_data = [item['new_name'] for item in data]
-
-    with open("chemical/chemical_new.json", "w", encoding='utf-8') as f:
-        json.dump(new_data, f)
-
+    # with open("chemical/chemical_new.json", "r", encoding='utf-8') as f:
+    #     data = json.load(f)
+    #
+    # new_data = [item['new_name'] for item in data]
+    #
+    # with open("chemical/chemical_new.json", "w", encoding='utf-8') as f:
+    #     json.dump(new_data, f)
+    #
     print()
