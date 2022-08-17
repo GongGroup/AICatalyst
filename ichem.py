@@ -1,11 +1,10 @@
-import json
 import random
 import shutil
 import time
 from pathlib import Path
 
 import requests
-from requests_html import HTMLSession
+from pyquery import PyQuery
 
 from fio import JsonIO, temp
 from logger import logger
@@ -14,6 +13,7 @@ from logger import logger
 IChemRoot = "http://www.ichemistry.cn/structure.asp"
 IChemStructure = "http://www.ichemistry.cn/ketcher/Name2Structure/?action=mol&input="
 IChemName = "http://www.ichemistry.cn/ketcher/Name2Structure/?action=ename&input="
+IChemFormula = "http://search.ichemistry.cn/?keys="
 headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
@@ -22,6 +22,7 @@ headers = {
 ChemDir = Path("./chemical")
 
 # file const
+FChemical = ChemDir / "chemical.json"
 FRecord = ChemDir / "record.json"  # success structure in sdf
 FError = ChemDir / "error"  # error chemical
 FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping
@@ -29,12 +30,12 @@ FNameName = ChemDir / "name_name.json"  # name~name mapping
 
 
 class IChemCrawler(object):
-    def __init__(self, file):
+    def __init__(self, file=None):
         self.io = JsonIO
         self.file = file
-        self.chemicals = self.io.read(self.file)
+        self.chemicals = self.io.read(self.file) if self.file is not None else None
 
-    def get_htmls(self):
+    def get_structure(self):
         """
         According to the chemical.json [list] crawler the sdf structure
         """
@@ -71,7 +72,7 @@ class IChemCrawler(object):
 
         logger.info("Update record.json successfully")
 
-    def smile_name(self):
+    def get_name(self):
         """
         According to the smile obtain the name
         """
@@ -102,39 +103,24 @@ class IChemCrawler(object):
 
         shutil.move(temp(FNameName), FNameName)
 
-    def name_smile(self, names):
-        """
-        According to the name obtain the smile
-
-        Args:
-            names: chemicals' name, list
-
-        """
-        url = 'http://127.0.0.1:5500/structure.html?input='  # local net, need structure.html && ketcher && ketcher.js
-        session = HTMLSession()
-
-        results = self.io.read(FNameSmile)
-        searched = [list(item.keys())[0] for item in results]
-        for name in names:
-            if name in searched:
-                continue
-
-            response = session.get(url=url + name)
-            response.html.render(wait=2, sleep=2)
-            smiles = response.html.find('#iename')[0].text
-            logger.info(f"{name} : {smiles}")
-            results.append({name: smiles})
-
-        try:
-            self.io.write(results, temp(FNameSmile))
-        except:
-            logger.error("Error!")
+    def get_formula(self, name):
+        response = requests.get(IChemFormula + name, headers=headers)
+        response.encoding = 'gbk'
+        doc = PyQuery(response.text)
+        chemicals = doc.find('#container-right tr:nth-child(n+2) td:nth-child(5)')
+        if len(chemicals):
+            formula = [chemical.text() for chemical in chemicals.items()]
+            logger.info(f"Transform [{name}] => [{formula[0]}] successfully")
+            return formula[0]
         else:
-            shutil.move(temp(FNameSmile), FNameSmile)
+            return None
 
 
 if __name__ == '__main__':
-    ichem = IChemCrawler(ChemDir / "chemical.json")
+    ichem = IChemCrawler()
+    chemicals = JsonIO.read(FChemical)
+    for chemical in chemicals[:10]:
+        ichem.get_formula(chemical)
     # ichem.get_htmls()
     # failures = OPSINCrawler.failure()
     # IChemCrawler.name_smile(failures)

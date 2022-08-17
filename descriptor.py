@@ -1,7 +1,7 @@
 import re
 
 PeriodicTable = [
-    'H', 'He',
+    'H', 'D', 'He',
     'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
     'Na', 'Mg', 'Al', 'P', 'S', 'Cl', 'Ar', 'Si',
     'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr',
@@ -63,7 +63,7 @@ class FormulaDescriptor(Descriptor):
             raise ValueError(f"`{value}` is invalid name")
 
         # check special symbols
-        symbols = [",", " ", "[", "]", "WSC"]
+        symbols = [",", "WSC"]
         for symbol in symbols:
             if symbol in value:
                 raise ValueError(f"`{value}` is invalid name")
@@ -74,9 +74,9 @@ class FormulaDescriptor(Descriptor):
 
         # check element
         check_value = value
-        check_value = re.sub(r'[0-9()*η+-]+', '', check_value)
         for element in PeriodicTable[::-1]:
             check_value = re.sub(element, '', check_value)
+        check_value = re.sub(r'[\d()\[\]*.·=/Xxnη+ -]+', '', check_value)
         if len(check_value):
             raise ValueError(f"`{value}` is invalid name")
 
