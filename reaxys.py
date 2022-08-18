@@ -1,23 +1,31 @@
-import json
 from pathlib import Path
 from typing import Iterable
 
+from fio import JsonIO
+
+# Directory constant
 ChemDir = Path("./chemical")
+
+# file constant
+FReaxys = ChemDir / "opsin_reaxys.json"
+FRecord = ChemDir / "opsin_record_new.json"
+
+# Variable constant
+ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'} for item in JsonIO.read(FRecord)}
 
 
 def list_float(values):
-    if isinstance(values, list):
-        if len(values):
-            try:
-                return [float(value) for value in values]
-            except ValueError:
-                return values
+    formatted_values = []
+    for value in values:
+        if ' - ' in value:
+            formatted_values.append(list(map(float, [item for item in value.split(' - ') if len(item)])))
         else:
-            return values
-    elif isinstance(values, str):
-        return float(values)
-    else:
-        raise TypeError(f"{type(values)} can't transform to float")
+            formatted_values.append(float(value))
+    return formatted_values
+
+
+def list_smiles(values):
+    return [ChemInfo[value].get('smiles', None) for value in values]
 
 
 class ReaxysRecord(object):
@@ -30,6 +38,10 @@ class ReaxysRecord(object):
         "time": list_float,
         "temperature": list_float,
         "pressure": list_float,
+        "reactant": list_smiles,
+        "product": list_smiles,
+        "PRO": list_smiles,
+        "reagent": list_smiles,
     }
 
     def __init__(self, record: dict):
@@ -54,13 +66,14 @@ class ReaxysRecords(list):
 
 class Reaxys(object):
     def __init__(self, file):
+        self.io = JsonIO
         self.file = file
         self._records = None
 
     def flatten(self):
         records = []
-        with open(self.file, "r", encoding="utf-8") as f:
-            original_records = json.load(f)
+
+        original_records = self.io.read(self.file)
 
         for reaction in original_records:
             header = reaction[0]
@@ -82,11 +95,11 @@ class Reaxys(object):
         for record in self.records:
             chemicals.append([record.PRO, record.product, record.reactant, record.reagent])
         total_chemicals = list(set(sum(sum(chemicals, []), [])))
-        with open(name, "w", encoding='utf-8') as f:
-            json.dump(total_chemicals, f)
+
+        self.io.write(total_chemicals, name)
 
 
 if __name__ == '__main__':
-    reaxys = Reaxys("reaxys_json.json")
-    reaxys.output_chemicals()
+    reaxys = Reaxys(FReaxys)
+    records = reaxys.records
     print()
