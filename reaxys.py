@@ -1,6 +1,9 @@
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
+from rdkit import Chem
+
 from fio import JsonIO
 
 # Directory constant
@@ -24,8 +27,18 @@ def list_float(values):
     return formatted_values
 
 
-def list_smiles(values):
-    return [ChemInfo[value].get('smiles', None) for value in values]
+def list_smiles(values, fingerprint=True):
+    if fingerprint:
+        fps = []
+        for value in values:
+            smiles = ChemInfo[value].get('smiles', None)
+            try:
+                fps.append(np.array(Chem.RDKFingerprint(Chem.MolFromSmiles(smiles)).ToList()))
+            except IndexError:
+                fps.append(smiles)
+        return fps
+    else:
+        return [ChemInfo[value].get('smiles', None) for value in values]
 
 
 class ReaxysRecord(object):
@@ -71,7 +84,7 @@ class Reaxys(object):
         self._records = None
 
     def flatten(self):
-        records = []
+        var_records = []
 
         original_records = self.io.read(self.file)
 
@@ -79,8 +92,8 @@ class Reaxys(object):
             header = reaction[0]
             for record in reaction[1:]:
                 record.update(header)
-                records.append(record)
-        self._records = records
+                var_records.append(record)
+        self._records = var_records
 
     @property
     def records(self):
@@ -102,4 +115,12 @@ class Reaxys(object):
 if __name__ == '__main__':
     reaxys = Reaxys(FReaxys)
     records = reaxys.records
+    for record in records:
+        for attr in ["reactant", "product", "PRO", "reagent"]:
+            for item in getattr(record, attr):
+                if not isinstance(item, np.ndarray):
+                    print(item)
+    # ms = [Chem.MolFromSmiles(record.PRO[0]) for record in records]
+    # fps = np.array([Chem.RDKFingerprint(x).ToList() for x in ms])
+    # sum_fps = np.sum(fps, axis=1)
     print()
