@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 from torch.utils.data import Dataset
 
 from reaxys import Reaxys
@@ -12,8 +13,8 @@ FReaxys = ChemDir / "opsin_reaxys.json"
 
 
 class ModelDataset(Dataset):
-    def __init__(self, records):
-        self.records = records
+    def __init__(self, file):
+        self.records = np.load(file, allow_pickle=True)
 
     def __getitem__(self, index):
         pass
@@ -23,6 +24,5 @@ class ModelDataset(Dataset):
 
 
 if __name__ == '__main__':
-    reaxys = Reaxys(FReaxys)
-    dataset = ModelDataset(reaxys.records)
+    dataset = ModelDataset("train_set_v1.npy")
     print()

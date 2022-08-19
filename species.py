@@ -66,7 +66,7 @@ class ChemFormula(object):
         self.name = name
 
     def __repr__(self):
-        return f"<ChemFormula {self.name}>"
+        return f"<ChemFormula [{self.name}]>"
 
     @staticmethod
     def new(name):
@@ -89,6 +89,9 @@ class MCatalyst(object):
 
     def __init__(self, name):
         self.name = name
+
+    def __repr__(self):
+        return f"<MCatalyst [{self.name}]>"
 
     @staticmethod
     def is_metal_catalyst(name):
