@@ -33,7 +33,7 @@ function getKetcher() {
 
 function name2structure(chemicalName) {
   $.ajax({
-    url: "../chemical/record.json",
+    url: "../chemical/ichem_record.json",
     type: "GET",
     dataType: "json",
     success: function (data) {

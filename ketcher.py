@@ -3,9 +3,11 @@ from pathlib import Path
 
 from requests_html import HTMLSession
 
-from fio import JsonIO, temp
+from fio import JsonIO, ftemp
 
 # Net constant
+from opsin import OPSINCrawler
+
 URL = 'http://127.0.0.1:5500/structure.html?input='
 
 # Directory const
@@ -45,8 +47,14 @@ class Ketcher(object):
             results.append({name: smiles})
 
         try:
-            self.io.write(results, temp(FNameSmile))
+            self.io.write(results, ftemp(FNameSmile))
         except:
             logger.error("Error!")
         else:
-            shutil.move(temp(FNameSmile), FNameSmile)
+            shutil.move(ftemp(FNameSmile), FNameSmile)
+
+
+if __name__ == '__main__':
+    chemicals = OPSINCrawler.get_failures()
+    ketcher = Ketcher()
+    ketcher.get_smile(chemicals)

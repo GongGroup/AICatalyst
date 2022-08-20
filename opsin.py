@@ -1,13 +1,16 @@
 import copy
 import json
+import os
 import shutil
 from functools import partial
 from pathlib import Path
 
 import execjs
 import requests
+from rdkit import Chem, RDConfig
+from rdkit.Chem import FragmentCatalog
 
-from fio import JsonIO, temp
+from fio import JsonIO, ftemp, fcopy
 from logger import logger
 
 # Net const
@@ -21,26 +24,30 @@ ChemDir = Path("./chemical")
 
 # File const
 FJSFunc = "func.js"
-FRecord = ChemDir / "opsin_record.json"
-FIChemRecord = ChemDir / "record.json"
+FChemical = ChemDir / "chemical.json"
+FFormula = ChemDir / "formula.json"
+FOpsinRecord = ChemDir / "opsin_record.json"
+FIChemRecord = ChemDir / "ichem_record.json"
+FNameName = ChemDir / "name_name.json"
 
 
 class OPSINCrawler(object):
-    def __init__(self, file):
+    def __init__(self, file=None):
         self.io = JsonIO
-        self.file = file
-        self.chemicals = self.io.read(self.file)
         self.encode = partial(execjs.compile(OPSINCrawler.load_js(FJSFunc)).call, "encode")
 
-    def get_htmls(self):
+        self.file = file
+        self.chemicals = self.io.read(self.file) if self.file is not None else None
+
+    def get_records(self):
         """
         According to the chemical.json [list] obtain the smiles, inchi, inchi-key and so on
         """
 
-        if not Path(FRecord).exists():
-            self.io.write([], FRecord)
+        if not Path(FOpsinRecord).exists():
+            self.io.write([], FOpsinRecord)
 
-        records = self.io.read(FRecord)
+        records = self.io.read(FOpsinRecord)
         records_name = [item['name'] for item in records]
 
         for index, chemical in enumerate(self.chemicals):
@@ -60,21 +67,100 @@ class OPSINCrawler(object):
                 records.append(content)
                 logger.warning(f"`{chemical}` : Response != 200, please check")
 
-            if index % 20 == 0 or index == len(self.chemicals) - 1:
-                self.io.write(records, temp(FRecord))
-                shutil.move(temp(FRecord), FRecord)
+        shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
+        self.io.write(records, ftemp(FOpsinRecord))
+        shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
 
         logger.info("Successfully update the opsin_record.json")
 
-    def failure(self):
+    def update_records(self):
+        formatted_func = lambda x: x.replace('<i>', '').replace('</i>', '').replace('<sup>', '').replace('</sup>', '')
+        chemicals = [item for item in JsonIO.read(FNameName) if item["new_name"] != "FAILURE"]
+        formatted_chemicals = [{'old_name': item['old_name'], 'new_name': formatted_func(item['new_name'])}
+                               for item in chemicals]
+        formatted_chemicals_name = [item['old_name'] for item in formatted_chemicals]
+
+        records = [item for item in self.io.read(FOpsinRecord) if item not in formatted_chemicals_name]
+        for item in formatted_chemicals:
+            url = OPSINRoot + "opsin/" + self.encode(item['new_name'])
+            html = requests.get(url, headers=headers)
+            if html.status_code == 200:
+                content = json.loads(html.content)
+                content.update({'name': item['old_name'], 'new_name': item['new_name']})
+                records.append(content)
+                logger.info(f"`{item['old_name']}` successfully store in database")
+            else:
+                content = {'name': item['old_name'], 'new_name': item['new_name'], 'status': 'FAILURE'}
+                records.append(content)
+                logger.warning(f"`{item['old_name']}` : Response != 200, please check")
+
+        self.io.write(records, ftemp(FOpsinRecord))
+        shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
+
+        logger.info("Successfully update the opsin_record.json")
+
+    def update_formulas(self):
+        formulas = {key: value for key, value in self.io.read(FFormula).items() if value != "FAILURE"}
+
+        records = []
+        for item in self.io.read(FOpsinRecord):
+            if item['name'] in formulas.keys() and item.get('formula', None) is None:
+                item['formula'] = formulas[item['name']]
+                logger.info(f"update `{item['name']}` formula successfully")
+            records.append(item)
+
+        shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
+        self.io.write(records, ftemp(FOpsinRecord))
+        shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
+
+        logger.info("Successfully update the opsin_record.json")
+
+    def update_groups(self):
+        fname = os.path.join(RDConfig.RDDataDir, 'FunctionalGroups.txt')
+        fparams = FragmentCatalog.FragCatParams(1, 6, fname)
+
+        def get_group(smiles):
+            m = Chem.MolFromSmiles(smiles)
+            fcat = FragmentCatalog.FragCatalog(fparams)
+            fcgen = FragmentCatalog.FragCatGenerator()
+            if m is None:
+                return None
+            fcgen.AddFragsFromMol(m, fcat)
+
+            group_count = fcat.GetNumEntries()
+            group_id = [list(fcat.GetEntryFuncGroupIds(i)) for i in range(group_count)]
+            group_found = set(sum(group_id, []))
+            single_group = []
+            for group in group_found:
+                func_group = fparams.GetFuncGroup(group)
+                single_group.append(func_group.GetProp('_Name'))
+            return single_group
+
+        records = []
+        for item in self.io.read(FOpsinRecord):
+            if item.get('group', None) is None and item.get('smiles', None) is not None:
+                smiles = item['smiles']
+                group = get_group(smiles)
+                if group is not None:
+                    item['group'] = group
+            records.append(item)
+
+        shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
+        self.io.write(records, ftemp(FOpsinRecord))
+        shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
+
+        logger.info("Successfully update the opsin_record.json")
+
+    @staticmethod
+    def get_failures():
         """
         chemicals in opsin site failure but success in ichem
         """
 
-        result = self.io.read(FRecord)
-        failure = [item['name'] for item in result if len(item) == 2]
+        result = JsonIO.read(FOpsinRecord)
+        failure = [item['name'] for item in result if item['status'] == "FAILURE"]
 
-        ichem = list(self.io.read(FIChemRecord).keys())
+        ichem = [key for key, value in JsonIO.read(FIChemRecord).items() if value.startswith("Ok.")]
 
         return [item for item in failure if item in ichem]
 
@@ -97,40 +183,25 @@ class OPSINCrawler(object):
 
 
 if __name__ == '__main__':
-    # opsin = OPSINCrawler("chemical_new.json")
-    # opsin.get_htmls()
+    # get records
+    # opsin = OPSINCrawler(FChemical)
+    # opsin.get_records()
 
-    with open("chemical/name_name.json", "r", encoding='utf-8') as f:  # old_name ~ new_name mapping
-        name2name = json.load(f)
+    # get failures
+    # opsin = OPSINCrawler(FChemical)
+    # chemicals = opsin.get_failures()
 
-    with open("chemical/opsin_record_old.json", "r", encoding='utf-8') as f:  # last opsin_record
-        opsin_record = json.load(f)
+    # update records
+    # opsin = OPSINCrawler()
+    # opsin.update_records()
 
-    with open("chemical/opsin_record.json", "r", encoding='utf-8') as f:  # newly succeed opsin_record
-        opsin_record_new = json.load(f)
+    # update formulas
+    # opsin = OPSINCrawler()
+    # opsin.update_formulas()
 
-    new_records = []
+    # update groups
+    # opsin = OPSINCrawler()
+    # opsin.update_groups()
 
-    # transform the list to dict for the subsequent quickly mapping
-    name2name_dict = {item['old_name']: item['new_name'] for item in name2name}
-    opsin_record_new_dict = {item['name']: {key: item[key] for key in item.keys() if key != "name"} for item in
-                             opsin_record_new}
-    for item in copy.deepcopy(opsin_record):
-        if item['name'] in list(name2name_dict.keys()):
-            # obtain new_name from old_name
-            new_name = name2name_dict[item['name']].replace('<i>', '').replace('</i>', '')
-            if new_name != "FAILURE":
-                for key in opsin_record_new_dict[new_name].keys():
-                    item[key] = opsin_record_new_dict[new_name][key]  # substitute old_info with new_info
-                    item['new_name'] = new_name  # add `new_name` key
-            else:
-                item['new_name'] = "FAILURE"
-        else:
-            item['new_name'] = item['name']
-        new_records.append(item)
-
-    new_records_sort = [{item2[0]: item2[1] for item2 in sorted(item.items(), key=lambda x: x[0])} for item in
-                        new_records]
-
-    with open("chemical/opsin_record_new.json", "w", encoding='utf-8') as f:
-        json.dump(new_records_sort, f, indent=2)
+    records = JsonIO.read(FOpsinRecord)
+    print()

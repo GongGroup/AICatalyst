@@ -6,7 +6,7 @@ from pathlib import Path
 import requests
 from pyquery import PyQuery
 
-from fio import JsonIO, temp
+from fio import JsonIO, ftemp
 from logger import logger
 
 # Net const
@@ -23,8 +23,8 @@ ChemDir = Path("./chemical")
 
 # file const
 FChemical = ChemDir / "chemical.json"
-FRecord = ChemDir / "record.json"  # success structure in sdf
-FError = ChemDir / "error"  # error chemical
+FFormula = ChemDir / "formula.json"
+FRecord = ChemDir / "ichem_record.json"  # success structure in sdf
 FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping
 FNameName = ChemDir / "name_name.json"  # name~name mapping
 
@@ -41,11 +41,8 @@ class IChemCrawler(object):
         """
         records = self.io.read(FRecord)
 
-        with open(FError, "r", encoding="utf-8") as f:
-            exclude = [line.rstrip() for line in f.readlines()]
-
         for chemical in self.chemicals:
-            if chemical in records.keys() or chemical in exclude:
+            if chemical in records.keys():
                 logger.debug(f"`{chemical}` has been searched, continue")
                 continue
             time.sleep(random.random() + 0.5)
@@ -56,81 +53,86 @@ class IChemCrawler(object):
                     records.update({chemical: content})
                     logger.info(f"`{chemical}` store in database")
                 else:
-                    exclude.append(chemical)
+                    records.update({chemical: "Error"})
                     logger.warning(f"`{chemical}` not in this site")
             else:
-                exclude.append(chemical)
+                records.update({chemical: "Error"})
                 logger.warning(f"`{chemical}` search error")
 
         # update record.json
-        self.io.write(records, temp(FRecord))
-        shutil.move(temp(FRecord), FRecord)
-
-        # update error
-        with open(FError, "w", encoding="utf-8") as f:
-            f.write('\n'.join(exclude))
+        self.io.write(records, ftemp(FRecord))
+        shutil.move(ftemp(FRecord), FRecord)
 
         logger.info("Update record.json successfully")
 
-    def get_name(self):
+    @staticmethod
+    def get_name():
         """
         According to the smile obtain the name
         """
-        data = self.io.read(FNameSmile)
+        data = JsonIO.read(FNameSmile)
 
         if not Path(FNameName).exists():
-            self.io.write([], FNameName)
+            JsonIO.write([], FNameName)
 
-        records = self.io.read(FNameName)
+        records = JsonIO.read(FNameName)
         searched = [item['old_name'] for item in records]
+        get_kv = lambda x: list(x.items())[0]
         for index, item in enumerate(data):
-            if item['old_name'] in searched:
+            name, smiles = get_kv(item)
+            if name in searched:
                 continue
             time.sleep(random.random() + 0.5)
-            response = requests.get(IChemName + item['smiles'], headers=headers)
+            response = requests.get(IChemName + smiles, headers=headers)
             text = response.text
             if text.startswith("Ok."):
                 new_name = text.split("Ok.")[1]
-                item['new_name'] = new_name
-                logger.info(f"{item['old_name']} => {item['new_name']}")
+                logger.info(f"{name} => {new_name}")
             else:
-                item['new_name'] = 'FAILURE'
+                new_name = 'FAILURE'
                 logger.warning(f"transform error")
-            searched.append(item)
+            searched.append({"old_name": name, "smiles": smiles, "new_name": new_name})
 
             if index % 20 == 0 or index == len(data) - 1:
-                self.io.write(searched, temp(FNameName))
+                JsonIO.write(searched, ftemp(FNameName))
 
-        shutil.move(temp(FNameName), FNameName)
+        shutil.move(ftemp(FNameName), FNameName)
 
-    def get_formula(self, name):
-        response = requests.get(IChemFormula + name, headers=headers)
-        response.encoding = 'gbk'
-        doc = PyQuery(response.text)
-        chemicals = doc.find('#container-right tr:nth-child(n+2) td:nth-child(5)')
-        if len(chemicals):
-            formula = [chemical.text() for chemical in chemicals.items()]
-            logger.info(f"Transform [{name}] => [{formula[0]}] successfully")
-            return formula[0]
-        else:
-            return None
+    def get_formula(self):
+
+        formulas = self.io.read(FFormula)
+        formulas_name = list(formulas.keys())
+
+        for index, chemical in enumerate(self.chemicals):
+            if chemical in formulas_name:
+                continue
+            response = requests.get(IChemFormula + chemical, headers=headers)
+            response.encoding = 'gbk'
+            doc = PyQuery(response.text)
+            records = doc.find('#container-right tr:nth-child(n+2) td:nth-child(5)')
+            if len(records):
+                formula = [record.text() for record in records.items()]
+                formulas.update({chemical: formula[0]})
+                logger.info(f"Transform [{chemical}] => [{formula[0]}] successfully")
+            else:
+                formulas.update({chemical: "FAILURE"})
+                logger.info(f"Transform [{chemical}] error")
+
+            if index % 20 == 0 or index == len(self.chemicals) - 1:
+                JsonIO.write(formulas, ftemp(FFormula))
+                shutil.move(ftemp(FFormula), FFormula)
 
 
 if __name__ == '__main__':
-    ichem = IChemCrawler()
-    chemicals = JsonIO.read(FChemical)
-    for chemical in chemicals[:10]:
-        ichem.get_formula(chemical)
-    # ichem.get_htmls()
-    # failures = OPSINCrawler.failure()
-    # IChemCrawler.name_smile(failures)
-    # IChemCrawler.smile_name()
-    # with open("chemical/chemical_new.json", "r", encoding='utf-8') as f:
-    #     data = json.load(f)
-    #
-    # new_data = [item['new_name'] for item in data]
-    #
-    # with open("chemical/chemical_new.json", "w", encoding='utf-8') as f:
-    #     json.dump(new_data, f)
-    #
+    # get_structure
+    # ichem = IChemCrawler(file=FChemical)
+    # ichem.get_structure()
+
+    # get new_name
+    # IChemCrawler.get_name()
+
+    # get formula
+    ichem = IChemCrawler(file=FChemical)
+    ichem.get_formula()
+
     print()

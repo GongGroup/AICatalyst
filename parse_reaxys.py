@@ -59,5 +59,5 @@ if __name__ == '__main__':
         for RXD_index in range(len(RXD_list)):
             parse_RXD(reaction_type, type_index, RXD_config, RXD_index)
 
-    with open('reaxys_json.json', 'w') as f:
+    with open('chemical/reaxys.json', 'w') as f:
         json.dump(data, f)

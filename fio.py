@@ -1,8 +1,9 @@
 import json
+from json import JSONEncoder
 from pathlib import Path
 
 
-def temp(file: Path):
+def ftemp(file: Path):
     """
     Add "_" in the prefix of file, e.g., chemical.json -> _chemical.json
 
@@ -13,6 +14,19 @@ def temp(file: Path):
         temp: new file path
     """
     return file.parent / f"_{file.name}"
+
+
+def fcopy(file: Path):
+    """
+    Add "_copy" in the suffix of file, e.g., chemical.json -> chemical_copy.json
+
+    Args:
+        file: file path
+
+    Returns:
+        temp: new file path
+    """
+    return file.parent / f"{file.stem}_copy{file.suffix}"
 
 
 class JsonIO(object):
@@ -49,7 +63,28 @@ class JsonIO(object):
             json.dump(obj, f, indent=indent)
 
 
+class CatalystJSONEncoder(JSONEncoder):
+    """
+    Extend the default JSONEncoder, make it accept the <MCatalyst> instance
+    """
+
+    def default(self, o):
+        from species import MCatalyst
+
+        if isinstance(o, MCatalyst):
+            return o.name
+        else:
+            return super(CatalystJSONEncoder, self).default(o)
+
+
+class CatalystJsonIO(JsonIO):
+    @staticmethod
+    def write(obj, file, indent=2, encoding='utf-8'):
+        with open(file, "w", encoding=encoding) as f:
+            json.dump(obj, f, cls=CatalystJSONEncoder, indent=indent)
+
+
 if __name__ == '__main__':
-    path = Path("reaxys_json.json")
-    temp_path = temp(path)
+    path = Path("chemical/reaxys.json")
+    temp_path = ftemp(path)
     print()

@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from descriptor import CatalystDescriptor, FormulaDescriptor
-from fio import JsonIO, temp
+from fio import JsonIO, ftemp
 from ichem import IChemCrawler
 from logger import logger
 
@@ -76,8 +76,8 @@ class ChemFormula(object):
             formula = IChemCrawler().get_formula(name)
             if formula is not None:
                 ChemFormula.mapping[name] = formula
-                JsonIO.write(ChemFormula.mapping, temp(FFormula))
-                shutil.move(temp(FFormula), FFormula)
+                JsonIO.write(ChemFormula.mapping, ftemp(FFormula))
+                shutil.move(ftemp(FFormula), FFormula)
                 logger.info(f"{name}~{formula} mapping stored in database")
                 return ChemFormula(formula)
             else:
