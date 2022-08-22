@@ -1,11 +1,12 @@
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
+from itertools import combinations
 from typing import Iterable
 
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from constant import FOpsinRecord, FChemical, FReaxys, FReactions
+from constant import FOpsinRecord, FChemical, FReaxys, FReactions, FReaxysYield
 from fio import JsonIO, CatalystJsonIO
 from species import MCatalyst
 
@@ -142,26 +143,46 @@ class ReaxysReaction(object):
             except KeyError:
                 continue
             pro_fp = Chem.RDKFingerprint(Chem.MolFromSmiles(pro_smiles))
-            similarity = {}
 
+            effective_reagent = {}
             for reactant in self.reagent:
                 try:
                     rea_smiles = ChemInfo[reactant]['smiles']
                 except KeyError:
                     continue
-                rea_fp = Chem.RDKFingerprint(Chem.MolFromSmiles(rea_smiles))
-                similarity.update({reactant: DataStructs.FingerprintSimilarity(pro_fp, rea_fp)})
+                else:
+                    rea_fp = Chem.RDKFingerprint(Chem.MolFromSmiles(rea_smiles))
+                    effective_reagent.update({reactant: rea_fp})
 
-            self.reactant.append(similarity)
+            candidate_reagent = [{i: effective_reagent[i] for i in item} for num in range(len(effective_reagent))
+                                 for item in combinations(effective_reagent, num + 1)]
 
-        self.reactant = [{key: value for key, value in item.items() if value == max(item.values())}
-                         for item in self.reactant]
+            reactant_p = []
+            for item in candidate_reagent:
+                sum_fp = Chem.RDKFingerprint(Chem.MolFromSmiles('[H]'))
+                for value in item.values():
+                    sum_fp |= value
+
+                similarity = {"reactant": list(item.keys()),
+                              "similarity": DataStructs.FingerprintSimilarity(pro_fp, sum_fp)}
+
+                reactant_p.append(similarity)
+
+            max_similarity = 0.
+            max_reactant = None
+            for item in reactant_p:
+                if item['similarity'] >= max_similarity:
+                    max_similarity = item['similarity']
+                    max_reactant = item['reactant']
+            self.reactant.append({"reactant": max_reactant, "similarity": max_similarity})
+        # self.reactant = [{key: value for key, value in item.items() if value == max(item.values())}
+        #                  for item in self.reactant]
 
         new_reactant = []
         for item in self.reactant:
-            reactant = list(item.keys())[0]
-            group = ChemInfo[reactant]['group']
-            new_reactant.append({reactant: {'group': group, 'similarity': item[reactant]}})
+            reactants = item['reactant']
+            group = sum([ChemInfo[reactant]['group'] for reactant in reactants], [])
+            new_reactant.append({"reactant": item['reactant'], 'group': group, 'similarity': item['similarity']})
         self.reactant = new_reactant
 
         new_product = []
@@ -170,8 +191,7 @@ class ReaxysReaction(object):
                 group = ChemInfo[item]['group']
             except KeyError:
                 continue
-            new_product.append({item: {'group': group}})
-
+            new_product.append({"product": item, 'group': group})
         self.product = new_product
 
 
@@ -220,29 +240,49 @@ class Reaxys(object):
 
         return ReaxysRecords(seq)
 
-    def get_catalyst_reaction_mapping(self):
-        reactions = self.reactions
-        catalysts = Counter([item.name for reaction in reactions for item in reaction.catalyst])
+    @staticmethod
+    def get_reaction_mapping():
+        # get_kv = lambda x: list(x.items())[0]
+        reactions = JsonIO.read(FReactions)
+        catalysts = Counter([item for reaction in reactions for item in reaction['catalyst']])
         catalysts_sort = sorted(catalysts.items(), key=lambda x: x[1], reverse=True)
-        catalyst_reaction_mapping = defaultdict(list)
+        mapping_count = {}
+        mapping_type = defaultdict(list)
+        Mapping = namedtuple("Mapping", ("reactant", "product"))
         for key, value in catalysts_sort:
             for reaction in reactions:
-                if key in [item.name for item in reaction.catalyst]:
-                    for i, j in zip(reaction.reactant, reaction.product):
-                        catalyst_reaction_mapping[key].append(
-                            (list(i.values())[0]['group'], list(j.values())[0]['group']))
-        return catalyst_reaction_mapping
+                if key in [item for item in reaction['catalyst']]:
+                    for i, j in zip(reaction['reactant'], reaction['product']):
+                        i_group = i['group']
+                        j_group = j['group']
+
+                        for item in i_group:
+                            if item in j_group:
+                                i_group.remove(item)
+                                j_group.remove(item)
+
+                        mapping = Mapping(tuple(i_group), tuple(j_group))
+                        mapping_type[key].append(mapping)
+            mapping_count.update({key: Counter(mapping_type[key])})
+        return mapping_type, mapping_count
 
 
 if __name__ == '__main__':
     # get records
-    # reaxys = Reaxys(FReaxys)
-    # records = reaxys.records()
+    reaxys = Reaxys(FReaxysYield)
+    records = reaxys.records()
 
     # get reactions
-    reaxys = Reaxys(FReaxys)
-    reaxys.reactions.to_json()
-    # catalyst_reaction_mapping = reaxys.get_catalyst_reaction_mapping()
+    # reaxys = Reaxys(FReaxys)
+    # reactions = reaxys.reactions
+    # reaxys.reactions.to_json()
+
+    # reaction_mapping = Reaxys.get_reaction_mapping()
+    # for key, value in reaction_mapping[1].items():
+    #     if len(value):
+    #         for item in value.most_common(1):
+    #             if item[1] >= 10:
+    #                 print(key, value.most_common(1))
 
     # for reaction in reactions:
     #     if 'palladium diacetate' in [item.name for item in reaction.catalyst]:

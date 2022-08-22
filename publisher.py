@@ -46,7 +46,7 @@ class PublisherCrawler(object):
         driver, wait = chrome.driver, chrome.wait
         scroll_height = 1000
 
-        for line in content[:900]:
+        for line in content[:910]:
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
             if Path(f"{self.output}/{md5_name}.html").exists():

@@ -50,7 +50,7 @@ class WOSCrawler(object):
     def get_htmls(self):
         # start driver
 
-        chrome = ChromeDriver(timeout=60)
+        chrome = ChromeDriver(timeout=60, options=False)
         driver, wait = chrome.driver, chrome.wait
         driver.get(WOSRoot)
 
