@@ -1,6 +1,6 @@
-# 人工智能项目入手向导
+# 人工智能项目教程
 
-本说明主要介绍一些入手人工智能相关项目所需的必要`软件`及`知识`储备，用于帮助新人快速入门或上手相关项目。如果你想更加全面的了解人工智能项目开发相关的技术，也可以根据本说明提到的一些关键词自行搜索学习。
+本教程主要介绍一些入手人工智能相关项目所需的必要`软件`及`知识`储备，用于帮助新人快速入门或上手相关项目。如果你想更加全面的了解人工智能项目开发相关的技术，也可以根据本教程提到的一些关键词自行搜索学习。
 
 ## 目录
 
@@ -31,7 +31,7 @@
 
 #### Anaconda 的安装
 
-浏览器输入 https://www.anaconda.com/products/distribution 进入 Anaconda 的下载页面，点击`Download`会自动下载电脑适配版本。
+浏览器输入 https://www.anaconda.com/products/distribution 进入 Anaconda 的下载页面，点击`Download`会自行下载电脑适配版本。
 
 ![img_1.png](img_1.png)
 
@@ -39,11 +39,11 @@
 
 > 在安装 Anaconda 过程中，注意勾选将 Anaconda 加入 PATH 环境变量，安装结束之后可查看系统环境变量确认
 
-<div align=center><img src="img_14.png"></div>
+<div align=center><img width=400 src="img_14.png"></div>
 
 > 系统环境变量查找路径：此电脑-属性（右键单击）-高级系统设置-环境变量-Path 环境变量（双击可查看）
 
-<div align=center><img width=500 src="img_3.png"/></div>
+<div align=center><img width=400 src="img_3.png"/></div>
 
 #### VScode 安装 (可选，建议安装)
 
@@ -51,11 +51,29 @@
 
 ![img_2.png](img_2.png)
 
+### VSCode 插件安装
+
+与 Pycharm 不同，VScode 的强大主要得益于其具有丰富且优秀的插件来帮助开发者更便利的开展项目开发。
+
+在 VSCode 中进行插件安装特别简单，只需要在`插件搜索栏`中输入你想安装的插件名字，即可进行安装。`插件搜索栏`如图中红框所示：
+
+![img_15.png](img_15.png)
+
+推荐安装的 VSCode 插件：
+
+- [C/C++: 官方 C/C++语言插件](https://github.com/Microsoft/vscode-cpptools.git)
+- [Python: 官方 Python 语言插件](https://github.com/Microsoft/vscode-python)
+- [Prettier: 代码格式化插件](https://prettier.io/)
+- [Markdown Preview Enhanced: Markdown 预览插件](https://shd101wyy.github.io/markdown-preview-enhanced/#/)
+- [Git Graph: 查看 Git 提交历史插件](https://marketplace.visualstudio.com/items?itemName=mhutchie.git-graph)
+- [Live Server: 本地服务器插件](https://github.com/ritwickdey/vscode-live-server.git)
+- [Code Spell Checker: 检查拼写插件](https://github.com/streetsidesoftware/vscode-spell-checker.git)
+
 ### 爬虫相关组件
 
 人工智能项目开发中涉及到利用爬虫开展数据挖掘的任务时，会使用[Selenium](https://www.selenium.dev/)等框架控制浏览器开展数据爬取，因此需要安装浏览器及对应的自动控制程序。
 
-本说明主要介绍`Chrome`浏览器及对应的`ChromeDriver`组件的安装，其他的浏览器（如`Edge`、`Safari`）也可以按类似的方法进行进行安装配置。
+本说明主要介绍`Chrome`浏览器及对应的`ChromeDriver`组件的安装，其他的浏览器（如`Edge`、`Safari`等）也可以按类似的方法进行进行安装配置。
 
 #### Chrome 浏览器
 
@@ -75,7 +93,7 @@ ChromeDriver 组件需要和对应版本的 Chrome 浏览器一起搭配使用�
 
 进入`104.0.5112.79`之后，即可选择对应系统的`ChromeDriver`进行下载安装。
 
-![img_7.png](img_7.png)
+<div align=center><img width=600 src="img_7.png"/></div>
 
 **note**
 
@@ -93,7 +111,7 @@ ChromeDriver 组件需要和对应版本的 Chrome 浏览器一起搭配使用�
 
 对于 Windows 平台，初次使用 conda 时，首先在任务栏的搜索框中搜索`PowerShell`，点击`以管理员身份运行`
 
-![img_8.png](img_8.png)
+<div align=center><img width=500 src="img_8.png"/></div>
 
 然后输入以下命令（目的是将 powershell 和 anaconda 进行关联）：
 
@@ -125,13 +143,13 @@ conda create -n python38
 conda env list
 ```
 
-![img_10.png](img_10.png)
+<div align=center><img width=400 src="img_10.png"/></div>
 
 可以看到，`python38`环境已经创建成功啦。
 
 ### Conda 激活环境
 
-当我们想使用新的`python38`环境时，我们需要先激活该环境，使用下述命令：
+当我们想使用新的`python38`环境时，需要先激活该环境，使用下述命令：
 
 ```
 conda activate python38
@@ -153,17 +171,17 @@ conda install python=3.8
 conda list
 ```
 
-![img_11.png](img_11.png)
+<div align=center><img width=500 src="img_11.png"/></div>
 
 可以看到，版本号为`3.8.13`的 python 已经成功安装在新环境下；另外，除了 python 之外，conda 还帮助我们安装了其他安装 python 所需的依赖（如`setuptools`等）。
 
-此外，`conda install`命令不仅可以用来安装 python，其他各种 python 包也可以使用该命令进行安装，只需将 python 改为包的名字即可。
+此外，`conda install`命令不仅可以用来安装 python，其他各种 python 包也可以使用该命令进行安装，只需将 `python` 改为包的名字即可（如`numpy`, `PyQuery`等）。
 
 ### Pycharm 中使用 Conda
 
-在日常的项目开发中，我们更多的是直接利用 Pycharm 启动一个 conda 环境进行开发，需要做的就是在首次打开项目时进行简单的配置：
+在日常的项目开发中，我们更多的是直接利用 Pycharm 启动一个 conda 环境进行开发，需要做的仅是在首次打开项目时进行简单的配置：
 
-例如，当我们利用打开[GVasp](https://github.com/Rasic2/gvasp)项目时， 点击右下角的`Python解释器`，如图中右下角红色框的位置：
+以[GVasp](https://github.com/Rasic2/gvasp)项目为例，当我们在 Pycharm 中打开该项目时， 点击右下角的`Python解释器`，如图中右下角红色框的位置：
 
 ![img_12.png](img_12.png)
 
@@ -171,9 +189,9 @@ conda list
 
 ![img_13.png](img_13.png)
 
-在`解释器`位置可以更改你想修改的 conda 环境，选择之后点击确认，项目的 conda 环境就配置好了。
+在`解释器`位置更改你想修改的 conda 环境，选择之后点击确认，项目的 conda 环境就配置好了。
 
-配置好 conda 环境后，如果后续想进行 conda 包的安装或环境的更改，可以直接利用 Pycharm 自带的 PowerShell 窗口进行操作，不用在搜索 PowerShell 启动使用了。
+配置好 conda 环境后，如果后续想进行 conda 包的安装，可以直接利用 Pycharm 自带的 PowerShell 窗口进行操作，无需单独启动 `PowerShell` 了。
 
 **note**
 
@@ -185,9 +203,9 @@ conda list
 
 ### Git 相关
 
-下面我们将简单介绍 git 相关的命令以方便新手入门如何使用 github 进行项目代码的管理。
+下面我们将简单介绍 `git` 相关的命令以方便新手学习如何使用 `git` 工具进行项目代码的管理。
 
-对于项目开发来说，往往涉及到多人合作开发一个项目以及项目代码开发过程中的版本更新迭代，于是需要一种工具来管理代码开发的整个过程，涉及代码的修改历史，版本回溯，分支合并等等，于是 git 就产生了，而 github 则是一个代码托管的平台，更多有关 git 及 github 的知识感兴趣的可以自行搜索学习。
+对于项目开发来说，经常会涉及到多人合作开发一个项目，因此需要一种工具来管理代码开发的整个过程，涉及代码的修改历史，版本回溯，分支合并等各个方面，这也就是 `git` 工具产生的原因，而 `github` 则是一个代码托管的平台。如果对 `git` 及 `github` 的原理及更多应用感兴趣，可以自行搜索学习。
 
 常用的 git 命令如下：
 
@@ -265,7 +283,7 @@ git pull origin master
 
 [4. 细读 Git | 让你弄懂 origin、HEAD、FETCH_HEAD 相关内容](https://developer.aliyun.com/article/919354)
 
-[5. github fork 与pull request](https://blog.csdn.net/benben0729/article/details/83031135)
+[5. GitHub fork 与 pull request](https://blog.csdn.net/benben0729/article/details/83031135)
 
 ### 镜像资源修改
 
@@ -284,7 +302,7 @@ default_channels:
 
 #### Pip 镜像修改
 
-除了 conda 之外，对于少数包，如果使用 pip 进行安装时，也许使用国内的镜像资源进行加速，方法是在用户目录下新建`.pip/pip.conf`文件（先建一个`.pip`文件夹），然后修改如下（使用阿里镜像）：
+对于少数没有上传到 conda 的 Python 包，当使用 pip 进行安装时，也需要使用国内的镜像资源进行加速，方法是在用户目录下新建`.pip/pip.conf`文件（先建一个`.pip`文件夹），然后修改如下（使用阿里镜像）：
 
 ```
 [global]
@@ -297,4 +315,4 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 
 ## 版权
 
-本说明的版权归[GongGroup](https://github.com/GongGroup)所有，更新维护工作暂由[Hui Zhou](https://github.com/Rasic2)及[DongZhi Li](https://github.com/mastreina)负责。
+本教程的版权归 [GongGroup](https://github.com/GongGroup) 所有，更新维护工作暂由 [Hui Zhou](https://github.com/Rasic2) 及 [DongZhi Li](https://github.com/mastreina) 负责。

@@ -2,7 +2,7 @@
 
 ## Table of Contents
 
-- [About WOSCrawler](#about-woscrawler)
+- [About AICatalyst](#about-aicatalyst)
 - [Code Structure](#code-structure)
 - [Requirements](#requirements)
 
@@ -23,10 +23,13 @@ construct the database, as well as use the machine learning to design the cataly
 
 ## Requirements
 
+- lxml
+- rdkit
 - numpy
 - execjs
 - pyquery
 - selenium
 - chromedriver
+- requests_html
 - Beautiful Soup
 - undetected_chromedriver
