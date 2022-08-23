@@ -3,8 +3,6 @@ from pathlib import Path
 import numpy as np
 from torch.utils.data import Dataset
 
-from reaxys import Reaxys
-
 # Directory constant
 ChemDir = Path("./chemical")
 

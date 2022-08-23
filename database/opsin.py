@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import shutil
@@ -10,8 +9,8 @@ import requests
 from rdkit import Chem, RDConfig
 from rdkit.Chem import FragmentCatalog
 
-from fio import JsonIO, ftemp, fcopy
-from logger import logger
+from common.fio import JsonIO, ftemp, fcopy
+from common.logger import logger
 
 # Net const
 OPSINRoot = 'https://opsin.ch.cam.ac.uk/'
@@ -20,7 +19,7 @@ headers = {
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
 # Directory const
-ChemDir = Path("./chemical")
+ChemDir = Path("../chemical")
 
 # File const
 FJSFunc = "func.js"

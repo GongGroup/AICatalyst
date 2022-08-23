@@ -6,9 +6,9 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from constant import FOpsinRecord, FChemical, FReaxys, FReactions, FReaxysYield
-from fio import JsonIO, CatalystJsonIO
-from species import MCatalyst
+from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield
+from common.fio import JsonIO, CatalystJsonIO
+from common.species import MCatalyst
 
 # Variable constant
 ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}

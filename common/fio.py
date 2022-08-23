@@ -85,6 +85,6 @@ class CatalystJsonIO(JsonIO):
 
 
 if __name__ == '__main__':
-    path = Path("chemical/reaxys.json")
+    path = Path("../chemical/reaxys.json")
     temp_path = ftemp(path)
     print()

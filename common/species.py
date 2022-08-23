@@ -1,10 +1,10 @@
 import shutil
 from pathlib import Path
 
-from descriptor import CatalystDescriptor, FormulaDescriptor
-from fio import JsonIO, ftemp
-from ichem import IChemCrawler
-from logger import logger
+from common.descriptor import CatalystDescriptor, FormulaDescriptor
+from common.fio import JsonIO, ftemp
+from database.ichem import IChemCrawler
+from common.logger import logger
 
 PeriodicTable = [
     'H', 'He',
@@ -51,7 +51,7 @@ MetalElementName = [
 ]
 
 # Directory const
-ChemDir = Path("./chemical")
+ChemDir = Path("../chemical")
 
 # file constant
 FChemical = ChemDir / "chemical.json"

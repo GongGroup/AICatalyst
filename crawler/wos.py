@@ -12,11 +12,11 @@ from pyquery import PyQuery
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 
-from driver import ChromeDriver
-from logger import logger
+from common.driver import ChromeDriver
+from common.logger import logger
 
 WOSRoot = "https://www.webofscience.com/wos/alldb/basic-search"
-DataDir = Path("./data")
+DataDir = Path("../data")
 
 
 class WOSCrawler(object):
@@ -184,7 +184,7 @@ class WOSParser(object):
 
         if self.md5_flag:
             md5_dict = {hashlib.md5(url.encode(encoding='utf-8')).hexdigest(): url for title, url, doi in data}
-            with open("data/md5_name.json", "w", encoding="utf-8") as f:
+            with open("../data/md5_name.json", "w", encoding="utf-8") as f:
                 json.dump(md5_dict, f)
             logger.info("url~md5 mapping has been wrote to md5_name.json")
 
@@ -199,5 +199,5 @@ if __name__ == '__main__':
     # crawler = WOSCrawler(config_file="config.json", output="htmls")
     # crawler.get_htmls()
 
-    parser = WOSParser(htmls_dir="htmls", datafile=DataDir / "datafile.csv")
+    parser = WOSParser(htmls_dir="../htmls", datafile=DataDir / "datafile.csv")
     parser()

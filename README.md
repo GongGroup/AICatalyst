@@ -1,4 +1,4 @@
-# WOSCrawler Manual
+# AICatalyst Manual
 
 ## Table of Contents
 
@@ -6,23 +6,20 @@
 - [Code Structure](#code-structure)
 - [Requirements](#requirements)
 
-## About WOSCrawler
+## About AICatalyst
 
-This package mainly services for obtaining literatures from [Web of Science](https://www.webofscience.com) (WOS).
+This package mainly services for obtaining literatures from [Web of Science](https://www.webofscience.com) (WOS),
+construct the database, as well as use the machine learning to design the catalyst.
 
 ## Code Structure
 
-- [driver](driver.py): customized selenium-driver
+- [common](common): common API
 
-- [wos](wos.py): crawler and parse `*.html` from WOS
+- [crawler](crawler): carry the crawler task from WOS or publisher
 
-- [publisher](publisher.py): according the url to crawler and check paper in `html` format
+- [database](database): related code about database construction
 
-- [parse_reaxys](parse_reaxys.py): in charge to parse [reaxys](https://www.reaxys.com/) database
-
-- [ichem](ichem.py): obtain structure in `sdf` format according to chemical name
-
-- [opsin](opsin.py): according to chemical name obtain inchi, smiles and so on
+- [tutorial](tutorial): a brief tutorial about the software and knowledge prepare to quickly start this project
 
 ## Requirements
 

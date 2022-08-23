@@ -6,8 +6,8 @@ from pathlib import Path
 import requests
 from pyquery import PyQuery
 
-from fio import JsonIO, ftemp
-from logger import logger
+from common.fio import JsonIO, ftemp
+from common.logger import logger
 
 # Net const
 IChemRoot = "http://www.ichemistry.cn/structure.asp"
@@ -19,7 +19,7 @@ headers = {
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
 # Directory const
-ChemDir = Path("./chemical")
+ChemDir = Path("../chemical")
 
 # file const
 FChemical = ChemDir / "chemical.json"

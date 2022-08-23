@@ -5,12 +5,11 @@ __pycache__
 *.csv
 literature
 data/md5_name.json
-config.json
+crawler/config.json
 data/exclude
 data/checked
 *.json
 chemical/*
-opsin.js
 ketcher
 node_modules/
 *.npy

@@ -1,6 +1,6 @@
 # 人工智能项目入手向导
 
-本说明主要介绍一些入手人工智能相关项目所需的必要`软件`及`知识`储备，用于帮助新人快速入门或上手相关项目。如果你想更加全面的了解人工智能相关的技术，也可以根据本说明提到的一些关键词自行搜索学习。
+本说明主要介绍一些入手人工智能相关项目所需的必要`软件`及`知识`储备，用于帮助新人快速入门或上手相关项目。如果你想更加全面的了解人工智能项目开发相关的技术，也可以根据本说明提到的一些关键词自行搜索学习。
 
 ## 目录
 
@@ -264,6 +264,8 @@ git pull origin master
 [3. Git reset 命令的使用](https://www.jianshu.com/p/cbd5cd504f14)
 
 [4. 细读 Git | 让你弄懂 origin、HEAD、FETCH_HEAD 相关内容](https://developer.aliyun.com/article/919354)
+
+[5. github fork 与pull request](https://blog.csdn.net/benben0729/article/details/83031135)
 
 ### 镜像资源修改
 

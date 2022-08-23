@@ -3,17 +3,17 @@ from pathlib import Path
 
 from requests_html import HTMLSession
 
-from fio import JsonIO, ftemp
+from common.fio import JsonIO, ftemp
 
 # Net constant
-from opsin import OPSINCrawler
+from database.opsin import OPSINCrawler
 
 URL = 'http://127.0.0.1:5500/structure.html?input='
 
 # Directory const
-from logger import logger
+from common.logger import logger
 
-ChemDir = Path("./chemical")
+ChemDir = Path("../chemical")
 
 # file const
 FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping
