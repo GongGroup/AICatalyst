@@ -1,18 +1,35 @@
-## WOSCrawlel
+# AICatalyst Manual
 
-This package mainly services for obtaining literatures from [`Web of Science`](https://www.webofscience.com)
+## Table of Contents
 
-- get_html: obtain the *.html by **selenium**
+- [About AICatalyst](#about-aicatalyst)
+- [Code Structure](#code-structure)
+- [Requirements](#requirements)
 
-- load_html: parse *.html by **pyquery** and generate the datafile.csv including `title` and `url` fields
+## About AICatalyst
 
-- download: download literature from url
+This package mainly services for obtaining literatures from [Web of Science](https://www.webofscience.com) (WOS),
+construct the database, as well as use the machine learning to design the catalyst.
 
-- download_check: check effectivity of download literature
+## Code Structure
+
+- [common](common): common API
+
+- [crawler](crawler): carry the crawler task from WOS or publisher
+
+- [database](database): related code about database construction
+
+- [tutorial](tutorial): a brief tutorial about the software and knowledge prepare to quickly start this project
 
 ## Requirements
 
+- lxml
+- rdkit
 - numpy
+- execjs
 - pyquery
 - selenium
 - chromedriver
+- requests_html
+- Beautiful Soup
+- undetected_chromedriver

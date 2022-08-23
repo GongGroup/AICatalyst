@@ -3,14 +3,14 @@ import time
 import inspect
 import logging
 
-current_dir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
-root_dir = current_dir
-LOG_DIR = os.path.join(current_dir, f"{root_dir}/logs")
+CurrentDir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
+RootDir = CurrentDir
+LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
 
-if not os.path.exists(LOG_DIR):
-    os.mkdir(LOG_DIR)
+if not os.path.exists(LogDir):
+    os.mkdir(LogDir)
 
-date = time.strftime("%Y-%m-%d", time.localtime())
+Date = time.strftime("%Y-%m-%d", time.localtime())
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 RESET_SEQ = "\033[0m"
@@ -61,7 +61,7 @@ class ColoredLogger(logging.Logger):
         file_formatter = ColoredFormatter(self.FILE_FORMAT, False)
         color_formatter = ColoredFormatter(self.COLOR_FORMAT, True)
 
-        fh = logging.FileHandler(f"{LOG_DIR}/{date}.txt")
+        fh = logging.FileHandler(f"{LogDir}/{Date}.txt", encoding='utf-8')
         fh.setFormatter(file_formatter)
 
         ch = logging.StreamHandler()

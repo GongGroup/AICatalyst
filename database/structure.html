@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="ketcher.js"></script>
+    <title>Structure</title>
+
+    <style type="text/css">
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        .form1 {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <iframe id="ifKetcher" title="Ketcher" src="ketcher/index.html" width="800" height="600"></iframe>
+    <tr>
+        <td colspan="3" align="center" style="padding: 0px 0px 0px 0px">
+            <form>
+                <input type="button" name='e2s' value="英文名转结构" onclick="name2structure()" class="form1" />
+                <input type="button" name='s2e' value="结构转smiles" onclick="structure2smile()" class="form1" />
+                <input type="button" name='p2s' value="参数转结构" onclick="handleInput()" class="form1" />
+                <span id="iename" style="color:#FF0000; font-size:14px"></span>
+            </form>
+        </td>
+    </tr>
+
+    <script>
+        var iframe = document.getElementById("ifKetcher");
+        setTimeout(function () { handleInput() }, 500);
+        setTimeout(function () { structure2smile() }, 2000);
+    </script>
+
+</body>
+
+</html>
