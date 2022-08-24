@@ -326,6 +326,7 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 - [点击下载《Python编程从入门到实践》代码](https://download.ituring.com.cn/book/download/646f556e-220c-4aab-824f-0d2ea7d61a87)
 
 <div id="2.《Python基础教程》"></div>
+
 #### 2.《Python基础教程》
 <div align="center"><img src="img_17.png"></div>
 本书适合对编程语言有过一定接触的读者作为学习Python的入门书籍。全书囊括了Python所有重要的知识点，内容难度适中，并且作者着重强调抽象意识，有助于读者理解面向对象编程，书中也有部分有价值的实战项目，可以用于在了解基础语法之后体会实际的项目编程逻辑和控制。但美中不足的是本书中文版翻译质量较差，建议结合原书对照阅读。
