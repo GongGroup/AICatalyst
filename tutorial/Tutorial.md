@@ -362,7 +362,7 @@ Python进阶书籍之一。本书是典型的字典类教材，提供了解决�
 
 #### 2.《利用Python进行数据分析》
 <div align="center"><img src="img_21.png"></div>
-本书大致内容与[《Python数据科学手册》](https://github.com/kealdoom/AICatalysy_kealdoom/blob/master/tutorial/Tutorial.md#1python%E6%95%B0%E6%8D%AE%E7%A7%91%E5%AD%A6%E6%89%8B%E5%86%8C)相同，但本书的作者是`Pandas`的主要开发者，如果想从另一个角度了解`Pandas`，可以选择阅读本书。
+本书大致内容与[《Python数据科学手册》](#1python数据科学手册)相同，但本书的作者是`Pandas`的主要开发者，如果想从另一个角度了解`Pandas`，可以选择阅读本书。
 
 - [点击下载《利用Python进行数据分析》代码](https://github.com/wesm/pydata-book/archive/refs/heads/3rd-edition.zip)
 
