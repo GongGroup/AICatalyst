@@ -325,8 +325,6 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 
 - [点击下载《Python编程从入门到实践》代码](https://download.ituring.com.cn/book/download/646f556e-220c-4aab-824f-0d2ea7d61a87)
 
-<div id="2.《Python基础教程》"></div>
-
 #### 2.《Python基础教程》
 <div align="center"><img src="img_17.png"></div>
 本书适合对编程语言有过一定接触的读者作为学习Python的入门书籍。全书囊括了Python所有重要的知识点，内容难度适中，并且作者着重强调抽象意识，有助于读者理解面向对象编程，书中也有部分有价值的实战项目，可以用于在了解基础语法之后体会实际的项目编程逻辑和控制。但美中不足的是本书中文版翻译质量较差，建议结合原书对照阅读。
@@ -341,7 +339,7 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 <div align="center"><img src="img_18.png"></div>
 Python进阶书籍之一。本书着重讲解Python编程语言独有的特性和设计思路，从Python的角度出发满足各类需求，能够培养读者以Python的风格进行编程。全书分为序章、数据结构、函数、类、控制流以及元编程六个部分，其中前三部分对于数据科学方向的Python实践帮助很大，后三部分更适合用于学习Python软件开发。如果在学习完前2本推荐教材之后直接阅读本书，可能会有一定挑战性，可以先学习一些相对简单的章节，后续再在项目实践的过程中同步学习。
 
-此外，本书的案例相对偏少，建议配合[《Python Cookbook》](#2.《Python-Cookbook》)同步阅读；如果想深入了解数据结构，可以参考[《算法导论》](3.《算法导论》)的数据结构相关部分。
+此外，本书的案例相对偏少，建议配合[《Python Cookbook》](#2.《Python-Cookbook》)同步阅读；如果想深入了解数据结构，可以参考[《算法导论》](#3.《算法导论》)的数据结构相关部分。
 
 >**前期建议阅读章节：第1章—第3章，第5章。**
 
