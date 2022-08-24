@@ -319,7 +319,7 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 
 #### 1.《Python编程从入门到实践》
 <div align="center"><img src="img_16.png"></div>
-本书适合完全0基础的读者作为学习Python的入门书籍，全书通过对Python基本语法和简单案例的讲解，能让读者快速掌握Python的核心编程概念，并增强学习Python的信心和兴趣。但是，本书作为0基础的入门书籍，涉及的Python知识点不够，没有着力于培养面向对象编程的思想，读者在理解基础语法后，需要结合[《Python基础教程》](#2Python基础教程)补充知识点与实战训练。此外，书中的实战项目不太实用，可以略过。
+本书适合完全0基础的读者作为学习Python的入门书籍，全书通过对Python基本语法和简单案例的讲解，能让读者快速掌握Python的核心编程概念，并增强学习Python的信心和兴趣。但是，本书作为0基础的入门书籍，涉及的Python知识点不够，没有着力于培养面向对象编程的思想，读者在理解基础语法后，需要结合[《Python基础教程》](#2python基础教程)补充知识点与实战训练。此外，书中的实战项目不太实用，可以略过。
 
 >**建议阅读章节：第1章—第10章。**
 
@@ -338,7 +338,7 @@ index-url = https://mirrors.aliyun.com/pypi/simple
 #### 3. 《流畅的Python》
 <div align="center"><img src="img_18.png"></div>
 Python进阶书籍之一。本书着重讲解Python编程语言独有的特性和设计思路，从Python的角度出发满足各类需求，能够培养读者以Python的风格进行编程。全书分为序章、数据结构、函数、类、控制流以及元编程六个部分，其中前三部分对于数据科学方向的Python实践帮助很大，后三部分更适合用于学习Python软件开发。如果在学习完前2本推荐教材之后直接阅读本书，可能会有一定挑战性，可以先学习一些相对简单的章节，后续再在项目实践的过程中同步学习。
-此外，本书的案例相对偏少，建议配合[《Python Cookbook》](#4Python-Cookbook)同步阅读；如果想深入了解数据结构，可以参考[《算法导论》](#3算法导论)的数据结构相关部分。
+此外，本书的案例相对偏少，建议配合[《Python Cookbook》](#4python-cookbook)同步阅读；如果想深入了解数据结构，可以参考[《算法导论》](#3算法导论)的数据结构相关部分。
 
 >**前期建议阅读章节：第1章—第3章，第5章。**
 
@@ -362,7 +362,7 @@ Python进阶书籍之一。本书是典型的字典类教材，提供了解决�
 
 #### 2.《利用Python进行数据分析》
 <div align="center"><img src="img_21.png"></div>
-本书大致内容与[《Python数据科学手册》](#1Python数据科学手册)相同，但本书的作者是`Pandas`的主要开发者，如果想从另一个角度了解`Pandas`，可以选择阅读本书。
+本书大致内容与[《Python数据科学手册》](https://github.com/kealdoom/AICatalysy_kealdoom/blob/master/tutorial/Tutorial.md#1python%E6%95%B0%E6%8D%AE%E7%A7%91%E5%AD%A6%E6%89%8B%E5%86%8C)相同，但本书的作者是`Pandas`的主要开发者，如果想从另一个角度了解`Pandas`，可以选择阅读本书。
 
 - [点击下载《利用Python进行数据分析》代码](https://github.com/wesm/pydata-book/archive/refs/heads/3rd-edition.zip)
 
