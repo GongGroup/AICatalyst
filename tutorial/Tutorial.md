@@ -7,9 +7,15 @@
 - [软件安装](#软件安装)
 - [Python 环境配置](#python-环境配置)
 - [项目开发相关知识](#项目开发相关知识)
-  - [Python 编程语言](#python-编程语言)
   - [Git 相关](#git-相关)
   - [镜像资源修改](#镜像资源修改)
+- [学习资料推荐](#学习资料推荐)
+  - [Python 编程语言](#Python-编程语言)
+  - [Python 数据分析](#Python-数据分析)
+  - [Python 网络爬虫](#Python-网络爬虫)
+  - [Python 机器学习](#Python-机器学习)
+  - [拓展书目](#拓展书目)
+- [常用库的在线手册](#常用库的在线手册)
 
 ## 软件安装
 
@@ -199,8 +205,6 @@ conda list
 
 ## 项目开发相关知识
 
-### Python 编程语言
-
 ### Git 相关
 
 下面我们将简单介绍 `git` 相关的命令以方便新手学习如何使用 `git` 工具进行项目代码的管理。
@@ -309,10 +313,149 @@ default_channels:
 index-url = https://mirrors.aliyun.com/pypi/simple
 ```
 
+## 学习资料推荐
+
+### Python 编程语言
+
+#### 1.《Python编程从入门到实践》
+<div align="center"><img src="img_16.png"></div>
+本书适合完全0基础的读者作为学习Python的入门书籍，全书通过对Python基本语法和简单案例的讲解，能让读者快速掌握Python的核心编程概念，并增强学习Python的信心和兴趣。但是，本书作为0基础的入门书籍，涉及的Python知识点不够，没有着力于培养面向对象编程的思想，读者在理解基础语法后，需要结合[《Python基础教程》](#2.《Python基础教程》)补充知识点与实战训练。此外，书中的实战项目不太实用，可以略过。
+
+>**建议阅读章节：第1章—第10章。**
+
+- [点击下载《Python编程从入门到实践》代码](https://download.ituring.com.cn/book/download/646f556e-220c-4aab-824f-0d2ea7d61a87)
+
+
+#### 2.《Python基础教程》
+<div align="center"><img src="img_17.png"></div>
+本书适合对编程语言有过一定接触的读者作为学习Python的入门书籍。全书囊括了Python所有重要的知识点，内容难度适中，并且作者着重强调抽象意识，有助于读者理解面向对象编程，书中也有部分有价值的实战项目，可以用于在了解基础语法之后体会实际的项目编程逻辑和控制。但美中不足的是本书中文版翻译质量较差，建议结合原书对照阅读。
+
+>**建议阅读章节：第1章—第11章，第20章，第22章。**
+
+- [点击下载《Python基础教程》英文版](https://libgen.rocks/get.php?md5=1ad21aa4a661ab666476ee2bc7d499cf&key=9CRH30QJRYL3VQ6Y)
+
+- [点击下载《Python基础教程》代码](https://download.ituring.com.cn/book/download/5ae84b8c-8bb0-48c7-af26-f749e56c761c)
+
+#### 3. 《流畅的Python》
+<div align="center"><img src="img_18.png"></div>
+Python进阶书籍之一。本书着重讲解Python编程语言独有的特性和设计思路，从Python的角度出发满足各类需求，能够培养读者以Python的风格进行编程。全书分为序章、数据结构、函数、类、控制流以及元编程六个部分，其中前三部分对于数据科学方向的Python实践帮助很大，后三部分更适合用于学习Python软件开发。如果在学习完前2本推荐教材之后直接阅读本书，可能会有一定挑战性，可以先学习一些相对简单的章节，后续再在项目实践的过程中同步学习。
+
+此外，本书的案例相对偏少，建议配合[《Python Cookbook》](#2.《Python-Cookbook》)同步阅读；如果想深入了解数据结构，可以参考[《算法导论》](3.《算法导论》)的数据结构相关部分。
+
+>**前期建议阅读章节：第1章—第3章，第5章。**
+
+- [点击下载《流畅的Python》代码](https://github.com/fluentpython/example-code/archive/refs/heads/master.zip)
+
+#### 4.《Python Cookbook》
+<div align="center"><img src="img_19.png"></div>
+Python进阶书籍之一。本书是典型的字典类教材，提供了解决各类实际问题的框架和技巧，但是略微欠缺系统性。推荐读者在基本了解书中涉及哪些内容后，作为`工具书`使用，如果在工作中遇到相似问题，再进行查阅；也可以作为每日读物，每天学习1-2个解决问题的方法。
+
+- [点击下载《Python Cookbook》代码](https://github.com/dabeaz/python-cookbook/archive/refs/heads/master.zip)
+
+### Python 数据分析
+
+#### 1.《Python数据科学手册》
+<div align="center"><img src="img_20.png"></div>
+本书主要介绍了Python在数据科学领域的几个常用工具: `Jupyter`,`Numpy`,`Pandas`,`Matplotlib`,`Scikit-Learn`。其中`Jupyter`提供日常数据处理的工作环境，`Numpy`用于储存和操作大型数据，`Pandas`处理带标签的大型数据，`Matplotlib`进行数据可视化，`Scikit-Learn`提供传统机器学习的实现。机器学习部分可以略过，[Python 机器学习](#Python-机器学习)部分有更详细教材。
+
+>**建议阅读章节：第1章—第4章。**
+
+- [点击下载《Python数据科学手册》代码](https://github.com/jakevdp/PythonDataScienceHandbook/archive/refs/heads/master.zip)
+
+#### 2.《利用Python进行数据分析》
+<div align="center"><img src="img_21.png"></div>
+本书大致内容[《Python数据科学手册》](#1.《Python数据科学手册》)相同，但本书的作者是`Pandas`的主要开发者，如果想从另一个角度了解`Pandas`，可以选择阅读。
+
+- [点击下载《利用Python进行数据分析》代码](https://github.com/wesm/pydata-book/archive/refs/heads/3rd-edition.zip)
+
+### Python 网络爬虫
+
+#### 1.《Python3网络爬虫开发实战》
+<div align="center"><img src="img_22.png"></div>
+本书对网络爬虫从端到端的各项内容都有所涉及，介绍了大量的Python库，对同一个问题也给出了多种解决方法，并且提供了爬虫实战网页，但内容略显冗杂，有堆料的嫌疑，适合作为工具书使用。
+
+>**建议阅读章节：第1章—第7章。**
+
+#### 2.《Python网络爬虫权威指南》
+<div align="center"><img src="img_23.png"></div>
+本书作为轻量版的爬虫教程，清晰地阐述了爬虫思路和流程，并对可能遇到的问题给出了简要的解决方法，相较于前书，更着重于思路。
+
+- [点击下载《Python网络爬虫权威指南》代码](https://github.com/REMitchell/python-scraping/archive/refs/heads/master.zip)
+
+### Python 机器学习
+
+#### 1.《吴恩达机器学习2022版》(视频)
+<div align=center><img width=700 src="img_24.png"/></div>
+吴恩达机器学习公开课十分适合初学者入门机器学习，该课程内容简单，涉及面广，并且只需要读者具备基础的数学知识。通过快速学习该课程，读者能够在短期内对各类机器学习基本概念有所了解。需要强调的是，虽然该课程对于模型概念和框架的理解很有帮助，但是实战内容（代码量）很少，需要结合实战材料一起学习。
+
+- [Coursera官网课程链接](https://www.coursera.org/specializations/machine-learning-introduction)
+
+- [B站Up主转载视频链接](https://www.bilibili.com/video/BV1Pa411X76s)
+
+- [课程代码下载](https://github.com/kaieye/2022-Machine-Learning-Specialization/archive/refs/heads/main.zip)
+
+#### 2.《机器学习实战：基于Scikit-Learn、Keras和TensorFlow》
+<div align="center"><img src="img_26.png"></div>
+本书专注于使用机器学习库进行实际操作，不过多涉及理论模型和实现方法，通过大量的实战代码，手把手教会读者真正从头开始训练机器学习模型的流程，是很适合初学者入门的实战教材。本书分为传统机器学习，即`Scikit-Learn`和深度学习，即`Keras`和`TensorFlow`两部分，由于项目开发更倾向于使用`PyTorch`框架，所以只建议阅读本书的传统机器学习部分。
+
+>**建议阅读章节：第1章—第9章。**
+
+- [点击下载《机器学习实战：基于Scikit-Learn、Keras和TensorFlow》代码](https://github.com/ageron/handson-ml2/archive/refs/heads/master.zip)
+
+#### 3.《深度学习入门：基于Python的理论与实现》
+<div align="center"><img src="img_25.png"></div>
+本书短小精悍，仅用`Numpy`和Python标准库就完成了简单深度学习框架的从零实现，对深度学习的核心思想与数学模型也有精妙的阐述，让读者对深度学习框架的底层实现有充分了解，十分适合用于深度学习入门。
+
+>**建议阅读章节：全部。**
+
+- [点击下载《深度学习入门：基于Python的理论与实现》代码](https://github.com/oreilly-japan/deep-learning-from-scratch/archive/refs/heads/master.zip)
+
+#### 4.《动手学深度学习》
+<div align="center"><img src="img_27.png"></div>
+本书包含了简要的深度学习所需数学知识，各类深度学习模型框架，模型优化方法以及开展深度学习所需硬件的介绍。新版教材使用`PyTorch`框架，由浅入深对近年来诞生的不同深度学习框架以及对应效率进行了讲解。在模型介绍之后，针对图片识别和自然语言处理两大应用也附有专项的练习。同时，教材作者还在B站实时直播授课，组织课程竞赛，讲解论文，十分推荐读者结合B站视频同步学习。
+
+>**建议阅读章节：全部。**
+
+- [课程官网](https://zh-v2.d2l.ai/index.html)
+
+- [PyTorch版教材下载](https://zh-v2.d2l.ai/d2l-zh-pytorch.pdf)
+
+- [作者B站主页](https://space.bilibili.com/1567748478)
+
+### 拓展书目
+
+#### 1.《C/C++ Primer Plus》
+<div align="center"><img src="img_28.png"></div>
+由于Python语言运行效率和内存的限制，以及大量库文件都用C/C++语言实现，在实际工作中，不论是想提升工作代码的效率还是想阅读库文件源码，仅依靠Python是无法满足需求的。相较于Python，C语言更加底层，通过学习C语言，程序员更理解相对底层的机制，并提升程序性能。因此，我们建议读者在工作进入正轨之后再学习C语言，以满足中大型项目或者核心库代码的开发需求。
+
+#### 2.《概率导论》
+<div align="center"><img src="img_29.png"></div>
+由于机器学习本质上是基于概率模型的，所以在阅读文献或者教材时，不可避免地会遇到大量的统计学概念。因此，简要学习概率论，对于理解各类机器学习模型的工作原理以及阅读文献有重要帮助。
+
+#### 3.《算法导论》
+<div align="center"><img src="img_30.png"></div>
+编程语言是解决问题的工具，而算法则是解决问题的方法。本书包含了基本的数据结构以及各种算法问题选编，通过对本书的学习，可以很大程度上拓宽读者利用程序解决问题的思路。虽然通读全书的难度曲线十分陡峭，但是我们还是建议读者至少掌握数据结构部分，以帮助读者在面对不同的需求时调用或编写适当的数据结构以简化问题。
+
+#### 4.《统计学习方法》
+<div align="center"><img src="img_31.png"></div>
+本书主要介绍了各类传统机器学习方法的数学原理，虽然我们十分不建议初学者把时间花在机器学习的数学解释上，但是如果读者有相关基础，并希望能够从更深的理论角度解释选用当前机器学习模型的原因、优劣，或者改进机器学习模型，那么本书是很值得一看的。
+
+#### 5.《深度学习》
+<div align="center"><img src="img_32.png"></div>
+与[《统计学习方法》](#4.《统计学习方法》)相似，本书主要介绍了深度学习的数学原理，因此，出于同样的理由，我们把本书作为在对深度学习具备一定程度的理解之后的理论层面进阶教材进行推荐。
+
+## 常用库的在线手册
+- [Numpy中文文档](https://www.numpy.org.cn/)
+- [Pandas](https://pandas.pydata.org/docs/user_guide/index.html#user-guide)
+- [Matplotlib](https://matplotlib.org/stable/tutorials/index.html)
+- [Scikit-Learn中文文档](https://www.sklearncn.cn/)
+- [PyTorch](https://pytorch.org/docs/stable/index.html)
+- [RDKit中文文档](http://rdkit.chenzhaoqiang.com/overview.html)
+
 ## 贡献者
 
-[Hui Zhou](https://github.com/Rasic2), [DongZhi Li](https://github.com/mastreina)
+[Hui Zhou](https://github.com/Rasic2), [DongZhi Li](https://github.com/kealdoom)
 
 ## 版权
 
-本教程的版权归 [GongGroup](https://github.com/GongGroup) 所有，更新维护工作暂由 [Hui Zhou](https://github.com/Rasic2) 及 [DongZhi Li](https://github.com/mastreina) 负责。
+本教程的版权归 [GongGroup](https://github.com/GongGroup) 所有，更新维护工作暂由 [Hui Zhou](https://github.com/Rasic2) 及 [DongZhi Li](https://github.com/kealdoom) 负责。
