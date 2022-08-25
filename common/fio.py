@@ -1,6 +1,11 @@
+import hashlib
 import json
 from json import JSONEncoder
 from pathlib import Path
+
+
+def md5(name: str):
+    return hashlib.md5(name.encode(encoding='utf-8')).hexdigest()
 
 
 def ftemp(file: Path):

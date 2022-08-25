@@ -1,7 +1,8 @@
-# Directory constant
 from pathlib import Path
 
+# Directory constant
 ChemDir = Path("../chemical")
+DrawDir = Path("../draw")
 
 # file constant
 FChemical = ChemDir / "chemical.json"

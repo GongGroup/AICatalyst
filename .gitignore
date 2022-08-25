@@ -14,3 +14,4 @@ ketcher
 node_modules/
 *.npy
 *.pdf
+draw/*

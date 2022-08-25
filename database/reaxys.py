@@ -6,8 +6,9 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield
-from common.fio import JsonIO, CatalystJsonIO
+from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield, DrawDir
+from common.draw import draw_svg
+from common.fio import JsonIO, CatalystJsonIO, md5
 from common.species import MCatalyst
 
 # Variable constant
@@ -269,14 +270,25 @@ class Reaxys(object):
 
 if __name__ == '__main__':
     # get records
-    reaxys = Reaxys(FReaxysYield)
-    records = reaxys.records()
+    # reaxys = Reaxys(FReaxysYield)
+    # records = reaxys.records(transform=False)
 
     # get reactions
-    # reaxys = Reaxys(FReaxys)
-    # reactions = reaxys.reactions
+    reaxys = Reaxys(FReaxysYield)
+    reactions = reaxys.reactions
     # reaxys.reactions.to_json()
+    product_type = defaultdict(list)
+    for reaction in reactions:
+        for p in reaction.product:
+            product_type[p['product']].append(reaction)
+    product_type_sorted = {key: value
+                           for key, value in sorted(product_type.items(), key=lambda x: len(x[1]), reverse=True)}
 
+    new_product_type = {key: value for key, value in product_type_sorted.items() if len(value) > 3}
+
+    for key, value in new_product_type.items():
+        mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
+        draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
     # reaction_mapping = Reaxys.get_reaction_mapping()
     # for key, value in reaction_mapping[1].items():
     #     if len(value):

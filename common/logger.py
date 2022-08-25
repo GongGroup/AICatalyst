@@ -4,7 +4,7 @@ import inspect
 import logging
 
 CurrentDir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
-RootDir = CurrentDir
+RootDir = os.path.dirname(CurrentDir)
 LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
 
 if not os.path.exists(LogDir):
