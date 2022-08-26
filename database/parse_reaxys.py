@@ -1,63 +1,77 @@
 from bs4 import BeautifulSoup
 import json
 
-def parse_RX(reaction_type, type_index, RX_config):
+data_type = []
+data_react = []
+
+
+def list2dict(func):
+    def decorate(*args, **kwargs):
+        if func.__name__ == 'parse_RX':
+            key_list, value_list = func(*args, **kwargs)
+            dict_type = dict(zip(key_list, value_list))
+            data_type.append(dict_type)
+        elif func.__name__ == 'parse_RXD':
+            key_list, value_list = func(*args, **kwargs)
+            dict_react = dict(zip(key_list, value_list))
+            dict_react.update(data_type[-1])
+            data_react.append(dict_react)
+
+    return decorate
+
+
+@list2dict
+def parse_RX(reaction_type, RX_config):
     key_list = []
     value_list = []
-    
+
     for event, elem in RX_config.items():
         key_list.append(event)
-    
+
         elem_text = reaction_type.find_all(elem)
         elem_text_list = []
         for i in range(len(elem_text)):
             elem_text_list.append(elem_text[i].text)
         value_list.append(elem_text_list)
-    
-    list2dict(key_list, value_list, type_index)
+    return key_list, value_list
 
-def parse_RXD(reaction_type, type_index, RXD_config, RXD_index):
-    cur_RXD = RXD_list[RXD_index]
+
+@list2dict
+def parse_RXD(RXD_config, cur_RXD):
     key_list = []
     value_list = []
-        
+
     for event, elem in RXD_config.items():
         key_list.append(event)
-        
+
         elem_value_list = []
         elem_list = cur_RXD.find_all(elem)
         for i in range(len(elem_list)):
             elem_value_list.append(elem_list[i].text)
         value_list.append(elem_value_list)
-    list2dict(key_list, value_list, type_index)
+    return key_list, value_list
 
-def list2dict(key_list, value_list, type_index):
-    dict_reaction = dict(zip(key_list, value_list))
-    data[type_index].append(dict_reaction) 
 
 if __name__ == '__main__':
     with open('RX_config.json', 'r') as f:
         RX_config = json.load(f)
-    
+
     with open('RXD_config.json', 'r') as f:
         RXD_config = json.load(f)
-    
+
     with open('reaxys_xml.xml', 'r') as f:
         xml_file = f.read()
 
     reaction_etree = BeautifulSoup(xml_file, 'xml')
     reaction_type_list = reaction_etree.find_all(name='reaction')
-    reaction_type_num = len(reaction_type_list)
-    data = [[] for _ in range(reaction_type_num)]
 
-    for type_index in range(0, reaction_type_num):
-        reaction_type = reaction_type_list[type_index]
+    for reaction_type in reaction_type_list:
 
-        parse_RX(reaction_type, type_index, RX_config)
-        
+        parse_RX(reaction_type, RX_config)
+
         RXD_list = reaction_type.find_all('RXD')
-        for RXD_index in range(len(RXD_list)):
-            parse_RXD(reaction_type, type_index, RXD_config, RXD_index)
+        for cur_RXD in RXD_list:
+            parse_RXD(RXD_config, cur_RXD)
 
-    with open('../chemical/reaxys.json', 'w') as f:
-        json.dump(data, f)
+    with open('reaxys_json.json', 'w') as f:
+        json.dump(data_react, f)
