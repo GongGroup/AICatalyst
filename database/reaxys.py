@@ -270,11 +270,10 @@ class Reaxys(object):
 
 if __name__ == '__main__':
     # get records
-    # reaxys = Reaxys(FReaxysYield)
-    # records = reaxys.records(transform=False)
+    reaxys = Reaxys(FReaxysYield)
+    records = reaxys.records(transform=False)
 
     # get reactions
-    reaxys = Reaxys(FReaxysYield)
     reactions = reaxys.reactions
     # reaxys.reactions.to_json()
     product_type = defaultdict(list)
@@ -286,9 +285,14 @@ if __name__ == '__main__':
 
     new_product_type = {key: value for key, value in product_type_sorted.items() if len(value) > 3}
 
-    for key, value in new_product_type.items():
-        mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
-        draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
+    name = 'toluene'
+    special_catalyst = [reaction.catalyst for reaction in new_product_type[name]]
+    special_records = [record for record in records if (name) in record.product and len(record.doi)]
+    special_product = new_product_type[name]
+    # for key, value in new_product_type.items():
+    #     mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
+    #     draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
+
     # reaction_mapping = Reaxys.get_reaction_mapping()
     # for key, value in reaction_mapping[1].items():
     #     if len(value):
