@@ -29,7 +29,7 @@
 
 浏览器输入 https://www.jetbrains.com/pycharm/ 进入 Pycharm 的下载页面，根据电脑系统选择下载 Windows，MACOS 还是 Linux 版本。
 
-![img.png](img.png)
+<div align=center><img width=600 src="img.png"></div>
 
 **Note**
 
@@ -39,7 +39,7 @@
 
 浏览器输入 https://www.anaconda.com/products/distribution 进入 Anaconda 的下载页面，点击`Download`会自行下载电脑适配版本。
 
-![img_1.png](img_1.png)
+<div align=center><img width=600 src="img_1.png"></div>
 
 **Important**
 
@@ -55,7 +55,7 @@
 
 浏览器输入 https://code.visualstudio.com/ 进入 VScode 的下载页面，单击`Download for Windows`即可下载 Windows 版本的 VScode。
 
-![img_2.png](img_2.png)
+<div align=center><img width=600 src="img_2.png"/></div>
 
 ### VSCode 插件安装
 
@@ -63,7 +63,7 @@
 
 在 VSCode 中进行插件安装特别简单，只需要在`插件搜索栏`中输入你想安装的插件名字，即可进行安装。`插件搜索栏`如图中红框所示：
 
-![img_15.png](img_15.png)
+<div align=center><img width=600 src="img_15.png"/></div>
 
 推荐安装的 VSCode 插件：
 
@@ -85,21 +85,21 @@
 
 浏览器输入 https://www.google.cn/chrome/index.html 进入 Chrome 浏览器下载页面，点击`下载Chrome`即可下载系统适配的 Chrome 浏览器。
 
-![img_4.png](img_4.png)
+<div align=center><img width=600 src="img_4.png"/></div>
 
 #### ChromeDriver 组件
 
 ChromeDriver 组件需要和对应版本的 Chrome 浏览器一起搭配使用，因此安装完`Chrome`浏览器之后，点击`浏览器-设置-关于Chrome`查看安装的 Chrome 版本，例如我当前的 Chrome 版本号为`104.0.5112.82`。
 
-![img_5.png](img_5.png)
+<div align=center><img width=600 src="img_5.png"/></div>
 
 确认安装的`Chrome`版本后，浏览器输入 http://chromedriver.storage.googleapis.com/index.html 进入`ChromeDriver`下载页面，根据 Chrome 版本号选择 ChromeDriver 版本，如果没有对应的版本，选择最相近的版本，例如我这里选择`104.0.5112.79`文件夹进入。
 
-![img_6.png](img_6.png)
+<div align=center><img width=500 src="img_6.png"/></div>
 
 进入`104.0.5112.79`之后，即可选择对应系统的`ChromeDriver`进行下载安装。
 
-<div align=center><img width=600 src="img_7.png"/></div>
+<div align=center><img width=500 src="img_7.png"/></div>
 
 **note**
 
@@ -189,11 +189,11 @@ conda list
 
 以[GVasp](https://github.com/Rasic2/gvasp)项目为例，当我们在 Pycharm 中打开该项目时， 点击右下角的`Python解释器`，如图中右下角红色框的位置：
 
-![img_12.png](img_12.png)
+<div align=center><img width=600 src="img_12.png"/></div>
 
 点击之后，选择`添加解释器-Conda环境-现有环境`，如图：
 
-![img_13.png](img_13.png)
+<div align=center><img width=500 src="img_13.png"/></div>
 
 在`解释器`位置更改你想修改的 conda 环境，选择之后点击确认，项目的 conda 环境就配置好了。
 
@@ -273,6 +273,24 @@ git push origin master
 
 ```
 git pull origin master
+```
+
+- 暂存工作区的代码到缓存区
+
+```
+git stash
+```
+
+- 查看缓存区记录
+
+```
+git stash list
+```
+
+- 将缓存区的第一条记录恢复到工作区
+
+```
+git stash pop
 ```
 
 由于 git 相关的知识较为丰富，本说明仅列了较为常用的 git 命令，更多相关的知识可以参考下述链接学习。

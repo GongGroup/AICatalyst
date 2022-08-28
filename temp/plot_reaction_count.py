@@ -30,14 +30,27 @@ def plot_wrapper(func):
 
 @plot_wrapper
 def main():
-    count = [14, 8, 10, 20, 75, 326]
-    label = ['>5', '5', '4', '3', '2', '1']
+    # count = [14, 8, 10, 20, 75, 326]
+    # label = ['>5', '5', '4', '3', '2', '1']
+
+    # 烯烃-酸          30
+    # 卤素-酸          15 + 9 + 8 + 6 + 4
+    # 卤素-酮          8 + 7 + 6 + 5 + 4 + 4
+    # 胺-酮            11 + 10 + 9 + 7
+    # 胺-酯            5 + 4
+    # 醇-酸            6 + 5 + 4
+    # 醇-酮            5
+
+    count = [30, 42, 34, 37, 9, 15, 5]
+    label = ["C=C -> COOH", "X -> COOH", "X -> CO", "N -> CO", "N -> CON", "OH -> COOH", "OH -> CO"]
     plt.bar(label, count)
     for x, y in zip(label, count):
         plt.text(x, y, y, ha='center', va='bottom', fontdict={"size": 20})
 
-    plt.ylim([0, 360])
-    plt.xlabel("Sample Range", fontsize=24)
+    # plt.ylim([0, 360])
+    plt.ylim([0, 50])
+    # plt.xlabel("Sample Range", fontsize=24)
+    plt.xlabel("Reaction Type", fontsize=24)
     plt.ylabel("Sample Count", fontsize=24)
     plt.show()
 
