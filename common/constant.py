@@ -1,6 +1,6 @@
 from pathlib import Path
 
-# Directory constant
+# Directory constant here
 ChemDir = Path("../chemical")
 DrawDir = Path("../draw")
 
