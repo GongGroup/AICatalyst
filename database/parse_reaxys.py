@@ -75,3 +75,5 @@ if __name__ == '__main__':
 
     with open('reaxys_json.json', 'w') as f:
         json.dump(data_react, f)
+        
+    print('111')
