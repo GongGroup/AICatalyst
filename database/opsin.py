@@ -79,7 +79,7 @@ class OPSINCrawler(object):
                                for item in chemicals]
         formatted_chemicals_name = [item['old_name'] for item in formatted_chemicals]
 
-        records = [item for item in self.io.read(FOpsinRecord) if item not in formatted_chemicals_name]
+        records = [item for item in self.io.read(FOpsinRecord) if item['name'] not in formatted_chemicals_name]
         for item in formatted_chemicals:
             url = OPSINRoot + "opsin/" + self.encode(item['new_name'])
             html = requests.get(url, headers=headers)
@@ -93,6 +93,7 @@ class OPSINCrawler(object):
                 records.append(content)
                 logger.warning(f"`{item['old_name']}` : Response != 200, please check")
 
+        shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
         self.io.write(records, ftemp(FOpsinRecord))
         shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
 
@@ -191,8 +192,8 @@ if __name__ == '__main__':
     # chemicals = opsin.get_failures()
 
     # update records
-    # opsin = OPSINCrawler()
-    # opsin.update_records()
+    opsin = OPSINCrawler()
+    opsin.update_records()
 
     # update formulas
     # opsin = OPSINCrawler()
@@ -202,5 +203,5 @@ if __name__ == '__main__':
     # opsin = OPSINCrawler()
     # opsin.update_groups()
 
-    records = JsonIO.read(FOpsinRecord)
+    # records = JsonIO.read(FOpsinRecord)
     print()
