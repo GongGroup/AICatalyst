@@ -15,6 +15,8 @@
   - [Python 网络爬虫](#python-网络爬虫)
   - [Python 机器学习](#python-机器学习)
   - [拓展书目](#拓展书目)
+- [常用库介绍](#常用库介绍)
+  - [Scikit-Learn](#scikit-learn)
 - [常用库的在线手册](#常用库的在线手册)
 
 ## 软件安装
@@ -493,365 +495,455 @@ Python 进阶书籍之一。本书是典型的字典类教材，提供了解决�
 
 与[《统计学习方法》](#统计学习方法)相似，本书主要介绍了深度学习的数学原理，因此，出于同样的理由，我们把本书作为深度学习的进阶教材进行推荐。
 
+## 常用库介绍
+
+在前面学习了相关 Python 基础语法及人工智能的相关知识后，下面对 Python 常用库进行简单的介绍，更加详尽的说明请参照[常用库的在线手册](#常用库的在线手册)一节。本教程目前仅介绍 [Scikit-Learn](https://scikit-learn.org/stable/index.html)，其他 Python 库的介绍后续会持续更新。
+
+### Scikit-Learn
+
+Scikit-Learn（简称 sklearn） 来源于 [Google Summer of Code](https://summerofcode.withgoogle.com/about)，是机器学习中最常用的`python`第三方模块，其对一些常用的机器学习方法进行了封装，这样使得我们在进行机器学习任务时，并不需要每个人都从头实现所有的算法，只需要简单的调用`sklearn`里的模块就可以实现大多数机器学习任务。
+
+关于`sklearn`中代码用法和相关技术原理的介绍，我们首先要推荐的阅读材料是`sklearn`的中文文档，可以点击以下链接进行学习 (均为第三方翻译)：
+
+- [Scikit-Learn 中文文档](https://www.sklearncn.cn/)
+- [scikit-learn 官方文档中文版](https://sklearn.apachecn.org/)
+
+推荐的第一份阅读材料是 sklearn 的中文文档，但是该文档翻译并不十分及时，现在更新到的版本是`0.19.x/0.21.x`。而 sklearn 的稳定发行版本号是`1.1.2`（2022.8），经过了七个版本的迭代，很多类和函数的使用方法也发生了变化，因此当遇到中文文档无法解决、解释不清的时候，我们推荐去翻阅最新的英文社区页面：
+
+- [Scikit-Learn: Machine Learning in Python](https://scikit-learn.org/stable/)
+
+相对应地，sklearn 也有翻译过的中文社区页面（对应`0.23.x`版本，更新不及时，而且一看就是机翻，并不推荐）：
+
+- [Scikit-Learn 中文社区](https://scikit-learn.org.cn/)
+
+通过阅览以上几个网页，我们就可以对`sklearn`的原理和用法有一定的了解，也可以上手使用这一软件包了。
+
+### 为什么是 Scikit-Learn?
+
+实际上，借助活跃的社区和开发公司的技术背景，一些同样成熟的软件包（例如`Pytorch`、`Tensorflow`）的代码效率、调用计算资源的能力确实会超过`sklearn`，但是，我们仍然能看到很多优秀的机器学习项目使用的是 sklearn，这是因为`sklearn`具有超高的易用性及封装度，使用者并不需要完全掌握从零开始手搓的代码，并且`sklearn`支持使用者自行对数据进行数据处理，例如特征选择，维度压缩，转换格式等。此外，对于很多中小型，特别是数据量不大的项目，这时更需要开发者手动对数据进行处理，选择模型，以及调试参数。这些都是`sklearn`十分擅长的。
+
+总之，在机器学习领域，大家的首选一般是`sklearn`。如果涉及到深度学习/神经网络等，才会选用别的`package`。
+
+### 快速上手 Scikit-Learn？
+
+下面我们将对如何使用`sklearn`进行简单的说明。
+
+要安装`sklearn`，只需要执行以下命令：
+
+```
+ pip install sklearn
+```
+
+对[面向对象的程序设计](https://www.runoob.com/python/python-object.html)有一定了解后，我们可以很方便地用相应的 API 调用 scikit-learn 的`@class`，并把它们在自己的程序中实例化，之后我们就可以直接使用已经开发好的机器学习相关程序。
+
+下面对`sklearn`的常用`class`（按照机器学习建模过程中使用的先后顺序，即数据整理、模型选取、评价指标、模型调参、保存模型）进行介绍。
+
+- [数据整理](#数据导入和整理筛选清洗)
+- [模型选取](#选取机器学习模型)
+- [评价指标](#判断模型优劣，比较模型性能)
+- [模型调参](#模型调参)
+- [保存模型](#保存模型)
+
+#### 数据导入和整理（筛选、清洗）
+
+`sklearn`处理的数据是存储为`numpy`数组或`scipy`稀疏矩阵的数字，或者`pandas`数据框等可以转换为数字数组的其他数据类型。因此在导入数据时，建议对数据做类似数组化的处理：
+
+```
+X = numpy.array(X)
+```
+
+数据整理是机器学习项目的第一步，只有在保证数据真实有效无噪声的情况下才能开始进行有效的机器学习建模。这就需要我们对输入的数据进行一定的预处理。具体有：
+
+- 标准化：
+
+```
+sklearn.preprocessing.StandardScaler
+```
+
+- 归一化：
+
+```
+sklearn.preprocessing.Normalizer
+```
+
+- 二值化：
+
+```
+sklearn.preprocessing.Binarizer
+```
+
+- 编码分类特征：
+
+```
+sklearn.preprocessing.LabelEncoder
+```
+
+- 生成多项式特征：
+
+```
+sklearn.preprocessing.PolynomialFeatures
+```
+
+- 输入缺失值：
+
+```
+sklearn.preprocessing.Imputer
+```
+
+##### 划分训练集和测试集
+
+在处理完数据后，我们通常会将手上的数据随机划分为训练集和测试集，比例一般为 7：3 或 8：2，sklearn 提供了以下方法：
+
+```
+sklearn.model_selection.train_test_split(X,y,random_state=0)
+```
+
+##### 调用内置的数据集
+
+当我们手上没有数据集但是又想练手时，sklearn 也提供了几个小规模数据集，如 iris, diabetes, digits, covtype, kddcup99, boson, breast_cancer，都可以通过
+
+```
+sklearn.datasets.load_iris
+```
+
+或类似的方法加载。
+
+#### 选取机器学习模型
+
+在明确了机器学习需要解决的问题后，我们可以选用相应的模型来对数据进行建模了。然而，`sklearn`对这些方法的分类有点过于详细了，有的时候我们会想去测试好几个相应的模型，但是每次都要单独对相应方法进行一个面向搜索引擎的知识查找，因此接下来我们会按照解决机器学习问题（分类、回归、聚集）对应的的方法进行介绍。
+
+##### 分类模型
+
+- `KNN`最近邻:
+
+```
+sklearn.neighbors.KNeighborsClassifier
+```
+
+- `logistic regression`逻辑回归:
+
+```
+sklearn.linear_model.LogisticRegressionClassifier
+```
+
+- `svm`支持向量机:
+
+```
+sklearn.svm.SVC
+```
+
+- `Naive Bayes`朴素贝叶斯:
+
+```
+sklearn.naive_bayes.**
+```
+
+- `Decision Tree`决策树:
+
+```
+sklearn.tree.DecisionTreeClassifier
+```
+
+- `Neural network`神经网络:
+
+```
+sklearn.neural_network.MLPClassifier
+sklearn.neural_network.MLPClassifier
+```
+
+##### 回归模型
+
+- `线性 `
+
+```
+sklearn.linear_model.LinearRegression
+```
+
+- `Lasso`
+
+```
+sklearn.linear_model.Lasso
+```
+
+- `内核岭 `
+
+```
+sklearn.linear_model.Ridge
+```
+
+- `KNN `
+
+```
+sklearn.neighbors.KNeighborsRegressor
+```
+
+- `支持向量机 `
+
+```
+sklearn.svm.SVR
+```
+
+- `决策树 `
+
+```
+sklearn.tree.DecisionTreeRegressor
+```
+
+- `极限数 `
+
+```
+sklearn.tree.ExtraTreeRegressor
+```
+
+- `多层感知机 `
+
+```
+sklearn.neural_network.MLPRegressor
+```
+
+- `随机森林 `
+
+```
+sklearn.ensemble.RandomForestRegressor
+```
+
+- `AdaBoost `
+
+```
+sklearn.ensemble.AdaBoostRegressor
+```
+
+- `梯度提升 `
+
+```
+sklearn.ensemble.GradientBoostingRegressor
+```
+
+- `Bagging`
+
+```
+sklearn.ensemble.BaggingRegressor
+```
+
+##### 聚集模型
+
+- `AgglomerativeClustering`: 层次聚类
+
+```
+sklearn.cluster.AgglomerativeClusterin(n_clusters=2, affinity='euclidean', memory=Memory(cachedir=None))
+```
+
+- `DBSCAN`
+
+```
+sklearn.cluster.DBSCAN(ps=0.5, min_samples=5, metric='euclidean')
+```
+
+- `KMeans`: K 均值聚类
+
+```
+sklearn.cluster.KMeans(n_clusters=8, init='k-means++', tol=0.0001, precompute_distances='auto')
+```
+
+##### 数据降维模型
+
+- `NMF`:非负矩阵分解
+
+```
+sklearn.decomposition.NMF(n_components=*, init='random', random_state=*0*)
+```
+
+- `PCA`:主成分分析
+
+```
+sklearn.decomposition.PCA(n_components=*2*)
+```
+
+#### 判断模型优劣，比较模型性能
+
+首先，我们有一个`通用`的方法，称为`交叉验证`：
+
+```
+sklearn.cross_validation.cross_val_score(estimator,X_train,y_train,cv=kfold,score=***)
+```
+
+其中，对于不同的机器学习方法，可选的 scoring 指标有：
+| Scoring | Function | Comment |
+|--------------------------------------|----------------------------------------|--------------------------------|
+| **Classification** | | |
+| ‘accuracy’ | metrics.accuracy_score | |
+| ‘balanced_accuracy’ | metrics.balanced_accuracy_score | |
+| ‘top_k_accuracy’ | metrics.top_k_accuracy_score | |
+| ‘average_precision’ | metrics.average_precision_score | |
+| ‘neg_brier_score’ | metrics.brier_score_loss | |
+| ‘f1’ | metrics.f1_score | for binary targets |
+| ‘f1_micro’ | metrics.f1_score | micro-averaged |
+| ‘f1_macro’ | metrics.f1_score | macro-averaged |
+| ‘f1_weighted’ | metrics.f1_score | weighted average |
+| ‘f1_samples’ | metrics.f1_score | by multilabel sample |
+| ‘neg_log_loss’ | metrics.log_loss | requires predict_proba support |
+| ‘precision’ etc. | metrics.precision_score | suffixes apply as with ‘f1’ |
+| ‘recall’ etc. | metrics.recall_score | suffixes apply as with ‘f1’ |
+| ‘jaccard’ etc. | metrics.jaccard_score | suffixes apply as with ‘f1’ |
+| ‘roc_auc’ | metrics.roc_auc_score | |
+| ‘roc_auc_ovr’ | metrics.roc_auc_score | |
+| ‘roc_auc_ovo’ | metrics.roc_auc_score | |
+| ‘roc_auc_ovr_weighted’ | metrics.roc_auc_score | |
+| ‘roc_auc_ovo_weighted’ | metrics.roc_auc_score | |
+| **Clustering** | | |
+| ‘adjusted_mutual_info_score’ | metrics.adjusted_mutual_info_score | |
+| ‘adjusted_rand_score’ | metrics.adjusted_rand_score | |
+| ‘completeness_score’ | metrics.completeness_score | |
+| ‘fowlkes_mallows_score’ | metrics.fowlkes_mallows_score | |
+| ‘homogeneity_score’ | metrics.homogeneity_score | |
+| ‘mutual_info_score’ | metrics.mutual_info_score | |
+| ‘normalized_mutual_info_score’ | metrics.normalized_mutual_info_score | |
+| ‘rand_score’ | metrics.rand_score | |
+| ‘v_measure_score’ | metrics.v_measure_score | |
+| **Regression** | | |
+| ‘explained_variance’ | metrics.explained_variance_score | |
+| ‘max_error’ | metrics.max_error | |
+| ‘neg_mean_absolute_error’ | metrics.mean_absolute_error | |
+| ‘neg_mean_squared_error’ | metrics.mean_squared_error | |
+| ‘neg_root_mean_squared_error’ | metrics.mean_squared_error | |
+| ‘neg_mean_squared_log_error’ | metrics.mean_squared_log_error | |
+| ‘neg_median_absolute_error’ | metrics.median_absolute_error | |
+| ‘r2’ | metrics.r2_score | |
+| ‘neg_mean_poisson_deviance’ | metrics.mean_poisson_deviance | |
+| ‘neg_mean_gamma_deviance’ | metrics.mean_gamma_deviance | |
+| ‘neg_mean_absolute_percentage_error’ | metrics.mean_absolute_percentage_error | |
+| ‘d2_absolute_error_score’ | metrics.d2_absolute_error_score | |
+| ‘d2_pinball_score’ | metrics.d2_pinball_score | |
+| ‘d2_tweedie_score’ | metrics.d2_tweedie_score | |
+
+对于不同的机器学习方法，有不同的评估模型性能的方法，有的是综合指标，有的就是把上面的 scoring 方法写成了`@metrics`里的函数，如下所示：
+
+##### 分类指标
+
+- 准确率：
+
+```
+sklearn.metrics.accuracy_score(y_test,y_pred)
+```
+
+- 分类预估评价函数：
+
+```
+sklearn.metrics.classification_report(y_test,y_pred)
+```
+
+- 混淆矩阵（准确率、召回率、f1 分数以及支持率）：
+
+```
+sklearn.metrics.confusion_matrix(y_test,y_pred)
+```
+
+##### 回归指标
+
+- 平均绝对误差（准确程度）：
+
+```
+sklearn.metrics.mean_absolute_error(y_test,y_pred)
+```
+
+- 均方误差（准确程度）：
+
+```
+sklearn.metrics.mean_squared_error(y_test,y_pred)
+```
+
+- R<sup>2</sup> 评分（线性程度）：
+
+```
+sklearn.metrics.r2_score(y_test,y_pred)
+```
+
+##### 聚类指标
+
+- 调整兰德系数:
+
+```
+sklearn.metrics.adjusted_rand_score(y_test,y_pred)
+```
+
+- 同质性：
+
+```
+sklearn.metrics.homogeneity_score(y_test,y_pred)
+```
+
+- V-measure:
+
+```
+sklearn.metrics.v_measure_score(y_test,y_pred)
+```
+
+#### 模型调参
+
+在这一部分，我们首先需要使用者对机器学习模型中的`参数`和`超参数`有一定的概念。换句话说，我们在调参时，首先要知道我们具体在对模型的什么特征做修改。这部分概念应该在学习基础课程时已经了解到，即固定一个评价指标，查看不同超参数下模型的返回值，并找到在给定超参数空间下全局最优的结果。如果对调参过程的目的和方法进行总结，可以表述为：
+
+> 借助合适的评价指标，优化选定模型在处理特定问题时的超参数，来提高模型的泛化能力
+
+具体地，sklearn 提供了`网格搜索`和`随机参数优化`的方法，但实际上一般会采用更优秀的调参方法，使得实际搜索的超参数空间更小，搜索的局部最优值更低。一般使用的是 `bayes-opt` 或者 `hyperopt` 程序包，也有将调参方法和机器学习结合的 `XGBoost` 程序包等，后续我们也会介绍这些更先进的方法。这里我们主要介绍 sklearn 内置的调参方法：
+
+- 网格搜索：
+
+```
+params = {
+            "n_neighbors": numpy.arrange(1,3),
+            "n_estimators": range(10,1000),
+         }
+grid = sklearn.grid_search.GridSearchCV(estimator=***, param_grid=params)
+grid.fit(X_train, y_train)
+```
+
+- 随机参数优化:
+
+```
+params = {
+            "n_neighbors": numpy.arrange(1,3),
+            "n_estimators": range(10,1000),
+         }
+random_search = sklearn.grid_search.RandomizedSearchCV(estimator=***, param_distributions=params)
+random_search.fit(X_train, y_train)
+```
+
+#### 保存模型
+
+在经历了以上步骤后，我们的机器学习模型就完成了！最后需要做的一件事就是，把我们训练好的模型保存下来。
+
+- 读取：
+
+```
+sklearn.externals.joblib.dump(*name,*path)
+```
+
+- 保存：
+
+```
+*name = sklearn.externals.joblib.dump(*path)
+```
+
+**note**
+
+> 需要注意的是，以上介绍的均为伪代码，在实际使用中当我们想向引用的 class 传入参数时，请一定在自己的脚本或程序中预先实例化！
+
+以上就是对 sklearn 的基本介绍。
+
 ## 常用库的在线手册
 
 - [Numpy 中文文档](https://www.numpy.org.cn/)
 - [Pandas](https://pandas.pydata.org/docs/user_guide/index.html#user-guide)
 - [Matplotlib](https://matplotlib.org/stable/tutorials/index.html)
 - [Scikit-Learn 中文文档](https://www.sklearncn.cn/)
+- [Scikit-Learn 官方文档中文版](https://sklearn.apachecn.org/)
 - [PyTorch](https://pytorch.org/docs/stable/index.html)
 - [RDKit 中文文档](http://rdkit.chenzhaoqiang.com/overview.html)
 
 ## 贡献者
 
-[Hui Zhou](https://github.com/Rasic2), [DongZhi Li](https://github.com/kealdoom)
+[Hui Zhou](https://github.com/Rasic2), [DongZhi Li](https://github.com/kealdoom), [XianYang Zhang](https://github.com/mastreina)
 
 ## 版权
 
 本教程的版权归 [GongGroup](https://github.com/GongGroup) 所有，更新维护工作暂由 [Hui Zhou](https://github.com/Rasic2) 及 [DongZhi Li](https://github.com/kealdoom) 负责。
-
-
-# AICatalyst - 常用package预览 - SciKit-Learn
-
-在 Tutorial.md 中，[@Kealdoom](https://github.com/kealdoom)向我们介绍了一些在`AICatalyst`中已经出现，或是将来会用到的`python package`，以及他们相应的中/英文doc。然而，为了方便参与项目的新人快速上手本项目，我们也在此对相关的package进行简单的介绍，以帮助大家对相关的程序快速建立起一定的概念。首先要介绍的是：
-
-## SciKit-Learn
-
-SKlearn来源于[Google Summer of Code](https://summerofcode.withgoogle.com/about)，是机器学习中最常用的`python`第三方模块，里面对一些常用的机器学习方法进行了封装，这样使得我们在进行机器学习任务时，并不需要每个人都从头实现所有的算法，只需要简单的调用`sklearn`里的模块就可以实现大多数机器学习任务。关于`sklearn`中代码用法和相关技术原理的介绍，我们首先要推荐的阅读材料是`sklearn`的中文文档，可以参考以下的网页 (均为第三方翻译)：
-
-- [Scikit-Learn 中文文档](https://www.sklearncn.cn/)
-- [scikit-learn 官方文档中文版](https://sklearn.apachecn.org/)
-
-首先要推荐的阅读材料仍然是sklearn的中文文档，但是该文档翻译并不是十分及时，现在更新到的版本是`0.19.x/0.21.x`。现在的sklearn的稳定发行版本号是`1.1.2`（2022.8），经过了七个版本的迭代，很多类和函数的使用方法也发生了变化，因此当遇到中文文档无法解决、解释不清的问题的时候，我们还是推荐去翻阅最新的英文社区页面：
-
-- [Scikit-Learn: Machine Learning in Python](https://scikit-learn.org/stable/)
-
-相对应地，sklearn也有翻译过的中文社区页面（对应`0.23.x`版本，更新不及时，而且一看就是机翻，并不推荐）：
-- [Scikit-Learn中文社区](https://scikit-learn.org.cn/)
-
-通过阅览以上的几个网页，我们就可以对`sklearn`的原理和用法拥有充分的了解，也可以上手使用这一软件包了。但是我仍然推荐你继续阅读本页面剩下的部分，因为即使在掌握相关方法之后，也可以使用本文档作为一个速查表。
-
-## 为什么是sci-kit learn?
-
-实际上，借助活跃的社区和开发公司的技术背景，一些同样成熟的软件包（例如`Pytorch`、`Tensorflow`）的代码效率、调用计算资源的能力确实会超过`sklearn`，但是，我们仍然能看到很多优秀的机器学习项目使用的是sklearn，这是因为`sklearn`具有超高的易用性及封装度，使用者并不需要完全掌握从零开始手搓的代码，并且sklearn支持使用者自行对数据进行数据处理，例如特征选择，维度压缩，转换格式等。此外，对于很多中小型，特别是数据量不大的项目，这时更需要开发者手动对数据进行处理，选择模型，以及调试参数。这些都是`sklearn`十分擅长的。
-
-总之，在机器学习领域，大家的首选一般是`sklearn`。如果涉及到深度学习/神经网络等，才会选用别的`package`。
-## 怎么称呼？
-
-<audio src="https://embed.howtopronounce.com/classic/zh/scikit-learn/11087943" width="200px" height="200px" controls="controls">
-</audio>
-
-
-# 快速上手sklearn？
-下面我们将对使用`sklearn`的方法进行简单的说明。
-
-要安装`sklearn`，只需要在你的`shell`中执行以下命令：
-```
- pip install sklearn
-```
-在对`面向对象`的程序有一定了解后，我们可以很方便地用相应的API调用scikit-learn的`@class`，并把它们在自己的程序中实例化，之后我们就可以直接使用已经开发好的机器学习，或深度学习的相关程序。
-
-- [Python面向对象](https://www.runoob.com/python/python-object.html)
-
-下面对`sklearn`的常用`class`，以机器学习过程中出现的先后顺序，即数据整理、模型选取、评价指标、模型调参、保存模型依次进行介绍。
-
-## 数据导入和整理（筛选、清洗）
-
-`sklearn`处理的数据是存储为`numpy`数组或`scipy`稀疏矩阵的数字，或者`pandas`数据框等可以转换为数字数组的其他数据类型。因此在导入数据时，建议对数据做类似数组化的处理：
-```
-X = numpy.array(X)
-```
-数据整理是机器学习项目的第一步，只有在保证数据真实有效无噪声的情况下才能开始进行有效的机器学习建模。这就需要我们对输入的数据进行一定的预处理。具体有：
-
-标准化：
-```
-sklearn.preprocessing.StandardScaler
-```
-归一化：
-```
-sklearn.preprocessing.Normalizer
-```
-二值化：
-```
-sklearn.preprocessing.Binarizer
-```
-编码分类特征：
-```
-sklearn.preprocessing.LabelEncoder
-```
-生成多项式特征：
-```
-sklearn.preprocessing.PolynomialFeatures
-```
-输入缺失值： 
-```
-sklearn.preprocessing.Imputer
-```
-### 划分训练集和测试集
-在处理完数据后，我们通常会将手上的数据随机划分为训练集和测试集，比例一般为7：3或8：2，sklearn提供了以下方法：
-```
-sklearn.model_selection.train_test_split(X,y,random_state=0)
-```
-### 调用内置的数据集
-当我们手上没有数据集但是又想练手时，sklearn也提供了几个小规模数据集，如iris, diabetes, digits, covtype, kddcup99, boson, breast_cancer，都可以通过
-```
-sklearn.datasets.load_iris
-```
-或类似的方法加载。
-
-## 选取机器学习模型
-
-在明确了机器学习需要解决的问题后，我们可以选用相应的模型来对数据进行建模了。然而，`sklearn`对这些方法的分类有点过于详细了，有的时候我们会想去测试好几个相应的模型，但是每次都要单独对相应方法进行一个面向搜索引擎的知识查找，因此接下来我们会按照解决机器学习问题（分类、回归、聚集）对应的的方法进行介绍。
-### 分类模型
-`KNN`最近邻:
-```
-sklearn.neighbors.KNeighborsClassifier
-```
-`logistic regression`逻辑回归: 
-```
-sklearn.linear_model.LogisticRegressionClassifier
-```
-`svm`支持向量机: 
-```
-sklearn.svm.SVC
-```
-`Naive Bayes`朴素贝叶斯: 
-```
-sklearn.naive_bayes.**
-```
-`Decision Tree`决策树:
-```
-sklearn.tree.DecisionTreeClassifier
-```
-`Neural network`神经网络: 
-```
-sklearn.neural_network.MLPClassifier
-sklearn.neural_network.MLPClassifier
-```
-
-### 回归模型
-`线性  `     
-```
-sklearn.linear_model.LinearRegression
-```
-`Lasso`      
-```
-sklearn.linear_model.Lasso
-```
-`内核岭 `     
-```
-sklearn.linear_model.Ridge
-```
-`KNN `       
-```
-sklearn.neighbors.KNeighborsRegressor
-```
-`支持向量机 `  
-```
-sklearn.svm.SVR
-```
-`决策树   `   
-```
-sklearn.tree.DecisionTreeRegressor
-```
-`极限数  `    
-```
-sklearn.tree.ExtraTreeRegressor
-```
-`多层感知机 `  
-```
-sklearn.neural_network.MLPRegressor
-```
-`随机森林  `  
-```
-sklearn.ensemble.RandomForestRegressor
-```
-`AdaBoost `  
-```
-sklearn.ensemble.AdaBoostRegressor
-```
-`梯度提升 `   
-```
-sklearn.ensemble.GradientBoostingRegressor
-```
-`Bagging`    
-```
-sklearn.ensemble.BaggingRegressor
-```
-### 聚集模型
-
-`AgglomerativeClustering`: 层次聚类
-```
-sklearn.cluster.AgglomerativeClustering(
-                                        n_clusters=2,   affinity='euclidean', memory=Memory(cachedir=None))
-```
-`DBSCAN`
-```
-sklearn.cluster.DBSCAN(
-                        ps=0.5, 
-                        min_samples=5, 
-                        metric='euclidean')
-```
-`KMeans`: K均值聚类
-```
-sklearn.cluster.KMeans(
-                        n_clusters=8, 
-                        init='k-means++',
-                        tol=0.0001,
-                        precompute_distances='auto')
-```
-
-
-### 数据降维模型
-考虑了一下还是放在了主要功能里，实际上这一部分也可以作为数据清洗的相关模块。
-
-`NMF`:非负矩阵分解
-```
-sklearn.decomposition.NMF(
-                        n_components=*, 
-                        init='random', 
-                        random_state=*0*)
-```
-`PCA`:主成分分析
-```
-sklearn.decomposition.PCA(n_components=*2*)
-
-```
-## 判断模型优劣，比较模型性能
-首先，我们有一个``通用``的方法，称为`交叉验证`：
-```
-sklearn.cross_validation.cross_val_score(estimator,X_train,y_train,cv=kfold,score=***)
-```
-其中，对于不同的机器学习方法，可选的scoring指标有：
-| Scoring                              | Function                               | Comment                        |
-|--------------------------------------|----------------------------------------|--------------------------------|
-| **Classification**                   |                                        |                                |
-| ‘accuracy’                           | metrics.accuracy_score                 |                                |
-| ‘balanced_accuracy’                  | metrics.balanced_accuracy_score        |                                |
-| ‘top_k_accuracy’                     | metrics.top_k_accuracy_score           |                                |
-| ‘average_precision’                  | metrics.average_precision_score        |                                |
-| ‘neg_brier_score’                    | metrics.brier_score_loss               |                                |
-| ‘f1’                                 | metrics.f1_score                       | for binary targets             |
-| ‘f1_micro’                           | metrics.f1_score                       | micro-averaged                 |
-| ‘f1_macro’                           | metrics.f1_score                       | macro-averaged                 |
-| ‘f1_weighted’                        | metrics.f1_score                       | weighted average               |
-| ‘f1_samples’                         | metrics.f1_score                       | by multilabel sample           |
-| ‘neg_log_loss’                       | metrics.log_loss                       | requires predict_proba support |
-| ‘precision’ etc.                     | metrics.precision_score                | suffixes apply as with ‘f1’    |
-| ‘recall’ etc.                        | metrics.recall_score                   | suffixes apply as with ‘f1’    |
-| ‘jaccard’ etc.                       | metrics.jaccard_score                  | suffixes apply as with ‘f1’    |
-| ‘roc_auc’                            | metrics.roc_auc_score                  |                                |
-| ‘roc_auc_ovr’                        | metrics.roc_auc_score                  |                                |
-| ‘roc_auc_ovo’                        | metrics.roc_auc_score                  |                                |
-| ‘roc_auc_ovr_weighted’               | metrics.roc_auc_score                  |                                |
-| ‘roc_auc_ovo_weighted’               | metrics.roc_auc_score                  |                                |
-| **Clustering**                       |                                        |                                |
-| ‘adjusted_mutual_info_score’         | metrics.adjusted_mutual_info_score     |                                |
-| ‘adjusted_rand_score’                | metrics.adjusted_rand_score            |                                |
-| ‘completeness_score’                 | metrics.completeness_score             |                                |
-| ‘fowlkes_mallows_score’              | metrics.fowlkes_mallows_score          |                                |
-| ‘homogeneity_score’                  | metrics.homogeneity_score              |                                |
-| ‘mutual_info_score’                  | metrics.mutual_info_score              |                                |
-| ‘normalized_mutual_info_score’       | metrics.normalized_mutual_info_score   |                                |
-| ‘rand_score’                         | metrics.rand_score                     |                                |
-| ‘v_measure_score’                    | metrics.v_measure_score                |                                |
-| **Regression**                       |                                        |                                |
-| ‘explained_variance’                 | metrics.explained_variance_score       |                                |
-| ‘max_error’                          | metrics.max_error                      |                                |
-| ‘neg_mean_absolute_error’            | metrics.mean_absolute_error            |                                |
-| ‘neg_mean_squared_error’             | metrics.mean_squared_error             |                                |
-| ‘neg_root_mean_squared_error’        | metrics.mean_squared_error             |                                |
-| ‘neg_mean_squared_log_error’         | metrics.mean_squared_log_error         |                                |
-| ‘neg_median_absolute_error’          | metrics.median_absolute_error          |                                |
-| ‘r2’                                 | metrics.r2_score                       |                                |
-| ‘neg_mean_poisson_deviance’          | metrics.mean_poisson_deviance          |                                |
-| ‘neg_mean_gamma_deviance’            | metrics.mean_gamma_deviance            |                                |
-| ‘neg_mean_absolute_percentage_error’ | metrics.mean_absolute_percentage_error |                                |
-| ‘d2_absolute_error_score’            | metrics.d2_absolute_error_score        |                                |
-| ‘d2_pinball_score’                   | metrics.d2_pinball_score               |                                |
-| ‘d2_tweedie_score’                   | metrics.d2_tweedie_score               |                                |
-
-对于不同的机器学习方法，有不同的评估模型性能的方法，有的是综合指标，有的就是把上面的scoring方法写成了@metrics里的函数，如下所示：
-### 分类指标 
-
-准确率：
-```
-sklearn.metrics.accuracy_score(y_test,y_pred)
-```
-分类预估评价函数：
-```
-sklearn.metrics.classification_report(y_test,y_pred)
-```
-混淆矩阵（准确率、召回率、f1分数以及支持率）：
-```
-sklearn.metrics.confusion_matrix(y_test,y_pred)
-```
-### 回归指标
-
-平均绝对误差（准确程度）：
-```
-sklearn.metrics.mean_absolute_error(y_test,y_pred)
-```
-均方误差（准确程度）：
-```
-sklearn.metrics.mean_squared_error(y_test,y_pred)
-```
-R^2评分（线性程度）：
-```
-sklearn.metrics.r2_score(y_test,y_pred)
-```
-### 聚类指标
-
-调整兰德系数:
-```
-sklearn.metrics.adjusted_rand_score(y_test,y_pred)
-```
-同质性：
-```
-sklearn.metrics.homogeneity_score(y_test,y_pred)
-```
-V-measure:
-```
-sklearn.metrics.v_measure_score(y_test,y_pred)
-```
-## 模型调参
-在这一部分，我们首先需要使用者对机器学习模型中的参数和超参数有一定的概念，换句话说，我们在调参数时，首先要知道我们具体在对模型的什么特征做修改。这部分概念应该在学习基础课程时已经了解到，即固定一个评价指标，查看不同超参数下模型的返回值，并找到在给定超参数空间下全局最优的结果。如果对调参过程的目的和方法进行总结，可以表述为：
-
-`借助合适的评价指标，优化选定模型在处理特定问题时的超参数，来提高模型的泛化能力`
-
-具体地，sklearn提供了网格搜索和随机参数优化的方法，但实际上一般会采用更优秀的调参方法，使得实际搜索的超参数空间更小，搜索的局部最优值更低。一般使用的是bayes-opt或者hyperopt程序包，也有将调参方法和机器学习结合的XGBoost程序包等,后续我们也会介绍这些更先进的方法。在这里我们介绍sklearn里内置的方法：
-
-网格搜索：
-```
-params = {
-        "n_neighbors":numpy.arrange(1,3)
-        "n_estimators":range(10,1000)}
-grid = sklearn.grid_search.GridSearchCV(
-        estimator=***,
-        param_grid=params)
-grid.fit(X_train,y_train)
-```
-随机参数优化:
-```
-params = {
-        "n_neighbors":numpy.arrange(1,3)
-        "n_estimators":range(10,1000)}
-random_search = sklearn.grid_search.RandomizedSearchCV(
-        estimator=***,
-        param_distributions=params)
-random_search.fit(X_train,y_train)
-```
-## 保存模型
-
-在经历了以上步骤后，我们的机器学习模型就完成了！最后需要做的一件事就是，把我们训练好的模型给保存下来。
-
-读取：
-```
-sklearn.externals.joblib.dump(*name,*path)
-```
-保存：
-```
-*name = sklearn.externals.joblib.dump(*path)
-```
-以上就是对sklearn的基本介绍。
-### 需要注意的是，以上介绍的均为伪代码，在实际使用中当我们想向引用的class传入参数时，请一定在自己的脚本或程序中预先实例化！
