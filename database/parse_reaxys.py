@@ -76,5 +76,3 @@ if __name__ == '__main__':
 
     with open(FReaxys, 'w') as f:
         json.dump(data_react, f)
-        
-    print('111')
