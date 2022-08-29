@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import json
+from common.constant import FReaxysXML, FReaxys, FRXconfig, FRXDconfig
 
 data_type = []
 data_react = []
@@ -53,13 +54,13 @@ def parse_RXD(RXD_config, cur_RXD):
 
 
 if __name__ == '__main__':
-    with open('RX_config.json', 'r') as f:
+    with open(FRXconfig, 'r') as f:
         RX_config = json.load(f)
 
-    with open('RXD_config.json', 'r') as f:
+    with open(FRXDconfig, 'r') as f:
         RXD_config = json.load(f)
 
-    with open('reaxys_xml.xml', 'r') as f:
+    with open(FReaxysXML, 'r') as f:
         xml_file = f.read()
 
     reaction_etree = BeautifulSoup(xml_file, 'xml')
@@ -73,5 +74,5 @@ if __name__ == '__main__':
         for cur_RXD in RXD_list:
             parse_RXD(RXD_config, cur_RXD)
 
-    with open('reaxys_json.json', 'w') as f:
+    with open(FReaxys, 'w') as f:
         json.dump(data_react, f)
