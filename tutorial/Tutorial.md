@@ -189,7 +189,13 @@ conda list
 
 在日常的项目开发中，我们更多的是直接利用 Pycharm 启动一个 conda 环境进行开发，需要做的仅是在首次打开项目时进行简单的配置：
 
-以[GVasp](https://github.com/Rasic2/gvasp)项目为例，当我们在 Pycharm 中打开该项目时， 点击右下角的`Python解释器`，如图中右下角红色框的位置：
+以 [GVasp](https://github.com/Rasic2/gvasp) 项目为例，我们首先利用 git 工具将项目代码 clone 到本地（关于 git 的安装及使用可以看[这里](#git-相关)）
+
+```
+git clone https://github.com/Rasic2/gvasp.git ./gvasp
+```
+
+然后将下载好的 gvasp 项目文件夹拖到 Pycharm 里打开，点击右下角的`Python解释器`（初次打开是`No interpreter`），如图中右下角红色框的位置：
 
 <div align=center><img width=600 src="img_12.png"/></div>
 
@@ -213,7 +219,11 @@ conda list
 
 对于项目开发来说，经常会涉及到多人合作开发一个项目，因此需要一种工具来管理代码开发的整个过程，涉及代码的修改历史，版本回溯，分支合并等各个方面，这也就是 `git` 工具产生的原因，而 `github` 则是一个代码托管的平台。如果对 `git` 及 `github` 的原理及更多应用感兴趣，可以自行搜索学习。
 
-常用的 git 命令如下：
+#### Git 安装
+
+> 使用 conda 可以很容易的进行 git 工具的安装(```conda install git```)
+
+#### Git 常用命令
 
 - 下载别人的项目代码
 
