@@ -15,4 +15,4 @@ node_modules/
 *.npy
 *.pdf
 draw/*
-*.png
+common/*.png
