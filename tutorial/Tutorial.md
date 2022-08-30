@@ -9,6 +9,8 @@
 - [项目开发相关知识](#项目开发相关知识)
   - [Git 相关](#git-相关)
   - [镜像资源修改](#镜像资源修改)
+- [常用软件介绍](#常用软件介绍)
+  - [Open Babel](#open-babel)
 - [学习资料推荐](#学习资料推荐)
   - [Python 编程语言](#python-编程语言)
   - [Python 数据分析](#python-数据分析)
@@ -221,7 +223,7 @@ git clone https://github.com/Rasic2/gvasp.git ./gvasp
 
 #### Git 安装
 
-> 使用 conda 可以很容易的进行 git 工具的安装(```conda install git```)
+> 使用 conda 可以很容易的进行 git 工具的安装(`conda install git`)
 
 #### Git 常用命令
 
@@ -342,6 +344,71 @@ default_channels:
 [global]
 index-url = https://mirrors.aliyun.com/pypi/simple
 ```
+
+## 常用软件介绍
+
+本部分主要介绍项目开发过程中可能用到的计算或建模软件。
+
+### Open Babel
+
+[Open Babel](https://openbabel.org/wiki/Main_Page) 是一个化学工具箱，对来自分子建模、化学、固态材料、生物化学或相关领域的数据提供搜索、转换、分析或存储等多种多样的功能，其 GitHub 主页可以看[这里](https://github.com/openbabel/openbabel)。
+
+#### 安装
+
+使用 conda 可以很容易的进行 `openbabel` 的安装，执行以下命令：
+
+```
+conda install -c conda-forge openbabel
+```
+
+因为 `openbabel` 在生成结构文件时需要读取自身的力场文件，因此需要设置环境变量 `BABEL_DATADIR` 为 `openbabel` 的目录（[如何设置环境变量看这](#anaconda-的安装)），如：
+
+```
+> set BABEL_DATADIR=D:\Anaconda\envs\WOS\share\openbabel
+```
+
+之后在 powershell 中执行`obabel -V`得到类似下面的版本信息就代表安装成功了：
+
+```
+> Open Babel 3.1.0 -- Jun 13 2022 -- 01:55:07
+```
+
+#### 常用命令
+
+- 根据 `Smiles` 生成加氢后的 `mol` 文件
+
+```
+obabel -:C --gen3d -omol -O C.mol
+```
+
+其中，-:后面接 Smiles，--gen3d 指明利用力场优化分子坐标生成 3d 结构，-o 后面接生成文件的格式（可不加），-O 指明生成的文件名（带后缀）
+
+运行上述命令后，可以得到 CH<sub>4</sub>分子的 mol 文件，如下所示：
+
+```
+
+ OpenBabel08302220183D
+
+  5  4  0  0  0  0  0  0  0  0999 V2000
+    1.0543   -0.0566   -0.0620 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.1465   -0.0566   -0.0620 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6903    0.4246    0.8484 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6903   -1.0857   -0.1003 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6903    0.4911   -0.9339 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  3  1  0  0  0  0
+  1  4  1  0  0  0  0
+  1  5  1  0  0  0  0
+M  END
+```
+
+**note**
+
+> 注意 mol 文件的空行
+
+使用 GaussView 打开该 mol 文件，即可得到一个 CH<sub>4</sub>分子的模型，如图：
+
+<div align="center"><img width=200 src="img_33.png"></div>
 
 ## 学习资料推荐
 
