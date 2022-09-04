@@ -67,5 +67,8 @@ def draw_reaction(rea: list[str], reagent=None, pro=None, template=None, file="r
 if __name__ == '__main__':
     # draw_reaction(['p-isobutylstyrene', 'CO'], template='[C:1](=[C:2]).CO>>[C:1](-[C:2])(-C([OH])=O)')
     # draw_reaction(['propan-1-ol-3-amine', 'benzyl carbonochloridate'], template='[C:1]N.[C:2](=O)(-Cl) >> [C:1]N[C:2](=O)')
-    draw_reaction(['(p-methoxyphenyl)(phenyl)iodonium bromide'], reagent=None, pro=['iodobenzene'])
+    # draw_reaction(['(p-methoxyphenyl)(phenyl)iodonium bromide'], reagent=None, pro=['acetic acid methyl ester', 'acetic acid'])
+    # draw_reaction(['methanol', 'carbon monoxide'], reagent=None, pro=['acetic acid methyl ester', 'acetic acid'])
+    mol = Chem.MolFromSmiles(ChemInfo['methanol']['smiles'])
+    print(Chem.MolToMolBlock(mol))
     print()
