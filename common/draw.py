@@ -71,4 +71,9 @@ if __name__ == '__main__':
     # draw_reaction(['methanol', 'carbon monoxide'], reagent=None, pro=['acetic acid methyl ester', 'acetic acid'])
     mol = Chem.MolFromSmiles(ChemInfo['methanol']['smiles'])
     print(Chem.MolToMolBlock(mol))
+<<<<<<< HEAD
     print()
+=======
+    print()
+
+>>>>>>> 7444789d5157264c665f514235b41d95c972c0c9

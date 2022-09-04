@@ -15,4 +15,9 @@ node_modules/
 *.npy
 *.pdf
 draw/*
+<<<<<<< HEAD
 *.png
+=======
+common/*.png
+*.gjf
+>>>>>>> 7444789d5157264c665f514235b41d95c972c0c9
