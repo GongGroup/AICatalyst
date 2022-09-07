@@ -9,6 +9,7 @@
 - [项目开发相关知识](#项目开发相关知识)
   - [Git 相关](#git-相关)
   - [镜像资源修改](#镜像资源修改)
+  - [Python 性能测试](#python-性能测试)
 - [常用软件介绍](#常用软件介绍)
   - [Open Babel](#open-babel)
 - [学习资料推荐](#学习资料推荐)
@@ -20,6 +21,7 @@
 - [常用库介绍](#常用库介绍)
   - [Scikit-Learn](#scikit-learn)
 - [常用库的在线手册](#常用库的在线手册)
+- [奇怪的技巧](#奇怪的技巧)
 
 ## 软件安装
 
@@ -344,6 +346,46 @@ default_channels:
 [global]
 index-url = https://mirrors.aliyun.com/pypi/simple
 ```
+
+### Python 性能测试
+
+当使用 Python 编写代码遇到性能问题需要进行优化时，第一步就是要找到制约性能的瓶颈，推荐使用的工具是 `line_profiler`，他可以对 Python 代码的逐行分析同时给出分析报告，类似下图所示：
+
+<div align=center><img width=800 src="img_34.png"/></div>
+
+#### line_profiler 安装
+
+因为该工具是 Python 的第三方模块，所以可通过 pip 直接进行安装：
+
+```
+pip install line_profiler
+```
+
+#### line_profiler 使用
+
+使用该工具进行性能测试时，只需`import`该模块，然后将想要进行性能测试的代码写到一个函数里（例如`main`函数），将函数名传给`LineProfiler`即可，例如：
+
+```
+import line_profiler
+
+from common.file import XSDFile, OUTCAR
+
+
+def main():
+    XSDFile.write(contcar="CONTCAR", outcar="OUTCAR")
+
+
+if __name__ == '__main__':
+    profile = line_profiler.LineProfiler()
+    profile.add_module(OUTCAR)
+    profile_wrapper = profile(main)
+    profile_wrapper()
+    profile.print_stats()
+```
+
+该示例中首先实例化一个`LineProfiler`类，然后将`main`函数名传给这个可调用的实例（此处是`profile`）进行包装，最后便可以打印出性能测试报告。
+
+推荐该工具主要是因为他有两个特别好用的 API，一个是`add_module`，它可以分析`main`函数调用过程中某个模块的性能；另一个是`add_func`，它可以分析`main`函数调用过程中某个函数的性能。利用这两个 API，我们便可以很容易的对 Python 的代码进行性能分析和优化，例如借助 [Cython](https://cython.org/)、[pybind11](https://pybind11.readthedocs.io/en/stable/index.html) 等工具编写 C/C++ 接口来提高 Python 本身的性能。
 
 ## 常用软件介绍
 
@@ -1016,6 +1058,10 @@ sklearn.externals.joblib.dump(*name,*path)
 - [Scikit-Learn 官方文档中文版](https://sklearn.apachecn.org/)
 - [PyTorch](https://pytorch.org/docs/stable/index.html)
 - [RDKit 中文文档](http://rdkit.chenzhaoqiang.com/overview.html)
+
+## 奇怪的技巧
+
+- 当运行网易云音乐时，Pycharm 进行格式化的快捷键`Ctrl+Alt+L`会失灵
 
 ## 贡献者
 
