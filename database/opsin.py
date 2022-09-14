@@ -31,12 +31,15 @@ FNameName = ChemDir / "name_name.json"
 
 
 class OPSINCrawler(object):
-    def __init__(self, file=None):
+    def __init__(self, file=FChemical):
         self.io = JsonIO
         self.encode = partial(execjs.compile(OPSINCrawler.load_js(FJSFunc)).call, "encode")
 
         self.file = file
         self.chemicals = self.io.read(self.file) if self.file is not None else None
+
+    def forward(self):
+        self.get_records()
 
     def get_records(self):
         """
@@ -48,27 +51,39 @@ class OPSINCrawler(object):
 
         records = self.io.read(FOpsinRecord)
         records_name = [item['name'] for item in records]
+        num_chemical = len(self.chemicals)
+        record_index = 0
+        tmp_record_index = 0
 
-        for index, chemical in enumerate(self.chemicals):
-            if chemical in records_name:
-                logger.debug(f"`{chemical}` has been stored in database, continue")
-                continue
+        while True:
+            try:
+                for index, chemical in enumerate(self.chemicals[record_index:]):
+                    tmp_record_index = index + record_index
+                    if chemical in records_name:
+                        logger.debug(f"{tmp_record_index + 1} of {num_chemical}: `{chemical}` has been stored in database, continue")
+                        continue
 
-            url = OPSINRoot + "opsin/" + self.encode(chemical)
-            html = requests.get(url, headers=headers)
-            if html.status_code == 200:
-                content = json.loads(html.content)
-                content['name'] = chemical
-                records.append(content)
-                logger.info(f"`{chemical}` successfully store in database")
+                    url = OPSINRoot + "opsin/" + self.encode(chemical)
+                    html = requests.get(url, headers=headers)
+                    if html.status_code == 200:
+                        content = json.loads(html.content)
+                        content['name'] = chemical
+                        records.append(content)
+                        logger.info(f"{tmp_record_index + 1} of {num_chemical}: `{chemical}` successfully store in database")
+                    else:
+                        content = {'name': chemical, 'status': 'FAILURE'}
+                        records.append(content)
+                        logger.warning(f"{tmp_record_index + 1} of {num_chemical}: `{chemical}` : Response != 200, please check")
+            except:
+                pass
+            shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
+            self.io.write(records, ftemp(FOpsinRecord))
+            shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
+            if tmp_record_index + 1 == len(self.chemicals):
+                break
             else:
-                content = {'name': chemical, 'status': 'FAILURE'}
-                records.append(content)
-                logger.warning(f"`{chemical}` : Response != 200, please check")
-
-        shutil.copy(FOpsinRecord, fcopy(FOpsinRecord))
-        self.io.write(records, ftemp(FOpsinRecord))
-        shutil.move(ftemp(FOpsinRecord), FOpsinRecord)
+                logger.warning('HTTP disconnect, get record again')
+                record_index = tmp_record_index
 
         logger.info("Successfully update the opsin_record.json")
 

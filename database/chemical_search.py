@@ -7,13 +7,13 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Draw, AllChem
 
+#import common
 from common.constant import FOpsinRecord
 from common.constant import FSucReaxys
+from common.constant import FReaxys
+from common.constant import FChemical
 from common.fio import JsonIO
-
-
-ChemInfo = {item['name'] : {key: value for key, value in item.items() if key != 'name'}
-            for item in JsonIO.read(FOpsinRecord)}
+from common.logger import logger
 
 
 class FeatureError(Exception):
@@ -23,19 +23,38 @@ class FeatureError(Exception):
 class SucReaxys:
     Features = ['reagent', 'solvent', 'product', 'reactant']
 
+
     def __init__(self, chemical=None, feature=None):
         self._index_list = []
         self.chemical = chemical
         self.feature = feature
+        self._pd = pd.DataFrame()
+        self.ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
+                        for item in JsonIO.read(FOpsinRecord)}
         self._initialize()
 
     def _initialize(self):
         if not os.path.exists(FSucReaxys):
             self._write_suc_reaxys()
-        self.reaxys_doc = pd.DataFrame.from_records(JsonIO.read(FSucReaxys))
+        self.reaxys_doc = self._pd.from_records(JsonIO.read(FSucReaxys))
+
+    def forward(self):
+        self._write_suc_reaxys()
+        logger.info("Successfully generate suc_reaxys")
 
     def _write_suc_reaxys(self):
-        pass
+        self.all_chemistry = JsonIO.read(FChemical)
+        self.origin_reaxys = JsonIO.read(FReaxys)
+        reaxys_list = []
+        for index, reaction in enumerate(self.origin_reaxys):
+            if not reaction['yield']:
+                continue
+            tmp_chemistry_list = [self.ChemInfo[tmp_chemistry]['status'] == 'SUCCESS'
+                                  for feature in self.Features
+                                  for tmp_chemistry in reaction[feature]]
+            if sum(tmp_chemistry_list) == len(tmp_chemistry_list):
+                reaxys_list.append(reaction)
+        JsonIO.write(reaxys_list, FSucReaxys)
 
     def search(self, chemical=None, feature=None, show_reagent=False,
                save_img=False, show_inline=True):
@@ -43,7 +62,7 @@ class SucReaxys:
             self.chemical = chemical
         if feature:
             self.feature = feature
-        status = ChemInfo[self.chemical]['status']
+        status = self.ChemInfo[self.chemical]['status']
         if not self.feature in self.Features:
             raise FeatureError('Feature illegal!')
         if status == 'FAILURE':
@@ -75,7 +94,7 @@ class SucReaxys:
 
     def Name2Smart(self, chemical_list):
         if len(chemical_list) > 0:
-            chemical_mol = [Chem.MolFromSmiles(ChemInfo[rea]['smiles']) for rea in chemical_list]
+            chemical_mol = [Chem.MolFromSmiles(self.ChemInfo[rea]['smiles']) for rea in chemical_list]
             return '.'.join([Chem.MolToSmarts(rea) for rea in chemical_mol])
         else:
             return None
@@ -122,7 +141,7 @@ class SucReaxys:
                 img_count += 1
 
 
-    def counter(self, feature=None, most_common=50):
+    def counter(self, feature=None, most_common=20):
         if feature:
             self.feature = feature
         chem_list = []
@@ -134,5 +153,5 @@ class SucReaxys:
 
 if __name__ == '__main__':
     reaction = SucReaxys()
-    #reaction.search('N,N-diethyl-α-oxo-2-pyridineacetamide','product', save_img=False, show_inline=False)
-    reaction.counter('reagent')
+    #reaction.search('ibuprofen','product', save_img=True, show_inline=False)
+    reaction.counter('product')

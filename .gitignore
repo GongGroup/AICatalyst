@@ -17,3 +17,5 @@ node_modules/
 draw/*
 common/*.png
 *.gjf
+.vs
+.vscode
