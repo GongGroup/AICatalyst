@@ -1,6 +1,9 @@
 import subprocess
 from pathlib import Path
 
+from common.constant import ChemInfo
+from database.reaxys import Reaxys
+
 
 class Gaussian(object):
     pass
@@ -27,5 +30,11 @@ class GJFFile(object):
 
 
 if __name__ == '__main__':
+    mapping = Reaxys.get_reaction_mapping()
+    catalysts = [name for name in list(mapping[0].keys()) if ChemInfo[name].get("smiles", None) is not None]
+    catalysts_smiles = [ChemInfo[name]['smiles'] for name in catalysts]
     gjf = GJFFile()
-    gjf.write(smiles="C")
+    for item, name in zip(catalysts_smiles, catalysts):
+        print(f"{name}.gjf has been written")
+        gjf.write(smiles=item, file=f"{name}.gjf")
+    print()

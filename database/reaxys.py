@@ -6,7 +6,7 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield, DrawDir
+from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield, DrawDir, FReaxys
 from common.draw import draw_svg
 from common.fio import JsonIO, CatalystJsonIO, md5
 from common.species import MCatalyst
@@ -270,11 +270,12 @@ class Reaxys(object):
 
 if __name__ == '__main__':
     # get records
-    reaxys = Reaxys(FReaxysYield)
+    reaxys = Reaxys(FReaxys)
     records = reaxys.records(transform=False)
 
     # get reactions
     reactions = reaxys.reactions
+
     # reaxys.reactions.to_json()
     product_type = defaultdict(list)
     for reaction in reactions:

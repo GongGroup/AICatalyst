@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from common.fio import JsonIO
+
 # Directory constant here
 ChemDir = Path("../chemical")
 DrawDir = Path("../draw")
@@ -14,3 +16,7 @@ FRXconfig = ChemDir / "RX_config.json"
 FRXDconfig = ChemDir / "RXD_config.json"
 FReaxysXML = ChemDir / "reaxys_xml.xml"
 FSucReaxys = ChemDir / "suc_reaxys.json"
+
+# Variable constant
+ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
+            for item in JsonIO.read(FOpsinRecord)}
