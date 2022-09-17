@@ -5,7 +5,7 @@ Element H:
     group: 1
     color: '#FFFFFF'
     valence: 1
-    _default_bonds:
+    default_bonds:
         Element N: 1.200
         Element O: 2.100
         Element F: 1.100
@@ -21,7 +21,7 @@ Element C:
     group: 14
     color: '#00FF00'
     valence: 4
-    _default_bonds:
+    default_bonds:
         Element H: 1.200
         Element C: 1.890
         Element N: 1.792
@@ -41,7 +41,7 @@ Element N:
     period: 2
     group: 15
     color: '#0000FF'
-    _default_bonds:
+    default_bonds:
         Element N: 1.882
         Element O: 1.817
         Element F: 1.826
@@ -55,7 +55,7 @@ Element O:
     group: 16
     color: '#FF0000'
     valence: 2
-    _default_bonds:
+    default_bonds:
         Element O: 1.700
         Element P: 1.610
         Element S: 1.430
@@ -66,7 +66,7 @@ Element F:
     period: 2
     group: 17
     color: '#B3FFFF'
-    _default_bonds:
+    default_bonds:
         Element H: 0.920
         Element N: 1.360
         Element O: 1.420
@@ -80,7 +80,7 @@ Element Al:
     period: 3
     group: 13
     color: '#FF64FF'
-    _default_bonds:
+    default_bonds:
         Element H: 1.906
         Element N: 2.246
         Element O: 2.107
@@ -100,7 +100,7 @@ Element P:
     period: 3
     group: 15
     color: '#E99CFF'
-    _default_bonds:
+    default_bonds:
         Element H: 1.459
         Element N: 1.971
         Element O: 2.086
@@ -119,7 +119,7 @@ Element S:
     period: 3
     group: 16
     color: '#FFEB00'
-    _default_bonds:
+    default_bonds:
         Element H: 1.429
         Element N: 2.288
         Element O: 1.800
@@ -135,7 +135,7 @@ Element Cl:
     period: 3
     group: 17
     color: '#B3FFAD'
-    _default_bonds:
+    default_bonds:
         Element H: 1.080
         Element N: 1.790
         Element O: 2.166
@@ -150,7 +150,7 @@ Element Cr:
     period: 4
     group: 6
     color: '#8B99C6'
-    _default_bonds:
+    default_bonds:
         Element H: 1.676
         Element C: 1.142
         Element N: 2.515
@@ -171,7 +171,7 @@ Element Cu:
     period: 4
     group: 11
     color: '#FF7B62'
-    _default_bonds:
+    default_bonds:
         Element H: 1.816
         Element C: 2.326
         Element N: 2.492
@@ -192,7 +192,7 @@ Element Zn:
     period: 4
     group: 12
     color: '#7C81AF'
-    _default_bonds:
+    default_bonds:
         Element H: 2.132
         Element N: 2.432
         Element O: 2.416
@@ -212,7 +212,7 @@ Element Ga:
     period: 4
     group: 13
     color: '#C39291'
-    _default_bonds:
+    default_bonds:
         Element H: 1.559
         Element N: 1.960
         Element O: 2.186
@@ -231,7 +231,7 @@ Element Br:
     period: 4
     group: 17
     color: '#D34F45'
-    _default_bonds:
+    default_bonds:
         Element H: 1.420
         Element C: 1.940
         Element N: 2.140
@@ -248,7 +248,7 @@ Element Zr:
     period: 5
     group: 4
     color: '#96E1E1'
-    _default_bonds:
+    default_bonds:
         Element H: 2.290
         Element N: 2.650
         Element O: 3.096
@@ -262,13 +262,18 @@ Element Zr:
         Element Te: 3.170
         Element I: 3.190
 
+Element Pd:
+    formula: Pd
+    default_bonds:
+        Element O: 2.39849
+
 Element Sn:
     formula: Sn
     number: 50
     period: 5
     group: 14
     color: '#668181'
-    _default_bonds:
+    default_bonds:
         Element H: 2.006
         Element N: 2.715
         Element O: 2.821
@@ -288,7 +293,7 @@ Element Ce:
     period: 6
     group: 3
     color: '#FFFFC8'
-    _default_bonds:
+    default_bonds:
         Element H: 2.346
         Element N: 2.785
         Element O: 2.863
@@ -308,7 +313,7 @@ Element W:
     period: 6
     group: 6
     color: '#2794D6'
-    _default_bonds:
+    default_bonds:
         Element H: 1.809
         Element N: 2.109
         Element O: 2.201
@@ -328,7 +333,7 @@ Element Au:
     period: 6
     group: 11
     color: '#FFD124'
-    _default_bonds:
+    default_bonds:
         Element H: 1.419
         Element N: 2.382
         Element O: 2.346

@@ -1,20 +1,10 @@
-from pathlib import Path
-
-import yaml
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-yaml.warnings({'YAMLLoadWarning': False})
+from common.constant import ElementInfo
 
 
 class RAtom(object):
-    _element_file = Path(f"element.yaml")
-    _load = False
-    _elements = None
-
-    def __new__(cls, *args, **kwargs):
-        cls.__load_config()
-        return object.__new__(cls)
 
     def __init__(self, ratom, rposition):
         self._ratom = ratom
@@ -23,20 +13,15 @@ class RAtom(object):
     def __repr__(self):
         return f"<{self.__class__.__name__} : {self.symbol}{self.total_valence} : {self.position}>"
 
-    @classmethod
-    def __load_config(cls):
-        """load element.yaml file (private classmethod)"""
-        if not cls._load:
-            with open(cls._element_file) as f:
-                cfg = f.read()
-            cls._elements = yaml.safe_load(cfg)
-            cls._load = True
-
     @property
     def is_unsaturated(self):
-        if self.total_valence < RAtom._elements[f'Element {self.symbol}']['valence']:
+        if self.total_valence < ElementInfo[f'Element {self.symbol}']['valence']:
             return True
         return False
+
+    @property
+    def order(self):
+        return self._ratom.GetIdx()
 
     @property
     def symbol(self):

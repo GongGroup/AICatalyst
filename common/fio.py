@@ -3,6 +3,8 @@ import json
 from json import JSONEncoder
 from pathlib import Path
 
+import yaml
+
 
 def md5(name: str):
     return hashlib.md5(name.encode(encoding='utf-8')).hexdigest()
@@ -66,6 +68,26 @@ class JsonIO(object):
         """
         with open(file, "w", encoding=encoding) as f:
             json.dump(obj, f, indent=indent)
+
+
+class YamlIO(object):
+    yaml.warnings({'YAMLLoadWarning': False})
+
+    @staticmethod
+    def read(file, encoding='utf-8'):
+        """
+        Json file read func
+
+        Args:
+            file: json file
+            encoding: file encoding method
+
+        Returns:
+            data: python object load from json file
+        """
+        with open(file, 'r', encoding=encoding) as f:
+            data = f.read()
+        return yaml.safe_load(data)
 
 
 class CatalystJSONEncoder(JSONEncoder):
