@@ -4,6 +4,7 @@ Element H:
     period: 1
     group: 1
     color: '#FFFFFF'
+    valence: 1
     _default_bonds:
         Element N: 1.200
         Element O: 2.100
@@ -19,6 +20,7 @@ Element C:
     period: 2
     group: 14
     color: '#00FF00'
+    valence: 4
     _default_bonds:
         Element H: 1.200
         Element C: 1.890
@@ -52,6 +54,7 @@ Element O:
     period: 2
     group: 16
     color: '#FF0000'
+    valence: 2
     _default_bonds:
         Element O: 1.700
         Element P: 1.610
