@@ -12,6 +12,7 @@
   - [Python 性能测试](#python-性能测试)
 - [常用软件介绍](#常用软件介绍)
   - [Open Babel](#open-babel)
+  - [xtb](#xtb)
 - [学习资料推荐](#学习资料推荐)
   - [Python 编程语言](#python-编程语言)
   - [Python 数据分析](#python-数据分析)
@@ -451,6 +452,38 @@ M  END
 使用 GaussView 打开该 mol 文件，即可得到一个 CH<sub>4</sub>分子的模型，如图：
 
 <div align="center"><img width=200 src="img_33.png"></div>
+
+### xtb
+
+[xtb](https://github.com/grimme-lab/xtb) 是由 Grimme 教授领导开发的半经验量子力学软件，可用 GFNn-xTB 半经验方法对分子开展单点能、结构优化，振动频率，分子动力学模拟等计算，软件的在线手册地址为 [xtb-doc](https://xtb-docs.readthedocs.io/en/latest/contents.html)。
+
+#### 安装
+
+使用 conda 可以很容易的进行 `xtb` 的安装，执行以下命令：
+
+```
+conda install -c conda-forge xtb
+```
+
+安装完 xtb 后，需要设置环境变量 XTBPATH 为 xtb 的路径，才可使用 GFN-xTB 方法，如
+
+```
+export XTBPATH=/home/hui_zhou/anaconda3/envs/AICatalysis/bin/xtb
+```
+
+如果仅使用 GFN-FF 方法，不设置该环境变量也可
+
+**note**
+
+> 目前使用 conda 安装 xtb 仅支持 Linux 平台
+
+#### 常用命令
+
+- 使用 gfnff 做分子优化
+
+```bash
+xtb molecule.xyz -o --gfnff > print-out 2>/dev/null
+```
 
 ## 学习资料推荐
 

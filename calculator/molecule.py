@@ -1,3 +1,6 @@
+import os
+import shutil
+
 import numpy as np
 
 from calculator.optimizer import Optimizer
@@ -62,10 +65,11 @@ class MCenter(RMolecule):
 
 
 class Molecule(object):
-    def __init__(self, center, ligands):
+    def __init__(self, center, ligands, gfnff=True):
         self.center = center
         self.ligands = ligands
         self.optimized_position = None
+        self.gfnff = gfnff
 
         self.rearrange()
 
@@ -103,27 +107,25 @@ class Molecule(object):
             center_position, ligand_position = optimizer.optimize(target_position, order)
             for symbol, position in zip(ligand_symbol, ligand_position):
                 self.optimized_position.append((symbol, position))
-            # stretch atom to satisfy the default bonds distance
-            # stretch_position = [(self.center.atoms[0].symbol, np.array(self.center.atoms[0].position))]
-            # for ligand_atom, delta_bond in zip(ligand_atoms, delta_vectors):
-            #     for atom in ligand_atom:
-            #         stretch_position.append((atom.symbol, atom.position + delta_bond))
-            #
-            # self.optimized_position = stretch_position
         self.optimized_position.append((self.center.atoms[0].symbol, center_position))
-        print()
 
     def write_to_xyz(self, name="molecule.xyz"):
-        with open(name, "w") as f:
+        with open("temp.xyz", "w") as f:
             f.write(f"{len(self.optimized_position)} \n")
             f.write(f"\n")
             for item in self.optimized_position:
                 f.write(f"{item[0]}\t {'    '.join(item[1].astype(str))} \n")
 
+        if self.gfnff:
+            os.system(f"bash xtb.sh")
+            shutil.move("xtbopt.xyz", name)
+        else:
+            shutil.move("temp.xyz", name)
+
 
 if __name__ == '__main__':
     OAc = Ligand.from_strings("OAc")
-    Pd = MCenter.from_strings("Pd")
+    Pd = MCenter.from_strings("Rh")
     mol = Molecule(Pd, [OAc] * 2)
     mol.write_to_xyz()
 

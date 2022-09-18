@@ -267,6 +267,11 @@ Element Pd:
     default_bonds:
         Element O: 2.39849
 
+Element Rh:
+    formula: Rh
+    default_bonds:
+        Element O: 2.24946
+
 Element Sn:
     formula: Sn
     number: 50
