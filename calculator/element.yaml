@@ -135,6 +135,7 @@ Element Cl:
     period: 3
     group: 17
     color: '#B3FFAD'
+    valence: 1
     default_bonds:
         Element H: 1.080
         Element N: 1.790
@@ -231,6 +232,7 @@ Element Br:
     period: 4
     group: 17
     color: '#D34F45'
+    valence: 1
     default_bonds:
         Element H: 1.420
         Element C: 1.940
@@ -265,7 +267,11 @@ Element Zr:
 Element Pd:
     formula: Pd
     default_bonds:
+        Element C: 2.33649
         Element O: 2.39849
+        Element I: 2.96649
+        Element Cl: 2.65649
+        Element Br: 2.80649
 
 Element Rh:
     formula: Rh
@@ -351,3 +357,6 @@ Element Au:
         Element Br: 2.776
         Element Te: 2.459
         Element I: 3.212
+Element I:
+    formula: I
+    valence: 1

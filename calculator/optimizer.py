@@ -4,9 +4,11 @@ import random
 
 import numpy as np
 
+from common.logger import logger
+
 
 class Optimizer(object):
-    def __init__(self, center, ligand, steps=1000, criterion=0.1, lr=0.1):
+    def __init__(self, center, ligand, steps=500, criterion=0.1, lr=0.1):
         self.center = center
         self.ligand = ligand
         self.steps = steps
@@ -15,7 +17,14 @@ class Optimizer(object):
 
     @staticmethod
     def _get_force(center, ligand):
-        return 1 / np.sum((ligand - center) ** 2, axis=0)
+        distance = np.max((ligand - center) ** 2, axis=0)
+        distance = np.where(distance == 0, 0.1, distance)
+
+        direction = np.max((ligand - center), axis=0)
+        if np.all(direction) == 0:
+            direction = np.where(direction == 0, 0.1, direction)
+
+        return direction / distance
 
     @staticmethod
     def _rotate(alpha, beta, gamma, ligand: np.array):
@@ -40,6 +49,7 @@ class Optimizer(object):
         min_force = 10000.
         min_ligand = ligand
         for step in range(self.steps):
+            ligand = Optimizer._translate(np.array(target), index, ligand)
             force = Optimizer._get_force(center, ligand)
             min_force = min(np.sum(force), min_force)
             if np.sum(force) <= self.criterion:
@@ -49,7 +59,7 @@ class Optimizer(object):
             ligand = Optimizer._translate(np.array(target), index, ligand)
             if min_force == np.sum(force):
                 min_ligand = ligand
-        print(f"step: {step + 1} min_force: {min_force} force: {np.sum(force)}")
+        logger.info(f"step: {step + 1} min_force: {min_force} force: {np.sum(force)}")
         return center, min_ligand
 
 

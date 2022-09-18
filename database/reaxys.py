@@ -210,14 +210,13 @@ class ReaxysReactions(list):
 
 class Reaxys(object):
     def __init__(self, file):
-        self.io = JsonIO
         self.file = file
         self._records = None
 
     def flatten(self):
         var_records = []
 
-        original_records = self.io.read(self.file)
+        original_records = JsonIO.read(self.file)
 
         for reaction in original_records:
             header = reaction[0]
@@ -243,7 +242,6 @@ class Reaxys(object):
 
     @staticmethod
     def get_reaction_mapping():
-        # get_kv = lambda x: list(x.items())[0]
         reactions = JsonIO.read(FReactions)
         catalysts = Counter([item for reaction in reactions for item in reaction['catalyst']])
         catalysts_sort = sorted(catalysts.items(), key=lambda x: x[1], reverse=True)
@@ -270,7 +268,7 @@ class Reaxys(object):
 
 if __name__ == '__main__':
     # get records
-    reaxys = Reaxys(FReaxys)
+    reaxys = Reaxys(FReaxysYield)
     records = reaxys.records(transform=False)
 
     # get reactions
@@ -286,15 +284,15 @@ if __name__ == '__main__':
 
     new_product_type = {key: value for key, value in product_type_sorted.items() if len(value) > 3}
 
-    name = 'toluene'
-    special_catalyst = [reaction.catalyst for reaction in new_product_type[name]]
-    special_records = [record for record in records if (name) in record.product and len(record.doi)]
-    special_product = new_product_type[name]
+    # name = 'toluene'
+    # special_catalyst = [reaction.catalyst for reaction in new_product_type[name]]
+    # special_records = [record for record in records if (name) in record.product and len(record.doi)]
+    # special_product = new_product_type[name]
     # for key, value in new_product_type.items():
     #     mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
     #     draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
 
-    # reaction_mapping = Reaxys.get_reaction_mapping()
+    reaction_mapping = Reaxys.get_reaction_mapping()
     # for key, value in reaction_mapping[1].items():
     #     if len(value):
     #         for item in value.most_common(1):

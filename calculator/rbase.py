@@ -1,7 +1,14 @@
+import numpy as np
 from rdkit import Chem
+from rdkit import RDLogger
 from rdkit.Chem import AllChem
 
 from common.constant import ElementInfo
+
+# close the rdkit warning
+from common.error import FileFormatError
+
+RDLogger.DisableLog('rdApp.warning')
 
 
 class RAtom(object):
@@ -11,11 +18,11 @@ class RAtom(object):
         self._rposition = rposition
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} : {self.symbol}{self.total_valence} : {self.position}>"
+        return f"<{self.__class__.__name__} : {self.symbol}{self.explicit_valence} : {self.position}>"
 
     @property
     def is_unsaturated(self):
-        if self.total_valence < ElementInfo[f'Element {self.symbol}']['valence']:
+        if self.explicit_valence < ElementInfo[f'Element {self.symbol}']['valence']:
             return True
         return False
 
@@ -90,21 +97,36 @@ class RMolecule(object):
                 enumerate(self._rmol.GetAtoms())]
 
     @property
+    def positions(self):
+        return np.array([atom.position for atom in self.atoms])
+
+    @property
+    def mass_center(self):
+        return np.mean(self.positions, axis=0)
+
+    @property
     def num_atoms(self):
         return self._rmol.GetNumAtoms()
 
     @staticmethod
-    def from_smiles(smiles, addH=True):
+    def _from_smiles(smiles, addHs=True):
         rmol = Chem.MolFromSmiles(smiles)
-        if addH:
+        if addHs:
             rmol = AllChem.AddHs(rmol)
         AllChem.EmbedMolecule(rmol)
         AllChem.MMFFOptimizeMolecule(rmol)
         return rmol
 
+    @staticmethod
+    def _from_mol_file(file, removeHs=False):
+        rmol = Chem.MolFromMolFile(file, removeHs=removeHs)
+        if rmol is None:
+            raise FileFormatError(f"The format of {file} is not correct")
+        return rmol, Chem.MolToSmiles(rmol)
+
 
 if __name__ == '__main__':
     smiles = "CC([O-])=O"
-    rmol = RMolecule.from_smiles(smiles)
+    rmol = RMolecule._from_smiles(smiles)
     rmol = RMolecule(rmol)
     print()

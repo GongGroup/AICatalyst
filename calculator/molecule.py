@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 import numpy as np
 
@@ -22,14 +23,22 @@ class Ligand(RMolecule):
         return f"<{self.__class__.__name__} : {self.name}>"
 
     @staticmethod
-    def from_strings(symbol, name=None, addH=True):
+    def from_strings(symbol, name=None, addHs=True):
         if name is None:
             name = symbol
 
         smiles = Ligand._LigandInfo[symbol]
-        rmol = RMolecule.from_smiles(smiles, addH)
+        rmol = RMolecule._from_smiles(smiles, addHs)
 
         return Ligand(name, smiles, rmol)
+
+    @staticmethod
+    def from_file(file, format="mol"):
+        if format != "mol":
+            raise NotImplementedError(f"{format} file is not supported now")
+
+        rmol, smiles = RMolecule._from_mol_file(file)
+        return Ligand(Path(file).stem, smiles, rmol)
 
     def get_unsaturated_atoms(self):
         unsaturated_atoms = []
@@ -51,7 +60,7 @@ class MCenter(RMolecule):
         self.name = name
 
     @staticmethod
-    def from_strings(symbol, name=None, addH=False):
+    def from_strings(symbol, name=None, addHs=False):
         if name is None:
             name = symbol
 
@@ -59,7 +68,7 @@ class MCenter(RMolecule):
         if "[" not in symbol:
             smiles = f"[{symbol}]"
 
-        rmol = RMolecule.from_smiles(smiles, addH)
+        rmol = RMolecule._from_smiles(smiles, addHs)
 
         return MCenter(name, rmol)
 
@@ -117,6 +126,7 @@ class Molecule(object):
                 f.write(f"{item[0]}\t {'    '.join(item[1].astype(str))} \n")
 
         if self.gfnff:
+            logger.info("Use xtb as the post-opt backend")
             os.system(f"bash xtb.sh")
             shutil.move("xtbopt.xyz", name)
         else:
@@ -124,9 +134,11 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    OAc = Ligand.from_strings("OAc")
-    Pd = MCenter.from_strings("Rh")
-    mol = Molecule(Pd, [OAc] * 2)
+    # I = Ligand.from_strings("I")
+    Cl = Ligand.from_strings("Cl")
+    CH2Cl = Ligand.from_file("CH2Cl.mol")
+    center = MCenter.from_strings("Pd")
+    mol = Molecule(center, [Cl, CH2Cl], gfnff=True)
     mol.write_to_xyz()
 
     print()
