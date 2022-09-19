@@ -118,6 +118,20 @@ class ForceFieldIO(object):
         return
 
 
+class QMIO(object):
+
+    @staticmethod
+    def read(file, encoding='utf-8'):
+        with open(file, 'r', encoding=encoding) as f:
+            data = f.read()
+        QM = namedtuple("QM", ("atom_type", "X", "Y", "Z"))
+        parameters = []
+        for line in data.splitlines()[1:]:
+            parameter = line.split()
+            parameters.append(QM(parameter[0], float(parameter[1]), float(parameter[2]), float(parameter[3])))
+        return parameters
+
+
 if __name__ == '__main__':
     path = Path("../chemical/reaxys.json")
     temp_path = ftemp(path)

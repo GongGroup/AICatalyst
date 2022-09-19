@@ -1,15 +1,38 @@
-import math
-
 import numpy as np
 
 
-def vector_angle(length_b, vector_a: np.array, theta):
-    length_a = np.sum(vector_a ** 2) ** 0.5
-    return length_a * length_b * math.cos(theta) / vector_a
+def rotate_angle(va: np.array, vb: np.array):
+    la = np.sum(va ** 2) ** 0.5
+    lb = np.sum(vb ** 2) ** 0.5
+    return np.arccos(np.dot(va, vb) / la * lb)  # rad
+
+
+def rotate_axis(va: np.array, vb: np.array):
+    return np.cross(va, vb)
+
+
+def rotate_matrix(va, vb):
+    vc = rotate_axis(va, vb)
+    theta = rotate_angle(va, vb)
+    lc = np.sum(vc ** 2) ** 0.5
+    vc = vc / lc
+    w = np.array([
+        [0, -vc[2], vc[1]],
+        [vc[2], 0, -vc[0]],
+        [-vc[1], vc[0], 0],
+    ])
+    return np.eye(3) + w * np.sin(theta) + np.dot(w, w) * (1 - np.cos(theta))
 
 
 if __name__ == '__main__':
-    a = np.array([0, 2, 0])
-    length_b = 1
-    theta = math.pi / 2
-    print(vector_angle(length_b, a, theta))
+    vector_a = np.array([1, 0, 0])
+    vector_b = np.array([0, 1, 0])
+    # length_b = 1
+    # theta = math.pi / 2
+    angle = rotate_angle(vector_a, vector_b)
+    axis = rotate_axis(vector_a, vector_b)
+    matrix = rotate_matrix(vector_a, vector_b)
+    print(angle)
+    print(axis)
+    print(matrix)
+    print(np.dot(matrix, vector_a))
