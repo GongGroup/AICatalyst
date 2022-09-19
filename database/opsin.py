@@ -9,7 +9,7 @@ import requests
 from rdkit import Chem, RDConfig
 from rdkit.Chem import FragmentCatalog
 
-from common.fio import JsonIO, ftemp, fcopy
+from common.file import JsonIO, ftemp, fcopy
 from common.logger import logger
 
 # Net const

@@ -2,7 +2,7 @@ from rdkit import Chem
 from rdkit.Chem import Draw, AllChem
 
 from common.constant import FOpsinRecord
-from common.fio import JsonIO
+from common.file import JsonIO
 
 ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
             for item in JsonIO.read(FOpsinRecord)}

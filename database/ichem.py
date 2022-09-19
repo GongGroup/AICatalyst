@@ -6,7 +6,7 @@ from pathlib import Path
 import requests
 from pyquery import PyQuery
 
-from common.fio import JsonIO, ftemp
+from common.file import JsonIO, ftemp
 from common.logger import logger
 
 # Net const

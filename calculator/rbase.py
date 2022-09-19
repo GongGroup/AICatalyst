@@ -4,18 +4,18 @@ from rdkit import RDLogger
 from rdkit.Chem import AllChem
 
 from common.constant import ElementInfo
-
-# close the rdkit warning
 from common.error import FileFormatError
 
+# close the rdkit warning
 RDLogger.DisableLog('rdApp.warning')
 
 
 class RAtom(object):
 
-    def __init__(self, ratom, rposition):
+    def __init__(self, ratom, rposition, mol):
         self._ratom = ratom
         self._rposition = rposition
+        self._mol = mol
 
     def __repr__(self):
         return f"<{self.__class__.__name__} : {self.symbol}{self.explicit_valence} : {self.position}>"
@@ -67,6 +67,10 @@ class RAtom(object):
         return self._ratom.GetHybridization()
 
     @property
+    def neighbors(self):
+        return [self._mol.atoms[atom.GetIdx()] for atom in self._ratom.GetNeighbors()]
+
+    @property
     def explicit_valence(self):
         return self._ratom.GetExplicitValence()
 
@@ -77,6 +81,10 @@ class RAtom(object):
     @property
     def total_valence(self):
         return self._ratom.GetTotalValence()
+
+    @staticmethod
+    def from_sp(symbol, position):
+        return RAtom(Chem.Atom(symbol), position, mol=None)
 
 
 class RMolecule(object):
@@ -93,7 +101,7 @@ class RMolecule(object):
 
     @property
     def atoms(self):
-        return [RAtom(atom, self._rmol.GetConformer().GetAtomPosition(index)) for index, atom in
+        return [RAtom(atom, self._rmol.GetConformer().GetAtomPosition(index), self) for index, atom in
                 enumerate(self._rmol.GetAtoms())]
 
     @property

@@ -8,7 +8,7 @@ from rdkit import RDLogger
 
 from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield, DrawDir, FReaxys
 from common.draw import draw_svg
-from common.fio import JsonIO, CatalystJsonIO, md5
+from common.file import JsonIO, CatalystJsonIO, md5
 from common.species import MCatalyst
 
 # Variable constant

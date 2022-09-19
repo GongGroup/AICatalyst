@@ -3,7 +3,7 @@ from pathlib import Path
 
 from requests_html import HTMLSession
 
-from common.fio import JsonIO, ftemp
+from common.file import JsonIO, ftemp
 
 # Net constant
 from database.opsin import OPSINCrawler

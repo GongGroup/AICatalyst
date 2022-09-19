@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections import namedtuple
 from json import JSONEncoder
 from pathlib import Path
 
@@ -70,26 +71,6 @@ class JsonIO(object):
             json.dump(obj, f, indent=indent)
 
 
-class YamlIO(object):
-    yaml.warnings({'YAMLLoadWarning': False})
-
-    @staticmethod
-    def read(file, encoding='utf-8'):
-        """
-        Json file read func
-
-        Args:
-            file: json file
-            encoding: file encoding method
-
-        Returns:
-            data: python object load from json file
-        """
-        with open(file, 'r', encoding=encoding) as f:
-            data = f.read()
-        return yaml.safe_load(data)
-
-
 class CatalystJSONEncoder(JSONEncoder):
     """
     Extend the default JSONEncoder, make it accept the <MCatalyst> instance
@@ -109,6 +90,32 @@ class CatalystJsonIO(JsonIO):
     def write(obj, file, indent=2, encoding='utf-8'):
         with open(file, "w", encoding=encoding) as f:
             json.dump(obj, f, cls=CatalystJSONEncoder, indent=indent)
+
+
+class YamlIO(object):
+    yaml.warnings({'YAMLLoadWarning': False})
+
+    @staticmethod
+    def read(file, encoding='utf-8'):
+        with open(file, 'r', encoding=encoding) as f:
+            data = f.read()
+        return yaml.safe_load(data)
+
+
+class ForceFieldIO(object):
+
+    @staticmethod
+    def read(file, encoding='utf-8', type="angle"):
+        with open(file, 'r', encoding=encoding) as f:
+            data = f.read()
+        if type == "angle":
+            Angle = namedtuple("Angle", ("atom_1", "atom_2", "atom_3", "value"))
+            parameters = []
+            for line in data.splitlines()[1:]:
+                parameter = line.split()
+                parameters.append(Angle(parameter[0], parameter[1], parameter[2], float(parameter[3])))
+            return parameters
+        return
 
 
 if __name__ == '__main__':

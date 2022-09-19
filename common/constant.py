@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from common.fio import JsonIO, YamlIO
+from common.file import JsonIO, YamlIO, ForceFieldIO
 
 # Directory constant here
 ChemDir = Path("../chemical")
@@ -18,9 +18,11 @@ FRXDconfig = ChemDir / "RXD_config.json"
 FReaxysXML = ChemDir / "reaxys_xml.xml"
 FSucReaxys = ChemDir / "suc_reaxys.json"
 Elements = Calculator / "element.yaml"
+Angle = Calculator / "angle.dat"
 
 # Variable constant
 ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
             for item in JsonIO.read(FOpsinRecord)}
 
 ElementInfo = YamlIO.read(Elements)
+FFAngle = ForceFieldIO.read(Angle)

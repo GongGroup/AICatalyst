@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from common.descriptor import CatalystDescriptor, FormulaDescriptor
-from common.fio import JsonIO, ftemp
+from common.file import JsonIO, ftemp
 from database.ichem import IChemCrawler
 from common.logger import logger
 
