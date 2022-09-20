@@ -19,12 +19,12 @@ FReaxysXML = ChemDir / "reaxys_xml.xml"
 FSucReaxys = ChemDir / "suc_reaxys.json"
 Elements = Calculator / "element.yaml"
 Angle = Calculator / "angle.dat"
-FQMParameter = Calculator / "QMParameter.dat"
+FQM1 = Calculator / "QM1.dat"
+FQM2 = Calculator / "QM2.dat"
 
 # Variable constant
 ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
             for item in JsonIO.read(FOpsinRecord)}
-
 ElementInfo = YamlIO.read(Elements)
-# FFAngle = ForceFieldIO.read(Angle)
-QMParameter = QMIO.read(FQMParameter)
+QM1 = QMIO.read1(FQM1)
+QM2 = QMIO.read2(FQM2)

@@ -1,6 +1,6 @@
 import hashlib
 import json
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from json import JSONEncoder
 from pathlib import Path
 
@@ -121,14 +121,24 @@ class ForceFieldIO(object):
 class QMIO(object):
 
     @staticmethod
-    def read(file, encoding='utf-8'):
+    def read1(file, encoding='utf-8'):
         with open(file, 'r', encoding=encoding) as f:
             data = f.read()
-        QM = namedtuple("QM", ("atom_type", "X", "Y", "Z"))
-        parameters = []
+        parameters = {}
         for line in data.splitlines()[1:]:
             parameter = line.split()
-            parameters.append(QM(parameter[0], float(parameter[1]), float(parameter[2]), float(parameter[3])))
+            parameters[parameter[0]] = [float(parameter[1]), float(parameter[2]), float(parameter[3])]
+        return parameters
+
+    @staticmethod
+    def read2(file, encoding='utf-8'):
+        with open(file, 'r', encoding=encoding) as f:
+            data = f.read()
+        parameters = defaultdict(dict)
+        for line in data.splitlines()[1:]:
+            parameter = line.split()
+            parameters[parameter[0]].update(
+                {parameter[1]: [float(parameter[2]), float(parameter[3]), float(parameter[4])]})
         return parameters
 
 

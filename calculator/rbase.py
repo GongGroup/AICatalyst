@@ -20,6 +20,9 @@ class RAtom(object):
     def __repr__(self):
         return f"<{self.__class__.__name__} : {self.symbol}{self.explicit_valence} : {self.position}>"
 
+    def __sub__(self, other):
+        return np.array(self._rposition - other._rposition)
+
     @property
     def is_unsaturated(self):
         if self.explicit_valence < ElementInfo[f'Element {self.symbol}']['valence']:
