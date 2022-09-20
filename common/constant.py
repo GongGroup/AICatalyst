@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from common.file import JsonIO, YamlIO, ForceFieldIO, QMIO
+from common.file import JsonIO, YamlIO, QMIO
 
 # Directory constant here
 ChemDir = Path("../chemical")

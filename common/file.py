@@ -1,6 +1,6 @@
 import hashlib
 import json
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 from json import JSONEncoder
 from pathlib import Path
 
@@ -100,22 +100,6 @@ class YamlIO(object):
         with open(file, 'r', encoding=encoding) as f:
             data = f.read()
         return yaml.safe_load(data)
-
-
-class ForceFieldIO(object):
-
-    @staticmethod
-    def read(file, encoding='utf-8', type="angle"):
-        with open(file, 'r', encoding=encoding) as f:
-            data = f.read()
-        if type == "angle":
-            Angle = namedtuple("Angle", ("atom_1", "atom_2", "atom_3", "value"))
-            parameters = []
-            for line in data.splitlines()[1:]:
-                parameter = line.split()
-                parameters.append(Angle(parameter[0], parameter[1], parameter[2], float(parameter[3])))
-            return parameters
-        return
 
 
 class QMIO(object):
