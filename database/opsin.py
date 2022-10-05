@@ -9,6 +9,7 @@ import requests
 from rdkit import Chem, RDConfig
 from rdkit.Chem import FragmentCatalog
 
+from common.constant import ChemDir, FFormula
 from common.file import JsonIO, ftemp, fcopy
 from common.logger import logger
 
@@ -18,13 +19,8 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
-# Directory const
-ChemDir = Path("../chemical")
-
 # File const
 FJSFunc = "func.js"
-FChemical = ChemDir / "chemical.json"
-FFormula = ChemDir / "formula.json"
 FOpsinRecord = ChemDir / "opsin_record.json"
 FIChemRecord = ChemDir / "ichem_record.json"
 FNameName = ChemDir / "name_name.json"

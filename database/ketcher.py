@@ -1,19 +1,14 @@
 import shutil
-from pathlib import Path
 
 from requests_html import HTMLSession
 
+from common.constant import ChemDir
 from common.file import JsonIO, ftemp
-
-# Net constant
+from common.logger import logger
 from database.opsin import OPSINCrawler
 
+# Net constant
 URL = 'http://127.0.0.1:5500/structure.html?input='
-
-# Directory const
-from common.logger import logger
-
-ChemDir = Path("../chemical")
 
 # file const
 FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping

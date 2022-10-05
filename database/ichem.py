@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 from pyquery import PyQuery
 
+from common.constant import ChemDir, FChemical, FFormula
 from common.file import JsonIO, ftemp
 from common.logger import logger
 
@@ -18,12 +19,7 @@ headers = {
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/104.0.5112.81 Safari/537.36 Edg/104.0.1293.47"}
 
-# Directory const
-ChemDir = Path("../chemical")
-
 # file const
-FChemical = ChemDir / "chemical.json"
-FFormula = ChemDir / "formula.json"
 FRecord = ChemDir / "ichem_record.json"  # success structure in sdf
 FNameSmile = ChemDir / "name_smile.json"  # name~smile mapping
 FNameName = ChemDir / "name_name.json"  # name~name mapping

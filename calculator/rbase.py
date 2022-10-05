@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from rdkit import Chem
 from rdkit import RDLogger
@@ -11,6 +13,7 @@ RDLogger.DisableLog('rdApp.warning')
 
 
 class RAtom(object):
+    searched = []
 
     def __init__(self, ratom, rposition, mol):
         self._ratom = ratom
@@ -74,6 +77,26 @@ class RAtom(object):
         return [self._mol.atoms[atom.GetIdx()] for atom in self._ratom.GetNeighbors()]
 
     @property
+    def connected(self):
+        """
+        Obtain the all connected atoms, which can be seen as one ligand
+
+        Returns:
+            connection (list): store the atoms' orders with the connection
+
+        """
+        connection = []
+        self._connected(connection)
+
+        return connection
+
+    def _connected(self, connection):
+        for neighbor in self.neighbors:
+            if neighbor.order not in connection:
+                connection.append(neighbor.order)
+                neighbor._connected(connection)
+
+    @property
     def explicit_valence(self):
         return self._ratom.GetExplicitValence()
 
@@ -134,6 +157,10 @@ class RMolecule(object):
         if rmol is None:
             raise FileFormatError(f"The format of {file} is not correct")
         return rmol, Chem.MolToSmiles(rmol)
+
+    @property
+    def mol_frags(self):
+        return [rmol for rmol in Chem.GetMolFrags(self._rmol, asMols=True)]
 
 
 if __name__ == '__main__':

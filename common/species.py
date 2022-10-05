@@ -1,22 +1,10 @@
 import shutil
-from pathlib import Path
 
+from common.constant import FFormula, FChemical
 from common.descriptor import CatalystDescriptor, FormulaDescriptor
 from common.file import JsonIO, ftemp
-from database.ichem import IChemCrawler
 from common.logger import logger
-
-PeriodicTable = [
-    'H', 'He',
-    'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
-    'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar',
-    'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr',
-    'Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe',
-    'Cs', 'Ba', 'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn',
-    'Fr', 'Ra', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og',
-    'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu',
-    'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
-]
+from database.ichem import IChemCrawler
 
 MetalElement = [
     'Li', 'Be',
@@ -50,13 +38,6 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
-# Directory const
-ChemDir = Path("../chemical")
-
-# file constant
-FChemical = ChemDir / "chemical.json"
-FFormula = ChemDir / "formula.json"
-
 
 class ChemFormula(object):
     mapping = JsonIO.read(FFormula)
@@ -84,7 +65,7 @@ class ChemFormula(object):
                 raise RuntimeError("Create ChemFormula instance error")
 
 
-class MCatalyst(object):
+class Metal(object):
     name = CatalystDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
 
     def __init__(self, name):
@@ -94,18 +75,9 @@ class MCatalyst(object):
         return f"<MCatalyst [{self.name}]>"
 
     @staticmethod
-    def is_metal_catalyst(name):
-        logger.info(f"check {name}")
-        if not isinstance(name, ChemFormula):
-            try:
-                formula = ChemFormula.new(name).name
-            except RuntimeError:
-                formula = name
-        else:
-            formula = name.name
-
+    def is_metal(name):
         try:
-            MCatalyst(formula)
+            Metal(name)
         except ValueError:
             return False
         else:
@@ -114,7 +86,7 @@ class MCatalyst(object):
 
 if __name__ == '__main__':
     chemicals = JsonIO.read(FChemical)
-    catalysts = {chemical: MCatalyst.is_metal_catalyst(chemical) for chemical in chemicals[2500:]}
+    catalysts = {chemical: Metal.is_metal(chemical) for chemical in chemicals[2500:]}
     # for chemical in chemicals:
     #     try:
     #         formula = ChemFormula(chemical)

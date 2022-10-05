@@ -1,3 +1,4 @@
+import random
 from collections import Counter, defaultdict, namedtuple
 from itertools import combinations
 from typing import Iterable
@@ -6,14 +7,10 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from common.constant import FOpsinRecord, FChemical, FReactions, FReaxysYield, DrawDir, FReaxys
-from common.draw import draw_svg
-from common.file import JsonIO, CatalystJsonIO, md5
-from common.species import MCatalyst
-
-# Variable constant
-ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
-            for item in JsonIO.read(FOpsinRecord)}
+from common.constant import FChemical, FReactions, FReaxysYield, ChemInfo
+from common.file import JsonIO, CatalystJsonIO
+from common.species import Metal
+from common.utils import sort_defaultdict
 
 # close the rdkit warning
 RDLogger.DisableLog('rdApp.warning')
@@ -122,7 +119,7 @@ class ReaxysReaction(object):
             for value in values:
                 if key in ["reactant", "reagent", "solvent"]:
                     try:
-                        catalyst = MCatalyst(value)
+                        catalyst = Metal(value)
                     except ValueError:
                         self.reagent.append(value)
                     else:
@@ -137,6 +134,7 @@ class ReaxysReaction(object):
         self.product = list(set(self.product))
         self.reagent = list(set(self.reagent))
         self.productivity = list(set(self.productivity))
+
         # search reactant to product from fingerprint mapping
         for product in self.product:
             try:
@@ -176,8 +174,6 @@ class ReaxysReaction(object):
                     max_similarity = item['similarity']
                     max_reactant = item['reactant']
             self.reactant.append({"reactant": max_reactant, "similarity": max_similarity})
-        # self.reactant = [{key: value for key, value in item.items() if value == max(item.values())}
-        #                  for item in self.reactant]
 
         new_reactant = []
         for item in self.reactant:
@@ -225,6 +221,44 @@ class Reaxys(object):
                 var_records.append(record)
         self._records = var_records
 
+    def records(self, transform=True):
+        if self._records is None:
+            self.flatten()
+        seq = [ReaxysRecord(item, transform) for item in self._records]
+
+        return ReaxysRecords(seq)
+
+    def catalyst_records(self, transform=False):
+        """
+        Obtain records by `catalyst`
+
+        Returns:
+            catalyst_records (dict): {'catalyst': [records]}
+        """
+        catalyst_type = defaultdict(list)
+        for record in self.records(transform=transform):
+            for item in record.reagent:
+                if Metal.is_metal(item):
+                    catalyst_type[item].append(record)
+        return sort_defaultdict(catalyst_type)
+
+    @staticmethod
+    def load_records():
+        train_records = np.load("train_set_v1.npy", allow_pickle=True)
+        test_records = np.load("test_set_v1.npy", allow_pickle=True)
+        return train_records, test_records
+
+    def dump_records(self, transform):
+        irecords = self.records(transform=transform)
+        shuffle_index = list(range(len(irecords)))
+        random.shuffle(shuffle_index)
+        length = len(irecords)
+        train_size = int(length * 0.8)
+        train_records = [irecords[i].to_dict() for i in shuffle_index[:train_size]]
+        test_records = [irecords[i].to_dict() for i in shuffle_index[train_size:]]
+        np.save("train_set.npy", train_records, allow_pickle=True)
+        np.save("test_set.npy", test_records, allow_pickle=True)
+
     @property
     def reactions(self):
         if self._records is None:
@@ -233,12 +267,29 @@ class Reaxys(object):
 
         return ReaxysReactions(seq)
 
-    def records(self, transform=True):
-        if self._records is None:
-            self.flatten()
-        seq = [ReaxysRecord(item, transform) for item in self._records]
+    def classify_reactions(self, field):
+        """
+        Obtain reactions by field
 
-        return ReaxysRecords(seq)
+        Args:
+            field (str): field for classifying the reactions, should be ["product", "catalyst"]
+
+        Returns:
+            defaultdict(list)
+
+        """
+        if field not in ["product", "catalyst"]:
+            raise ValueError(f"{field} is not valid value")
+
+        reactions_type = defaultdict(list)
+        for reaction in self.reactions:
+            reaction_component = getattr(reaction, field)
+            for item in reaction_component:
+                if field == "product":
+                    reactions_type[item['product']].append(reaction)
+                elif field == "catalyst":
+                    reactions_type[item.name].append(reaction)
+        return sort_defaultdict(reactions_type)
 
     @staticmethod
     def get_reaction_mapping():
@@ -267,22 +318,11 @@ class Reaxys(object):
 
 
 if __name__ == '__main__':
-    # get records
     reaxys = Reaxys(FReaxysYield)
     records = reaxys.records(transform=False)
-
-    # get reactions
-    reactions = reaxys.reactions
-
-    # reaxys.reactions.to_json()
-    product_type = defaultdict(list)
-    for reaction in reactions:
-        for p in reaction.product:
-            product_type[p['product']].append(reaction)
-    product_type_sorted = {key: value
-                           for key, value in sorted(product_type.items(), key=lambda x: len(x[1]), reverse=True)}
-
-    new_product_type = {key: value for key, value in product_type_sorted.items() if len(value) > 3}
+    # reactions = reaxys.reactions
+    # reaction_mapping = Reaxys.get_reaction_mapping()
+    catalyst_records = reaxys.catalyst_records(transform=False)
 
     # name = 'toluene'
     # special_catalyst = [reaction.catalyst for reaction in new_product_type[name]]
@@ -292,27 +332,10 @@ if __name__ == '__main__':
     #     mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
     #     draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
 
-    reaction_mapping = Reaxys.get_reaction_mapping()
     # for key, value in reaction_mapping[1].items():
     #     if len(value):
     #         for item in value.most_common(1):
     #             if item[1] >= 10:
     #                 print(key, value.most_common(1))
 
-    # for reaction in reactions:
-    #     if 'palladium diacetate' in [item.name for item in reaction.catalyst]:
-    #         test.append(reaction.product)
-    # print(reactions)
-    # shuffle_index = list(range(len(records)))
-    # random.shuffle(shuffle_index)
-    # length = len(records)
-    # train_size = int(length * 0.8)
-    # train_records = [records[i].to_dict() for i in shuffle_index[:train_size]]
-    # test_records = [records[i].to_dict() for i in shuffle_index[train_size:]]
-    # np.save("train_set.npy", train_records, allow_pickle=True)
-    # np.save("test_set.npy", test_records, allow_pickle=True)
-    # train_records = np.load("train_set_v1.npy", allow_pickle=True)
-    # test_records = np.load("test_set_v1.npy", allow_pickle=True)
-
-    print()
     print()

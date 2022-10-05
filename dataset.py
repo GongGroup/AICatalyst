@@ -1,13 +1,5 @@
-from pathlib import Path
-
 import numpy as np
 from torch.utils.data import Dataset
-
-# Directory constant
-ChemDir = Path("./chemical")
-
-# file constant
-FReaxys = ChemDir / "opsin_reaxys.json"
 
 
 class ModelDataset(Dataset):

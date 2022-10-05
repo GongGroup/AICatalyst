@@ -7,8 +7,10 @@ import numpy as np
 from calculator.matrix import r_matrix
 from calculator.rbase import RMolecule
 from common.constant import QM1, QM2
+from common.error import StructureError
 from common.file import JsonIO
 from common.logger import logger
+from common.species import Metal
 
 
 class Ligand(RMolecule):
@@ -98,7 +100,7 @@ class Molecule(object):
             Returns:
                 ligand_positions (list[np.array]): positions after translate
             """
-            
+
             for single_uatoms, single_positions in zip(ligand_uatoms, ligand_positions):
                 anchor_atom_type = f"{single_uatoms.symbol}_{single_uatoms.hybridization}"
                 translate_vector = np.array(QM1[anchor_atom_type]) - np.array(single_uatoms.position)
@@ -202,6 +204,15 @@ class Molecule(object):
             raise NotImplementedError(f"{format} file is not supported now")
 
         rmol, _ = RMolecule._from_mol_file(file)
+        rmol = RMolecule(rmol)
+        atoms = rmol.atoms
+        metals = [atom for atom in atoms if Metal.is_metal(atom.symbol)]
+        if len(metals) > 1:
+            raise StructureError(f"The num of metal elements is `{len(metals)}`, should be `1`")
+        center = MCenter.from_strings(metals[0].symbol)
+
+        uatoms = [atom for atom in atoms if atom.is_unsaturated]
+        fragments = [RMolecule(item) for item in rmol.mol_frags]
         return RMolecule(rmol)
 
 
@@ -210,9 +221,9 @@ if __name__ == '__main__':
     Cl = Ligand.from_strings("OAc")
     # CH2Cl = Ligand.from_file("CH2Cl.mol")
     center = MCenter.from_strings("Pd")
-    mol = Molecule(center, [Cl, Cl], gfnff=False)
+    mol = Molecule(center, [Cl, Cl], gfnff=True)
     mol.write_to_xyz()
 
-    # mol = Molecule.from_file("OAc.mol")
+    # mol = Molecule.from_file("PdOAc.mol")
 
     print()

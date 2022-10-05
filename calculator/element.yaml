@@ -266,6 +266,7 @@ Element Zr:
 
 Element Pd:
     formula: Pd
+    valence: 0
     default_bonds:
         Element C: 2.33649
         Element O: 2.39849

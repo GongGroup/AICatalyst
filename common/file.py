@@ -77,9 +77,9 @@ class CatalystJSONEncoder(JSONEncoder):
     """
 
     def default(self, o):
-        from species import MCatalyst
+        from species import Metal
 
-        if isinstance(o, MCatalyst):
+        if isinstance(o, Metal):
             return o.name
         else:
             return super(CatalystJSONEncoder, self).default(o)
