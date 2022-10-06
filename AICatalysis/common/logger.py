@@ -1,21 +1,7 @@
-import os
-import time
-import inspect
 import logging
+from pathlib import Path
 
-CurrentDir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
-RootDir = os.path.dirname(CurrentDir)
-LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
-
-if not os.path.exists(LogDir):
-    os.mkdir(LogDir)
-
-Date = time.strftime("%Y-%m-%d", time.localtime())
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-
-RESET_SEQ = "\033[0m"
-COLOR_SEQ = "\033[1;%dm"
-BOLD_SEQ = "\033[1m"
+from AICatalysis.common.constant import DATE, RESET, BOLD, YELLOW, WHITE, BLUE, RED, LogDir
 
 COLORS = {
     'WARNING': YELLOW,
@@ -28,7 +14,7 @@ COLORS = {
 
 def formatter_message(message, use_color=True):
     if use_color:
-        message = message.replace("$RESET", RESET_SEQ).replace("$BOLD", BOLD_SEQ)
+        message = message.replace("$RESET", RESET).replace("$BOLD", BOLD)
     else:
         message = message.replace("$RESET", "").replace("$BOLD", "")
 
@@ -45,7 +31,7 @@ class ColoredFormatter(logging.Formatter):
         levelname = record.levelname
 
         if self.use_color and levelname in COLORS:
-            levelname_color = COLOR_SEQ % (30 + COLORS[levelname]) + levelname + RESET_SEQ
+            levelname_color = COLORS[levelname] + levelname + RESET
             record.levelname = levelname_color
 
         return logging.Formatter.format(self, record)
@@ -61,7 +47,8 @@ class ColoredLogger(logging.Logger):
         file_formatter = ColoredFormatter(self.FILE_FORMAT, False)
         color_formatter = ColoredFormatter(self.COLOR_FORMAT, True)
 
-        fh = logging.FileHandler(f"{LogDir}/{Date}.txt", encoding='utf-8')
+        Path(LogDir).mkdir(exist_ok=True)
+        fh = logging.FileHandler(f"{LogDir}/{DATE}.txt", encoding='utf-8')
         fh.setFormatter(file_formatter)
 
         ch = logging.StreamHandler()
@@ -71,6 +58,7 @@ class ColoredLogger(logging.Logger):
         self.addHandler(ch)
 
 
-logging.setLoggerClass(ColoredLogger)
-logger = logging.getLogger("__main__")
-logger.setLevel(logging.INFO)
+def init_root_logger(name=None, level=logging.INFO):
+    logging.setLoggerClass(ColoredLogger)
+    root_logger = logging.getLogger(name)
+    root_logger.setLevel(level=level)

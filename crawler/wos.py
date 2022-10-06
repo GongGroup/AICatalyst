@@ -12,8 +12,8 @@ from pyquery import PyQuery
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 
-from common.driver import ChromeDriver
-from common.logger import logger
+from AICatalysis.common import ChromeDriver
+from AICatalysis.common import logger
 
 WOSRoot = "https://www.webofscience.com/wos/alldb/basic-search"
 DataDir = Path("../data")

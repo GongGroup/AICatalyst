@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import json
-from common.constant import FReaxysXML, FReaxys, FRXconfig, FRXDconfig
+from AICatalysis.common import FReaxysXML, FReaxys, FRXconfig, FRXDconfig
 
 data_type = []
 data_react = []

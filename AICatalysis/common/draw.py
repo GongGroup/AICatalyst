@@ -1,7 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import Draw, AllChem
 
-from common.constant import ChemInfo
+from AICatalysis.common.constant import ChemInfo
 
 
 def draw_png(mol, width=800, height=400, file="figure.png"):

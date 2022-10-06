@@ -13,7 +13,7 @@ construct the database, as well as use the machine learning to design the cataly
 
 ## Code Structure
 
-- [common](common): common API
+- [common](AICatalysis/common): common API
 
 - [crawler](crawler): carry the crawler task from WOS or publisher
 

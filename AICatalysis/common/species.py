@@ -1,10 +1,12 @@
+import logging
 import shutil
 
-from common.constant import FFormula, FChemical
-from common.descriptor import CatalystDescriptor, FormulaDescriptor
-from common.file import JsonIO, ftemp
-from common.logger import logger
+from AICatalysis.common.constant import FFormula, FChemical
+from AICatalysis.common.descriptor import CatalystDescriptor, FormulaDescriptor
+from AICatalysis.common.file import JsonIO, ftemp
 from database.ichem import IChemCrawler
+
+logger = logging.getLogger(__name__)
 
 MetalElement = [
     'Li', 'Be',

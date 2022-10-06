@@ -1,3 +1,4 @@
+import logging
 import random
 import shutil
 import time
@@ -6,9 +7,10 @@ from pathlib import Path
 import requests
 from pyquery import PyQuery
 
-from common.constant import ChemDir, FChemical, FFormula
-from common.file import JsonIO, ftemp
-from common.logger import logger
+from AICatalysis.common.constant import ChemDir, FChemical, FFormula
+from AICatalysis.common.file import JsonIO, ftemp
+
+logger = logging.getLogger(__name__)
 
 # Net const
 IChemRoot = "http://www.ichemistry.cn/structure.asp"

@@ -1,12 +1,10 @@
-import copy
-
 import numpy as np
 from rdkit import Chem
 from rdkit import RDLogger
 from rdkit.Chem import AllChem
 
-from common.constant import ElementInfo
-from common.error import FileFormatError
+from AICatalysis.common.constant import ElementInfo
+from AICatalysis.common.error import FileFormatError
 
 # close the rdkit warning
 RDLogger.DisableLog('rdApp.warning')

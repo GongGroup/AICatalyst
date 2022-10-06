@@ -9,9 +9,9 @@ import requests
 from rdkit import Chem, RDConfig
 from rdkit.Chem import FragmentCatalog
 
-from common.constant import ChemDir, FFormula
-from common.file import JsonIO, ftemp, fcopy
-from common.logger import logger
+from AICatalysis.common import ChemDir, FFormula
+from AICatalysis.common import JsonIO, ftemp, fcopy
+from AICatalysis.common import logger
 
 # Net const
 OPSINRoot = 'https://opsin.ch.cam.ac.uk/'

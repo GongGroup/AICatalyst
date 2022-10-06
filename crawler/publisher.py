@@ -15,8 +15,8 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 
-from common.driver import ChromeDriver
-from common.logger import logger
+from AICatalysis.common import ChromeDriver
+from AICatalysis.common import logger
 
 DataDir = Path("../data")
 logger.setLevel(logging.INFO)

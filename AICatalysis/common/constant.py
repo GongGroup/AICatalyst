@@ -1,6 +1,9 @@
+import inspect
+import os
+import time
 from pathlib import Path
 
-from common.file import JsonIO, YamlIO, QMIO
+from AICatalysis.common.file import JsonIO, YamlIO, QMIO
 
 PeriodicTable = [
     'H', 'D', 'He',
@@ -14,9 +17,27 @@ PeriodicTable = [
     'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
 ]
 
+DATE = time.strftime("%Y-%m-%d", time.localtime())
+
+BLACK = "\033[1;30m"
+RED = "\033[1;31m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+BLUE = "\033[1;34m"
+MAGENTA = "\033[1;35m"
+CYAN = "\033[1;36m"
+WHITE = "\033[1;37m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+CurrentDir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
+SourceDir = os.path.dirname(CurrentDir)
+RootDir = os.path.dirname(SourceDir)
+LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
+
 # Directory constant here
-ChemDir = Path("../chemical")
-DrawDir = Path("../draw")
+ChemDir = Path("../../chemical")
+DrawDir = Path("../../draw")
 Calculator = Path("../calculator")
 
 # file constant

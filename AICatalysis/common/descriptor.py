@@ -1,6 +1,6 @@
 import re
 
-from common.constant import PeriodicTable
+from AICatalysis.common.constant import PeriodicTable
 
 
 class Descriptor(object):

@@ -7,9 +7,9 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Draw, AllChem
 
-from common.constant import FOpsinRecord
-from common.constant import FSucReaxys
-from common.file import JsonIO
+from AICatalysis.common import FOpsinRecord
+from AICatalysis.common import FSucReaxys
+from AICatalysis.common import JsonIO
 
 
 ChemInfo = {item['name'] : {key: value for key, value in item.items() if key != 'name'}

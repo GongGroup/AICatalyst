@@ -2,9 +2,9 @@ import shutil
 
 from requests_html import HTMLSession
 
-from common.constant import ChemDir
-from common.file import JsonIO, ftemp
-from common.logger import logger
+from AICatalysis.common import ChemDir
+from AICatalysis.common import JsonIO, ftemp
+from AICatalysis.common import logger
 from database.opsin import OPSINCrawler
 
 # Net constant

@@ -1,16 +1,18 @@
+import logging
 import os
 import shutil
 from pathlib import Path
 
 import numpy as np
 
-from calculator.matrix import r_matrix
-from calculator.rbase import RMolecule
-from common.constant import QM1, QM2
-from common.error import StructureError
-from common.file import JsonIO
-from common.logger import logger
-from common.species import Metal
+from AICatalysis.calculator.matrix import r_matrix
+from AICatalysis.calculator.rbase import RMolecule
+from AICatalysis.common.constant import QM1, QM2
+from AICatalysis.common.error import StructureError
+from AICatalysis.common.file import JsonIO
+from AICatalysis.common.species import Metal
+
+logger = logging.getLogger(__name__)
 
 
 class Ligand(RMolecule):
