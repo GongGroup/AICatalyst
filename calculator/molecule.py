@@ -103,8 +103,13 @@ class Molecule(object):
 
             for single_uatoms, single_positions in zip(ligand_uatoms, ligand_positions):
                 anchor_atom_type = f"{single_uatoms.symbol}_{single_uatoms.hybridization}"
-                translate_vector = np.array(QM1[anchor_atom_type]) - np.array(single_uatoms.position)
-                single_positions += translate_vector
+                try:
+                    translate_vector = np.array(QM1[anchor_atom_type]) - np.array(single_uatoms.position)
+                except KeyError:
+                    logger.error(f"atom_type: `{anchor_atom_type}` is not exist for translate")
+                    exit(1)
+                else:
+                    single_positions += translate_vector
             return ligand_positions
 
         def rotate(ligand_uatoms, ligand_positions):
@@ -123,6 +128,11 @@ class Molecule(object):
             for single_uatoms, single_positions in zip(ligand_uatoms, ligand_positions):
                 anchor_atom_type = f"{single_uatoms.symbol}_{single_uatoms.hybridization}"
                 neighbors = single_uatoms.neighbors  # get neighbors
+                if len(neighbors) == 0:
+                    unit_matrix = np.eye(3)
+                    single_positions = np.dot(single_positions, unit_matrix)
+                    ligand_rotation_positions.append(single_positions)
+                    continue
                 for neighbor in neighbors:
                     neighbor_atom_type = f"{neighbor.symbol}_{neighbor.hybridization}"
                     if QM2.get(anchor_atom_type, None) is not None and \
@@ -197,6 +207,7 @@ class Molecule(object):
             shutil.move("xtbopt.xyz", name)
         else:
             shutil.move("temp.xyz", name)
+        logger.info(f"molecule has been writen to `{name}`")
 
     @staticmethod
     def from_file(file, format="mol"):
@@ -217,13 +228,9 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    # I = Ligand.from_strings("I")
-    Cl = Ligand.from_strings("OAc")
-    # CH2Cl = Ligand.from_file("CH2Cl.mol")
+    ligand = Ligand.from_strings("Cl")
     center = MCenter.from_strings("Pd")
-    mol = Molecule(center, [Cl, Cl], gfnff=True)
+    mol = Molecule(center, [ligand, ligand], gfnff=True)
     mol.write_to_xyz()
-
-    # mol = Molecule.from_file("PdOAc.mol")
 
     print()
