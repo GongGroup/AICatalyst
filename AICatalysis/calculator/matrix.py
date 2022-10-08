@@ -15,11 +15,11 @@ def r_axis(va: np.array, vb: np.array):
 
 
 @singledispatch
-def r_matrix(arg1, arg2):
-    print(f"arg1 = {arg1}, arg2= {arg2}")
+def r_matrix(*args):
+    pass
 
 
-@r_matrix.register
+@r_matrix.register(np.ndarray)
 def _(va: np.ndarray, vb: np.ndarray):
     """
 
@@ -42,8 +42,8 @@ def _(va: np.ndarray, vb: np.ndarray):
     return np.eye(3) + w * np.sin(angle) + np.dot(w, w) * (1 - np.cos(angle))
 
 
-@r_matrix.register
-def _(v_axis: np.ndarray, angle: float):
+@r_matrix.register(float)
+def _(angle: float, v_axis: np.ndarray):
     l_axis = np.sum(v_axis ** 2) ** 0.5
     v_axis = v_axis / l_axis
     w = np.array([

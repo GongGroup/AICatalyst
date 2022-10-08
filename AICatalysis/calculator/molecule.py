@@ -1,5 +1,5 @@
-import itertools
 import logging
+import math
 import os
 import shutil
 from pathlib import Path
@@ -157,50 +157,94 @@ class Molecule(object):
             ligand_positions = ligand_rotation_positions
             return ligand_positions
 
-        def symmetry(ligand_positions, directions, transposes):
+        def symmetry(ligand_uatoms_order, ligand_positions, unit_directions):
             """
             Symmetry Operation
 
             Args:
-                ligand_positions: (list[np.array]): positions before symmetry
-                directions (np.array): symmetry directions depends on CN
+                ligand_positions (list[np.array]): positions before symmetry
+                unit_directions (np.array): symmetry directions depends on CN (unit vector)
 
             Returns:
-                ligand_positions: (list[np.array]): positions after symmetry
+                ligand_positions (list[np.array]): positions after symmetry
             """
             final_positions = []
-            for single_position, single_direction, single_transpose in zip(ligand_positions, directions, transposes):
-                single_position *= single_direction
-                single_position = single_position @ single_transpose
+            distances = [np.sum(ligand[order] ** 2) ** 0.5
+                         for ligand, order in zip(ligand_positions, ligand_uatoms_order)]
+            directions = [distances[i] * unit_directions[i] for i in range(len(distances))]
+            for single_position, vector_after, order in zip(ligand_positions, directions, ligand_uatoms_order):
+                vector_before = single_position[order]
+                rotation_matrix = r_matrix(vector_before, vector_after)
+                single_position = np.dot(single_position, rotation_matrix)
                 final_positions.append(single_position)
             return np.array(final_positions, dtype=object)
 
         if len(self.ligands) == 2:
-            directions = np.array([(1, 1, 1), (-1, -1, -1)])
-            transposes = np.array([np.eye(3), np.eye(3)])
+            unit_directions = np.array([(0, 1, 0), (0, -1, 0)])
         elif len(self.ligands) == 4:
-            directions = np.array([(1, 1, 1), (1, 1, 1), (-1, 1, -1), (1, 1, 1)])
-            transposes = np.array(
-                [np.eye(3), ((0, 0, -1), (0, -1, 0), (1, 0, 0)), np.eye(3), ((0, 0, 1), (0, -1, 0), (-1, 0, 0))])
+            unit_directions = np.array(
+                [(0.26629634, 0.59716506, 0.75662418), (-0.78360941, -0.56477488, 0.2588158),
+                 (-0.26830478, 0.58738621, -0.7635378), (0.77721406, -0.57470191, -0.25623428)])
         else:
             raise NotImplementedError(f"Number of ligands equal to {len(self.ligands)} is not supported now")
 
-        def check_overlap(ligand_positions):
+        def rotate_again(ligand_uatoms_order, ligand_positions, max_count=500, min_dist=1.5):
+            """
+            Rotate Operation around axis
+
+            Args:
+                ligand_uatoms_order (list): record the order of anchor atoms for each ligand
+                ligand_positions (list[np.array]): positions before rotate
+
+            Returns:
+                ligand_positions (list[np.array]): positions after rotate_again
+            """
+            vector_axis = [ligand[order] for ligand, order in zip(ligand_positions, ligand_uatoms_order)]
+            overlap = check_overlap(ligand_positions, min_dist=min_dist)
+            count = 0
+            while len(overlap):
+                for pair in overlap:
+                    angle = 0.
+                    while angle <= 2 * math.pi:
+                        logger.debug(f"angle = {angle}")
+                        rotation_matrix = r_matrix(angle, vector_axis[pair[1]])
+                        ligand_positions[pair[1]] = np.dot(ligand_positions[pair[1]], rotation_matrix)
+                        if len(check_overlap(ligand_positions, min_dist=min_dist)):
+                            angle += 0.03
+                        else:
+                            break
+                    if angle > 2 * math.pi:
+                        logger.warning(f"Step {count}: Rotation have performed one cycle, still overlap")
+                        count += 1
+                if count >= 10:
+                    min_dist -= 0.01
+                    logger.warning(f"Step {count}: --> Failed exceed 10 times, decrease min_dist to {min_dist}")
+                if count >= max_count:
+                    logger.error(f"Step {count}: --> Exceed max iteration ({max_count}), please check!")
+                    exit(1)
+                overlap = check_overlap(ligand_positions, min_dist=min_dist)
+            return ligand_positions
+
+        def check_overlap(ligand_positions, min_dist=1.5):
             length = len(ligand_positions)
             combinations = get_combinations(range(length), range(length))
+            overlap = []
             for item in combinations:
                 position_1 = ligand_positions[item[0]]
                 position_2 = ligand_positions[item[1]]
                 for index, atom_position in enumerate(position_2):
                     distance = np.sum((position_1 - atom_position) ** 2, axis=1) ** 0.5
                     min_distance = np.min(distance)
-                    if min_distance <= 1.:
-                        logger.warning(
+                    if min_distance <= min_dist:
+                        overlap.append(item)
+                        logger.debug(
                             f"The minium distance of ligand_{item[0]} and ligand_{item[1]} is {min_distance} (Atom {index})")
+            return set(overlap)
 
         # ligand Atom list
         ligand_atoms = [ligand.atoms for ligand in self.ligands]  # atoms in each ligand
         ligand_uatoms = sum([ligand.get_unsaturated_atoms() for ligand in self.ligands], [])  # unsaturated_atoms
+        ligand_uatoms_order = [uatom.order for uatom in ligand_uatoms]
 
         # ligand atom position && symbol array
         ligand_positions = [np.array([atom.position for atom in ligand]) for ligand in ligand_atoms]
@@ -212,8 +256,8 @@ class Molecule(object):
 
         ligand_positions = translate(ligand_uatoms, ligand_positions)  # translate operation
         ligand_positions = rotate(ligand_uatoms, ligand_positions)  # rotation operation
-        ligand_positions = symmetry(ligand_positions, directions, transposes)  # symmetry operation
-        check_overlap(ligand_positions)
+        ligand_positions = symmetry(ligand_uatoms_order, ligand_positions, unit_directions)  # symmetry operation
+        ligand_positions = rotate_again(ligand_uatoms_order, ligand_positions)
 
         # add symbols
         self.optimized_position = []
@@ -261,7 +305,7 @@ if __name__ == '__main__':
     ligand = Ligand.from_strings("PPh3")
     ligand2 = Ligand.from_strings("Cl")
     center = MCenter.from_strings("Pd")
-    mol = Molecule(center, [ligand, ligand, ligand2, ligand2], gfnff=False)
+    mol = Molecule(center, [ligand, ligand, ligand, ligand], gfnff=False)
     mol.write_to_xyz()
 
     print()
