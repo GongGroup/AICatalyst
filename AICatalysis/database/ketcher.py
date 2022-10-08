@@ -5,7 +5,7 @@ from requests_html import HTMLSession
 from AICatalysis.common import ChemDir
 from AICatalysis.common import JsonIO, ftemp
 from AICatalysis.common import logger
-from database.opsin import OPSINCrawler
+from AICatalysis.database.opsin import OPSINCrawler
 
 # Net constant
 URL = 'http://127.0.0.1:5500/structure.html?input='

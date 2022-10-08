@@ -5,7 +5,7 @@ __pycache__
 *.csv
 literature
 data/md5_name.json
-crawler/config.json
+AICatalysis/crawler/config.json
 data/exclude
 data/checked
 *.json

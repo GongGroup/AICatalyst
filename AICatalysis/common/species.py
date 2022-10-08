@@ -4,7 +4,7 @@ import shutil
 from AICatalysis.common.constant import FFormula, FChemical
 from AICatalysis.common.descriptor import CatalystDescriptor, FormulaDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
-from database.ichem import IChemCrawler
+from AICatalysis.database.ichem import IChemCrawler
 
 logger = logging.getLogger(__name__)
 

@@ -18,7 +18,7 @@ from selenium.webdriver.support import expected_conditions as ec
 from AICatalysis.common import ChromeDriver
 from AICatalysis.common import logger
 
-DataDir = Path("../data")
+DataDir = Path("../../data")
 logger.setLevel(logging.INFO)
 
 

@@ -7,10 +7,10 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from AICatalysis.common import FChemical, FReactions, FReaxysYield, ChemInfo
-from AICatalysis.common import JsonIO, CatalystJsonIO
-from AICatalysis.common import Metal
-from AICatalysis.common import sort_defaultdict
+from AICatalysis.common.constant import FChemical, FReactions, FReaxysYield, ChemInfo
+from AICatalysis.common.file import JsonIO, CatalystJsonIO
+from AICatalysis.common.species import Metal
+from AICatalysis.common.utils import sort_defaultdict
 
 # close the rdkit warning
 RDLogger.DisableLog('rdApp.warning')

@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 
 from AICatalysis.common.constant import ChemInfo
-from database.reaxys import Reaxys
+from AICatalysis.database.reaxys import Reaxys
 
 
 class Gaussian(object):

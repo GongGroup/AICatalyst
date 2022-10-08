@@ -15,9 +15,9 @@ construct the database, as well as use the machine learning to design the cataly
 
 - [common](AICatalysis/common): common API
 
-- [crawler](crawler): carry the crawler task from WOS or publisher
+- [crawler](AICatalysis/crawler): carry the crawler task from WOS or publisher
 
-- [database](database): related code about database construction
+- [database](AICatalysis/database): related code about database construction
 
 - [tutorial](tutorial): a brief tutorial about the software and knowledge prepare to quickly start this project
 

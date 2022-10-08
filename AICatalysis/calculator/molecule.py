@@ -1,3 +1,4 @@
+import itertools
 import logging
 import os
 import shutil
@@ -11,6 +12,7 @@ from AICatalysis.common.constant import QM1, QM2
 from AICatalysis.common.error import StructureError
 from AICatalysis.common.file import JsonIO
 from AICatalysis.common.species import Metal
+from AICatalysis.common.utils import get_combinations
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,12 @@ class Ligand(RMolecule):
         if name is None:
             name = symbol
 
-        smiles = Ligand._LigandInfo[symbol]
+        try:
+            smiles = Ligand._LigandInfo[symbol]
+        except KeyError:
+            logger.error(f"`{symbol}` can not recognized as a valid ligand")
+            exit(1)
+
         rmol = RMolecule._from_smiles(smiles, addHs)
 
         return Ligand(name, smiles, rmol)
@@ -146,11 +153,11 @@ class Molecule(object):
                         ligand_rotation_positions.append(single_positions)
                         break
                 else:
-                    raise TypeError("The atom pairs is not exist in QM2 file")
+                    raise TypeError("No atom pairs exist for rotate operation")
             ligand_positions = ligand_rotation_positions
             return ligand_positions
 
-        def symmetry(ligand_positions, directions):
+        def symmetry(ligand_positions, directions, transposes):
             """
             Symmetry Operation
 
@@ -161,15 +168,35 @@ class Molecule(object):
             Returns:
                 ligand_positions: (list[np.array]): positions after symmetry
             """
-
-            for single_position, single_direction in zip(ligand_positions, directions):
+            final_positions = []
+            for single_position, single_direction, single_transpose in zip(ligand_positions, directions, transposes):
                 single_position *= single_direction
-            return ligand_positions
+                single_position = single_position @ single_transpose
+                final_positions.append(single_position)
+            return np.array(final_positions, dtype=object)
 
         if len(self.ligands) == 2:
             directions = np.array([(1, 1, 1), (-1, -1, -1)])
+            transposes = np.array([np.eye(3), np.eye(3)])
+        elif len(self.ligands) == 4:
+            directions = np.array([(1, 1, 1), (1, 1, 1), (-1, 1, -1), (1, 1, 1)])
+            transposes = np.array(
+                [np.eye(3), ((0, 0, -1), (0, -1, 0), (1, 0, 0)), np.eye(3), ((0, 0, 1), (0, -1, 0), (-1, 0, 0))])
         else:
             raise NotImplementedError(f"Number of ligands equal to {len(self.ligands)} is not supported now")
+
+        def check_overlap(ligand_positions):
+            length = len(ligand_positions)
+            combinations = get_combinations(range(length), range(length))
+            for item in combinations:
+                position_1 = ligand_positions[item[0]]
+                position_2 = ligand_positions[item[1]]
+                for index, atom_position in enumerate(position_2):
+                    distance = np.sum((position_1 - atom_position) ** 2, axis=1) ** 0.5
+                    min_distance = np.min(distance)
+                    if min_distance <= 1.:
+                        logger.warning(
+                            f"The minium distance of ligand_{item[0]} and ligand_{item[1]} is {min_distance} (Atom {index})")
 
         # ligand Atom list
         ligand_atoms = [ligand.atoms for ligand in self.ligands]  # atoms in each ligand
@@ -185,7 +212,8 @@ class Molecule(object):
 
         ligand_positions = translate(ligand_uatoms, ligand_positions)  # translate operation
         ligand_positions = rotate(ligand_uatoms, ligand_positions)  # rotation operation
-        ligand_positions = symmetry(ligand_positions, directions)  # symmetry operation
+        ligand_positions = symmetry(ligand_positions, directions, transposes)  # symmetry operation
+        check_overlap(ligand_positions)
 
         # add symbols
         self.optimized_position = []
@@ -230,9 +258,10 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    ligand = Ligand.from_strings("Cl")
+    ligand = Ligand.from_strings("PPh3")
+    ligand2 = Ligand.from_strings("Cl")
     center = MCenter.from_strings("Pd")
-    mol = Molecule(center, [ligand, ligand], gfnff=True)
+    mol = Molecule(center, [ligand, ligand, ligand2, ligand2], gfnff=False)
     mol.write_to_xyz()
 
     print()
