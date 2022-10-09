@@ -7,7 +7,7 @@ import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit import RDLogger
 
-from AICatalysis.common.constant import FChemical, FReactions, FReaxysYield, ChemInfo
+from AICatalysis.common.constant import FChemical, FReactions, FReaxysYield, ChemInfo, FReaxys
 from AICatalysis.common.file import JsonIO, CatalystJsonIO
 from AICatalysis.common.species import Metal
 from AICatalysis.common.utils import sort_defaultdict

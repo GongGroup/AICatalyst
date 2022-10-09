@@ -129,6 +129,29 @@ class RMolecule(object):
                 enumerate(self._rmol.GetAtoms())]
 
     @property
+    def bonds(self):
+        return [{"idx": bond.GetIdx(),
+                 "bond_type": bond.GetBondType(),
+                 "bond_type_as_double": bond.GetBondTypeAsDouble(),
+                 "aromatic": bond.GetIsAromatic(),
+                 "conjugated": bond.GetIsConjugated(),
+                 "in_ring": bond.IsInRing(),
+                 "begin": bond.GetBeginAtomIdx(),
+                 "end": bond.GetEndAtomIdx()} for bond in rmol._rmol.GetBonds()]
+
+    @property
+    def rotate_bonds(self):
+        _rotate_bonds = []
+        for bond in self.bonds:
+            bond_type = bond['bond_type']
+            conjugated = bond['conjugated']
+            begin_atom = self.atoms[bond['begin']]
+            end_atom = self.atoms[bond['end']]
+            if bond_type == Chem.rdchem.BondType.SINGLE and not conjugated and begin_atom.symbol != "H" and end_atom.symbol != "H":
+                _rotate_bonds.append(bond)
+        return _rotate_bonds
+
+    @property
     def positions(self):
         return np.array([atom.position for atom in self.atoms])
 
