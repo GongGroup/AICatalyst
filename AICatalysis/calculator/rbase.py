@@ -94,6 +94,25 @@ class RAtom(object):
                 connection.append(neighbor.order)
                 neighbor._connected(connection)
 
+    def get_connected_without_idx(self, idx):
+        """
+        Obtain the connected atoms without one index
+
+        Returns:
+            connection (list): store the atoms' orders with the connection (include self)
+
+        """
+        connection = []
+        self._get_connected_without_idx(connection, idx)
+
+        return connection
+
+    def _get_connected_without_idx(self, connection, idx):
+        for neighbor in self.neighbors:
+            if neighbor.order not in connection and neighbor.order != idx:
+                connection.append(neighbor.order)
+                neighbor._get_connected_without_idx(connection, idx)
+
     @property
     def explicit_valence(self):
         return self._ratom.GetExplicitValence()
