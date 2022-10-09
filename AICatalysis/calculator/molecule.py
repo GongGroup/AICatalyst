@@ -297,7 +297,7 @@ class Molecule(object):
         center = MCenter.from_strings(metals[0].symbol)
 
         uatoms = [atom for atom in atoms if atom.is_unsaturated]
-        fragments = [RMolecule(item) for item in rmol.mol_frags]
+        fragments = [RMolecule(item) for item in rmol.rfrags]
         return RMolecule(rmol)
 
 

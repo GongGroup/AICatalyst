@@ -109,7 +109,7 @@ class RAtom(object):
 
     def _get_connected_without_idx(self, connection, idx):
         for neighbor in self.neighbors:
-            if neighbor.order not in connection and neighbor.order != idx:
+            if neighbor.order not in connection and neighbor.order not in idx:
                 connection.append(neighbor.order)
                 neighbor._get_connected_without_idx(connection, idx)
 
@@ -199,12 +199,30 @@ class RMolecule(object):
         return rmol, Chem.MolToSmiles(rmol)
 
     @property
-    def mol_frags(self):
+    def rfrags(self):
         return [rmol for rmol in Chem.GetMolFrags(self._rmol, asMols=True)]
+
+    @property
+    def fragments(self):
+        """
+        Cut molecule based on rotate bonds
+
+        Returns:
+            frags (list[tuple, list]): tuple represent the cut-bonds, while the list represent the fragment
+        """
+        frags = []
+        for bond in self.rotate_bonds:
+            begin_idx = bond['begin']
+            end_idx = bond['end']
+            frags.append(((begin_idx, end_idx), sorted(self.atoms[begin_idx].get_connected_without_idx([end_idx])),))
+            frags.append(((begin_idx, end_idx), sorted(self.atoms[end_idx].get_connected_without_idx([begin_idx])),))
+        return frags
 
 
 if __name__ == '__main__':
-    smiles = "CC([O-])=O"
+    # smiles = "CC([O-])=O"
+    smiles = "C1(=CC=CC=C1)P(C1=CC=CC=C1)C1=CC=CC=C1"
     rmol = RMolecule._from_smiles(smiles)
     rmol = RMolecule(rmol)
+    rmol.fragments()
     print()
