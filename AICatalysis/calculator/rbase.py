@@ -156,7 +156,7 @@ class RMolecule(object):
                  "conjugated": bond.GetIsConjugated(),
                  "in_ring": bond.IsInRing(),
                  "begin": bond.GetBeginAtomIdx(),
-                 "end": bond.GetEndAtomIdx()} for bond in rmol._rmol.GetBonds()]
+                 "end": bond.GetEndAtomIdx()} for bond in self._rmol.GetBonds()]
 
     @property
     def rotate_bonds(self):
@@ -224,5 +224,5 @@ if __name__ == '__main__':
     smiles = "C1(=CC=CC=C1)P(C1=CC=CC=C1)C1=CC=CC=C1"
     rmol = RMolecule._from_smiles(smiles)
     rmol = RMolecule(rmol)
-    rmol.fragments()
+
     print()

@@ -1,6 +1,8 @@
+import copy
 import logging
 import math
 import os
+import random
 import shutil
 from pathlib import Path
 
@@ -121,7 +123,7 @@ class Molecule(object):
                     single_positions += translate_vector
             return ligand_positions
 
-        def rotate(ligand_uatoms, ligand_positions):
+        def rotate_global(ligand_uatoms, ligand_positions):
             """
             Rotate Operation
 
@@ -188,60 +190,102 @@ class Molecule(object):
         else:
             raise NotImplementedError(f"Number of ligands equal to {len(self.ligands)} is not supported now")
 
-        def rotate_again(ligand_uatoms_order, ligand_positions, max_count=500, min_dist=1.5):
+        def rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions, min_dist=1.5):
             """
-            Rotate Operation around axis
+            Rotate fragments
 
             Args:
+                fragments_info (list[list[tuple]]): record the fragments information, first item represent the bond
                 ligand_uatoms_order (list): record the order of anchor atoms for each ligand
                 ligand_positions (list[np.array]): positions before rotate
 
             Returns:
                 ligand_positions (list[np.array]): positions after rotate_again
             """
-            vector_axis = [ligand[order] for ligand, order in zip(ligand_positions, ligand_uatoms_order)]
-            overlap = check_overlap(ligand_positions, min_dist=min_dist)
-            count = 0
-            while len(overlap):
-                for pair in overlap:
+            crash_pair = check_overlap(ligand_positions, min_dist=min_dist)
+            min_num_crash = len(crash_pair)
+            invalid_count = 0
+            invalid_pair = None
+            while len(crash_pair):
+                random_index = random.randint(0, len(crash_pair) - 1)
+                crash_ligand_pair, crash_atom_pair = list(map(list, zip(*list(crash_pair[random_index].items()))))
+                crash_ligand_pair = list(map(int, crash_ligand_pair))
+                ligand_rindex = crash_ligand_pair[-1]  # the ligand to rotate
+                anchor_atom = ligand_uatoms_order[ligand_rindex]  # anchor atom in ligand
+                candidate_frags = [frag for frag in fragments_info[ligand_rindex] if
+                                   crash_atom_pair[-1] in frag[1]]
+
+                molecule_frag = [((anchor_atom, anchor_atom), list(range(len(ligand_positions[ligand_rindex]))))]
+                candidate_frags += molecule_frag  # plus the ligand
+                candidate_frags = sorted(candidate_frags, key=lambda x: len(x[1]))
+                for candidate in candidate_frags:
+                    bond_atom_1, bond_atom_2 = candidate[0]  # two atoms composite to the bond
+                    fragment = candidate[1]  # fragment generate by cut the bond
                     angle = 0.
                     while angle <= 2 * math.pi:
                         logger.debug(f"angle = {angle}")
-                        rotation_matrix = r_matrix(angle, vector_axis[pair[1]])
-                        ligand_positions[pair[1]] = np.dot(ligand_positions[pair[1]], rotation_matrix)
-                        if len(check_overlap(ligand_positions, min_dist=min_dist)):
+                        ligand_positions_backup = copy.deepcopy(ligand_positions)
+                        if bond_atom_1 != bond_atom_2:  # small fragment, (translate -> rotate -> translate back)
+                            vector_axis = ligand_positions[ligand_rindex][bond_atom_1] - \
+                                          ligand_positions[ligand_rindex][bond_atom_2]  # will set as (0,0,0)
+                            rotation_matrix = r_matrix(angle, vector_axis)
+                            trans_vector = ligand_positions[ligand_rindex][bond_atom_2]
+                            ligand_positions[ligand_rindex][fragment] -= trans_vector
+                            ligand_positions[ligand_rindex][fragment] = np.dot(
+                                ligand_positions[ligand_rindex][fragment], rotation_matrix)
+                            ligand_positions[ligand_rindex][fragment] += trans_vector
+                        else:  # entire ligand, (rotate only)
+                            vector_axis = ligand_positions[ligand_rindex][bond_atom_1]
+                            rotation_matrix = r_matrix(angle, vector_axis)
+                            ligand_positions[ligand_rindex][fragment] = np.dot(
+                                ligand_positions[ligand_rindex][fragment], rotation_matrix)
+                        min_distance_000 = np.min(np.sum(ligand_positions ** 2, axis=2))  # min distance to (0,0,0)
+                        if min_num_crash <= len(check_overlap(ligand_positions, min_dist=min_dist)) \
+                                or min_distance_000 <= min_dist:
+                            ligand_positions = ligand_positions_backup
                             angle += 0.03
                         else:
+                            min_num_crash = len(check_overlap(ligand_positions, min_dist=min_dist))
                             break
-                    if angle > 2 * math.pi:
-                        logger.warning(f"Step {count}: Rotation have performed one cycle, still overlap")
-                        count += 1
-                if count >= 10:
-                    min_dist -= 0.01
-                    logger.warning(f"Step {count}: --> Failed exceed 10 times, decrease min_dist to {min_dist}")
-                if count >= max_count:
-                    logger.error(f"Step {count}: --> Exceed max iteration ({max_count}), please check!")
-                    exit(1)
-                overlap = check_overlap(ligand_positions, min_dist=min_dist)
+                    if angle <= 2 * math.pi:  # rotation success, don't need to try longer fragment
+                        break
+                    else:
+                        logger.debug(f"Rotation have performed one cycle, still crash")
+                else:
+                    logger.debug(f"Rotation is not valid for this pair")
+                    if invalid_pair is None or invalid_pair != len(crash_pair):
+                        invalid_pair = len(crash_pair)
+                        invalid_count = 1
+                    else:
+                        invalid_count += 1
+                        if invalid_count >= 3:
+                            logger.info(f"Invalid exceed more than {invalid_count} times, translate the ligand now")
+                            for ligand, anchor_order in zip(ligand_positions, ligand_uatoms_order):
+                                ligand += 0.05 * ligand[anchor_order]
+
+                crash_pair = check_overlap(ligand_positions, min_dist=min_dist)
+                logger.info(f"{len(crash_pair)} pairs crashing left...")
             return ligand_positions
 
         def check_overlap(ligand_positions, min_dist=1.5):
             length = len(ligand_positions)
             combinations = get_combinations(range(length), range(length))
-            overlap = []
+            crash_pair = []
             for item in combinations:
                 position_1 = ligand_positions[item[0]]
                 position_2 = ligand_positions[item[1]]
                 for index, atom_position in enumerate(position_2):
                     distance = np.sum((position_1 - atom_position) ** 2, axis=1) ** 0.5
                     min_distance = np.min(distance)
+                    min_index = np.argmin(distance)
                     if min_distance <= min_dist:
-                        overlap.append(item)
+                        crash_pair.append({f"{item[0]}": min_index, f"{item[1]}": index})
                         logger.debug(
                             f"The minium distance of ligand_{item[0]} and ligand_{item[1]} is {min_distance} (Atom {index})")
-            return set(overlap)
+            return crash_pair
 
         # ligand Atom list
+        fragments_info = [ligand.fragments for ligand in self.ligands]
         ligand_atoms = [ligand.atoms for ligand in self.ligands]  # atoms in each ligand
         ligand_uatoms = sum([ligand.get_unsaturated_atoms() for ligand in self.ligands], [])  # unsaturated_atoms
         ligand_uatoms_order = [uatom.order for uatom in ligand_uatoms]
@@ -255,9 +299,9 @@ class Molecule(object):
                 f"Anchor atoms num({len(ligand_uatoms)}) is not equal ligands num({len(self.ligands)})")
 
         ligand_positions = translate(ligand_uatoms, ligand_positions)  # translate operation
-        ligand_positions = rotate(ligand_uatoms, ligand_positions)  # rotation operation
+        ligand_positions = rotate_global(ligand_uatoms, ligand_positions)  # rotation ligand
         ligand_positions = symmetry(ligand_uatoms_order, ligand_positions, unit_directions)  # symmetry operation
-        ligand_positions = rotate_again(ligand_uatoms_order, ligand_positions)
+        ligand_positions = rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions)  # rotation fragments
 
         # add symbols
         self.optimized_position = []
