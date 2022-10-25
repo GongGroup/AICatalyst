@@ -41,6 +41,7 @@ Element N:
     period: 2
     group: 15
     color: '#0000FF'
+    valence: 3
     default_bonds:
         Element N: 1.882
         Element O: 1.817

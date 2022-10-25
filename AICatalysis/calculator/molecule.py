@@ -346,10 +346,11 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    ligand = Ligand.from_strings("PPh3")
+    # ligand = Ligand.from_strings("1,3-dialkylimidazole", addHs=False)
+    ligand = Ligand.from_file("1,3-dialkylimidazole.mol")
     ligand2 = Ligand.from_strings("Cl")
-    center = MCenter.from_strings("Pd")
-    mol = Molecule(center, [ligand, ligand, ligand, ligand], gfnff=False)
+    center = MCenter.from_strings("Se")
+    mol = Molecule(center, [ligand, ligand], gfnff=False)
     mol.write_to_xyz()
 
     print()
