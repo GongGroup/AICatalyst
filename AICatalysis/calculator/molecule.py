@@ -239,7 +239,8 @@ class Molecule(object):
                             rotation_matrix = r_matrix(angle, vector_axis)
                             ligand_positions[ligand_rindex][fragment] = np.dot(
                                 ligand_positions[ligand_rindex][fragment], rotation_matrix)
-                        min_distance_000 = np.min(np.sum(ligand_positions ** 2, axis=2))  # min distance to (0,0,0)
+                        # calculate min distance to (0,0,0)
+                        min_distance_000 = min([np.min(np.sum(l, axis=1) ** 0.5) for l in ligand_positions ** 2])
                         if min_num_crash <= len(check_overlap(ligand_positions, min_dist=min_dist)) \
                                 or min_distance_000 <= min_dist:
                             ligand_positions = ligand_positions_backup
@@ -353,7 +354,8 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    ligand = Ligand.from_strings("P(PhCF3)3")
+    ligand = Ligand.from_file("P(Cy2PhPh).mol")
+    # ligand = Ligand.from_strings("P(Cy2PhPh)")
     ligand2 = Ligand.from_file("NTf2.mol")
     center = MCenter.from_strings("Pd")
     mol = Molecule(center, [ligand, ligand2], gfnff=False)
