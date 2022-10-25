@@ -67,6 +67,7 @@ Element F:
     period: 2
     group: 17
     color: '#B3FFFF'
+    valence: 1
     default_bonds:
         Element H: 0.920
         Element N: 1.360
@@ -121,6 +122,7 @@ Element S:
     period: 3
     group: 16
     color: '#FFEB00'
+    valence: 5
     default_bonds:
         Element H: 1.429
         Element N: 2.288

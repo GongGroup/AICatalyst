@@ -26,8 +26,11 @@ class RAtom(object):
 
     @property
     def is_unsaturated(self):
-        if self.explicit_valence < ElementInfo[f'Element {self.symbol}']['valence']:
-            return True
+        try:
+            if self.explicit_valence < ElementInfo[f'Element {self.symbol}']['valence']:
+                return True
+        except KeyError:
+            print(self.symbol)
         return False
 
     @property

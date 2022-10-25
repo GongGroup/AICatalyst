@@ -328,7 +328,7 @@ class Molecule(object):
         logger.info(f"molecule has been writen to `{name}`")
 
     @staticmethod
-    def from_file(file, format="mol"):
+    def file2parameter(file, format="mol"):
         if format != "mol":
             raise NotImplementedError(f"{format} file is not supported now")
 
@@ -338,19 +338,26 @@ class Molecule(object):
         metals = [atom for atom in atoms if Metal.is_metal(atom.symbol)]
         if len(metals) > 1:
             raise StructureError(f"The num of metal elements is `{len(metals)}`, should be `1`")
-        center = MCenter.from_strings(metals[0].symbol)
-
-        uatoms = [atom for atom in atoms if atom.is_unsaturated]
-        fragments = [RMolecule(item) for item in rmol.rfrags]
-        return RMolecule(rmol)
+        metal = metals[0]
+        print("---+---------------------------------")
+        for anchor in metal.neighbors:
+            print("|", metal.symbol, "->", f"{anchor.symbol}_{anchor.hybridization}", ":",
+                  np.array(anchor.position) - np.array(metal.position))
+            for neighbor in anchor.neighbors:
+                if neighbor.symbol == metal.symbol:
+                    continue
+                print("|", f"{anchor.symbol}_{anchor.hybridization}", "->",
+                      f"{neighbor.symbol}_{neighbor.hybridization}", ":",
+                      np.array(neighbor.position) - np.array(anchor.position))
+            print("---+---------------------------------")
 
 
 if __name__ == '__main__':
-    # ligand = Ligand.from_strings("1,3-dialkylimidazole", addHs=False)
-    ligand = Ligand.from_file("1,3-dialkylimidazole.mol")
-    ligand2 = Ligand.from_strings("Cl")
-    center = MCenter.from_strings("Se")
-    mol = Molecule(center, [ligand, ligand], gfnff=False)
+    ligand = Ligand.from_strings("P(PhCF3)3")
+    ligand2 = Ligand.from_file("NTf2.mol")
+    center = MCenter.from_strings("Pd")
+    mol = Molecule(center, [ligand, ligand2], gfnff=False)
     mol.write_to_xyz()
+    # mol = Molecule.file2parameter("Au(P(PhCF3)3)NTf2.mol")
 
     print()
