@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from AICatalysis.calculator.matrix import r_matrix
+from AICatalysis.calculator.matrix import r_matrix, direction_tetrahedron
 from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.constant import QM1, QM2
 from AICatalysis.common.error import StructureError
@@ -66,6 +66,22 @@ class Ligand(RMolecule):
 
         return unsaturated_atoms
 
+    @property
+    def bond_direction(self):
+        uatoms = self.get_unsaturated_atoms()
+        if len(uatoms) != 1:
+            raise TypeError("Unsaturated Atoms not only 1.")
+        uatom = uatoms[0]
+        if len(uatom.neighbors) == 3:
+            unit_direction = direction_tetrahedron(*[np.array(neighbor.position) for neighbor in uatom.neighbors])
+        elif len(uatom.neighbors):
+            vectors = [np.array(neighbor.position) - np.array(uatom.position) for neighbor in uatom.neighbors]
+            direction = np.sum(vectors, axis=0)
+            unit_direction = direction / (np.sum(direction ** 2) ** 0.5)
+        else:
+            unit_direction = np.array([1, 0, 0])
+        return unit_direction
+
 
 class MCenter(RMolecule):
     def __init__(self, name=None, rmol=None):
@@ -100,6 +116,7 @@ class Molecule(object):
 
     def optimize(self):
 
+        # deprecated
         def translate(ligand_uatoms, ligand_positions):
             """
             Translate Operation
@@ -123,6 +140,7 @@ class Molecule(object):
                     single_positions += translate_vector
             return ligand_positions
 
+        # deprecated
         def rotate_global(ligand_uatoms, ligand_positions):
             """
             Rotate Operation
@@ -159,6 +177,69 @@ class Molecule(object):
             ligand_positions = ligand_rotation_positions
             return ligand_positions
 
+        def docking(ligand_uatoms, ligand_positions, ligand_directions):
+            for single_uatom, single_position, single_direction in zip(ligand_uatoms, ligand_positions,
+                                                                       ligand_directions):
+                uatom_dist = np.sum(np.array(single_uatom.position) ** 2) ** 0.5
+                anchor_atom_type = f"{single_uatom.symbol}_{single_uatom.hybridization}"
+                metal_uatom_dist = np.sum((np.array(QM1[anchor_atom_type]) ** 2)) ** 0.5
+                pseudo_metal_position = (uatom_dist + metal_uatom_dist) * single_direction
+                calculate_dist = np.sum((pseudo_metal_position - np.array(single_uatom.position)) ** 2) ** 0.5
+
+                # Reverse Direction
+                if abs(calculate_dist - metal_uatom_dist) >= 0.5:
+                    single_direction *= -1
+                    pseudo_metal_position = (uatom_dist + metal_uatom_dist) * single_direction
+
+                # translate the Metal-Center to (0, 0, 0)
+                translate_vector = -pseudo_metal_position
+                single_position += translate_vector
+            return ligand_positions
+
+        # deprecated
+        def rotate_global_v2(ligand_uatoms, ligand_positions, ligand_directions):
+            """
+            Rotate Operation
+
+            Args:
+                ligand_uatoms (list[RAtom]): unsaturated <RAtom object> in each ligand
+                ligand_positions (list[np.array]): positions before rotate
+
+            Returns:
+                ligand_positions (list[np.array]): positions after rotate
+            """
+
+            ligand_rotation_positions = []
+            for single_uatoms, single_positions, single_direction in zip(ligand_uatoms, ligand_positions,
+                                                                         ligand_directions):
+                anchor_atom_type = f"{single_uatoms.symbol}_{single_uatoms.hybridization}"
+                neighbors = single_uatoms.neighbors  # get neighbors
+                if len(neighbors) == 0:
+                    unit_matrix = np.eye(3)
+                    single_positions = np.dot(single_positions, unit_matrix)
+                    ligand_rotation_positions.append(single_positions)
+                    continue
+                rotation_before = np.array(single_positions[single_uatoms.order])
+                bond_length = np.sum(rotation_before ** 2) ** 0.5
+                rotation_after = single_direction * bond_length
+                rotation_matrix = r_matrix(rotation_before, rotation_after)
+                single_positions = np.dot(single_positions, rotation_matrix)
+                ligand_rotation_positions.append(single_positions)
+                # for neighbor in neighbors:
+                #     neighbor_atom_type = f"{neighbor.symbol}_{neighbor.hybridization}"
+                #     if QM2.get(anchor_atom_type, None) is not None and \
+                #             QM2[anchor_atom_type].get(neighbor_atom_type, None) is not None:
+                #         rotation_before = np.array(neighbor.position) - np.array(single_uatoms.position)
+                #         rotation_after = np.array(QM2[anchor_atom_type][neighbor_atom_type])
+                #         rotation_matrix = r_matrix(rotation_before, rotation_after)
+                #         single_positions = np.dot(single_positions, rotation_matrix)
+                #         ligand_rotation_positions.append(single_positions)
+                #         break
+                # else:
+                #     raise TypeError("No atom pairs exist for rotate operation")
+            ligand_positions = ligand_rotation_positions
+            return ligand_positions
+
         def symmetry(ligand_uatoms_order, ligand_positions, unit_directions):
             """
             Symmetry Operation
@@ -190,6 +271,7 @@ class Molecule(object):
         else:
             raise NotImplementedError(f"Number of ligands equal to {len(self.ligands)} is not supported now")
 
+        # deprecated
         def rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions, min_dist=1.5):
             """
             Rotate fragments
@@ -290,6 +372,7 @@ class Molecule(object):
         ligand_atoms = [ligand.atoms for ligand in self.ligands]  # atoms in each ligand
         ligand_uatoms = sum([ligand.get_unsaturated_atoms() for ligand in self.ligands], [])  # unsaturated_atoms
         ligand_uatoms_order = [uatom.order for uatom in ligand_uatoms]
+        ligand_directions = [ligand.bond_direction for ligand in self.ligands]
 
         # ligand atom position && symbol array
         ligand_positions = [np.array([atom.position for atom in ligand]) for ligand in ligand_atoms]
@@ -299,10 +382,12 @@ class Molecule(object):
             raise RuntimeError(
                 f"Anchor atoms num({len(ligand_uatoms)}) is not equal ligands num({len(self.ligands)})")
 
-        ligand_positions = translate(ligand_uatoms, ligand_positions)  # translate operation
-        ligand_positions = rotate_global(ligand_uatoms, ligand_positions)  # rotation ligand
+        ligand_positions = docking(ligand_uatoms, ligand_positions, ligand_directions)
+        # ligand_positions = translate(ligand_uatoms, ligand_positions)  # translate operation
+        # ligand_positions = rotate_global(ligand_uatoms, ligand_positions)  # rotation ligand
+        # ligand_positions = rotate_global_v2(ligand_uatoms, ligand_positions, ligand_directions)  # rotation ligand
         ligand_positions = symmetry(ligand_uatoms_order, ligand_positions, unit_directions)  # symmetry operation
-        ligand_positions = rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions)  # rotation fragments
+        # ligand_positions = rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions)  # rotation fragments
 
         # add symbols
         self.optimized_position = []
@@ -354,9 +439,10 @@ class Molecule(object):
 
 
 if __name__ == '__main__':
-    ligand = Ligand.from_file("P(Cy2PhPh).mol")
-    # ligand = Ligand.from_strings("P(Cy2PhPh)")
+    # ligand = Ligand.from_file("P(PhOMe)3.mol")
+    ligand = Ligand.from_strings("PPh3")
     ligand2 = Ligand.from_file("NTf2.mol")
+    # ligand2 = Ligand.from_strings("Cl")
     center = MCenter.from_strings("Pd")
     mol = Molecule(center, [ligand, ligand2], gfnff=False)
     mol.write_to_xyz()
