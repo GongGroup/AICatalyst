@@ -77,7 +77,7 @@ class Ligand(RMolecule):
         elif len(uatom.neighbors):
             vectors = [np.array(neighbor.position) - np.array(uatom.position) for neighbor in uatom.neighbors]
             direction = np.sum(vectors, axis=0)
-            unit_direction = direction / (np.sum(direction ** 2) ** 0.5)
+            unit_direction = -direction / (np.sum(direction ** 2) ** 0.5)
         else:
             unit_direction = np.array([1, 0, 0])
         return unit_direction
@@ -183,13 +183,17 @@ class Molecule(object):
                 uatom_dist = np.sum(np.array(single_uatom.position) ** 2) ** 0.5
                 anchor_atom_type = f"{single_uatom.symbol}_{single_uatom.hybridization}"
                 metal_uatom_dist = np.sum((np.array(QM1[anchor_atom_type]) ** 2)) ** 0.5
-                pseudo_metal_position = (uatom_dist + metal_uatom_dist) * single_direction
-                calculate_dist = np.sum((pseudo_metal_position - np.array(single_uatom.position)) ** 2) ** 0.5
-
-                # Reverse Direction
-                if abs(calculate_dist - metal_uatom_dist) >= 0.5:
-                    single_direction *= -1
-                    pseudo_metal_position = (uatom_dist + metal_uatom_dist) * single_direction
+                if len(single_uatom.neighbors) == 3:
+                    if (np.array(single_uatom.position) * single_direction)[0] >= 0:
+                        pass
+                    else:
+                        if single_direction[0] >= 0:
+                            single_direction *= -1  # Reverse Direction
+                        else:
+                            uatom_dist *= -1
+                    pseudo_metal_position = (metal_uatom_dist + uatom_dist) * single_direction
+                else:
+                    pseudo_metal_position = (metal_uatom_dist - uatom_dist) * single_direction
 
                 # translate the Metal-Center to (0, 0, 0)
                 translate_vector = -pseudo_metal_position
