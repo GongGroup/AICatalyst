@@ -54,6 +54,11 @@ def _(angle: float, v_axis: np.ndarray):
     return np.eye(3) + w * np.sin(angle) + np.dot(w, w) * (1 - np.cos(angle))
 
 
+def direction_vector(p1, p2):
+    vector = p2 - p1
+    return vector / (np.sum(vector ** 2) ** 0.5)
+
+
 def direction_tetrahedron(p1, p2, p3):
     v1 = p2 - p1
     v2 = p3 - p1

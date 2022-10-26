@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from AICatalysis.calculator.matrix import r_matrix, direction_tetrahedron
+from AICatalysis.calculator.matrix import r_matrix, direction_tetrahedron, direction_vector, r_angle
 from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.constant import QM1, QM2
 from AICatalysis.common.error import StructureError
@@ -75,7 +75,8 @@ class Ligand(RMolecule):
         if len(uatom.neighbors) == 3:
             unit_direction = direction_tetrahedron(*[np.array(neighbor.position) for neighbor in uatom.neighbors])
         elif len(uatom.neighbors):
-            vectors = [np.array(neighbor.position) - np.array(uatom.position) for neighbor in uatom.neighbors]
+            vectors = [direction_vector(np.array(uatom.position), np.array(neighbor.position)) for neighbor in
+                       uatom.neighbors]
             direction = np.sum(vectors, axis=0)
             unit_direction = -direction / (np.sum(direction ** 2) ** 0.5)
         else:
@@ -184,16 +185,16 @@ class Molecule(object):
                 anchor_atom_type = f"{single_uatom.symbol}_{single_uatom.hybridization}"
                 metal_uatom_dist = np.sum((np.array(QM1[anchor_atom_type]) ** 2)) ** 0.5
                 if len(single_uatom.neighbors) == 3:
-                    if (np.array(single_uatom.position) * single_direction)[0] >= 0:
+                    v_anchor_neighbor = np.array(single_uatom.neighbors[0].position) - np.array(single_uatom.position)
+                    theta = math.degrees(r_angle(single_direction, v_anchor_neighbor))
+                    if theta >= 90:
                         pass
                     else:
-                        if single_direction[0] >= 0:
-                            single_direction *= -1  # Reverse Direction
-                        else:
-                            uatom_dist *= -1
-                    pseudo_metal_position = (metal_uatom_dist + uatom_dist) * single_direction
+                        single_direction *= -1  # Reverse Direction
+
+                    pseudo_metal_position = np.array(single_uatom.position) + metal_uatom_dist * single_direction
                 else:
-                    pseudo_metal_position = (metal_uatom_dist - uatom_dist) * single_direction
+                    pseudo_metal_position = np.array(single_uatom.position) + metal_uatom_dist * single_direction
 
                 # translate the Metal-Center to (0, 0, 0)
                 translate_vector = -pseudo_metal_position
@@ -266,7 +267,9 @@ class Molecule(object):
                 final_positions.append(single_position)
             return np.array(final_positions, dtype=object)
 
-        if len(self.ligands) == 2:
+        if len(self.ligands) == 1:
+            unit_directions = np.array([(1, 0, 0)])
+        elif len(self.ligands) == 2:
             unit_directions = np.array([(0, 1, 0), (0, -1, 0)])
         elif len(self.ligands) == 4:
             unit_directions = np.array(
@@ -444,10 +447,10 @@ class Molecule(object):
 
 if __name__ == '__main__':
     # ligand = Ligand.from_file("P(PhOMe)3.mol")
-    ligand = Ligand.from_strings("PPh3")
+    ligand = Ligand.from_strings("P(Bu2PhPh)")
     ligand2 = Ligand.from_file("NTf2.mol")
     # ligand2 = Ligand.from_strings("Cl")
-    center = MCenter.from_strings("Pd")
+    center = MCenter.from_strings("Au")
     mol = Molecule(center, [ligand, ligand2], gfnff=False)
     mol.write_to_xyz()
     # mol = Molecule.file2parameter("Au(P(PhCF3)3)NTf2.mol")
