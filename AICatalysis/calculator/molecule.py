@@ -70,7 +70,7 @@ class Ligand(RMolecule):
     def bond_direction(self):
         uatoms = self.get_unsaturated_atoms()
         if len(uatoms) != 1:
-            raise TypeError("Unsaturated Atoms not only 1.")
+            raise TypeError("Unsaturated Atoms is not equal to 1.")
         uatom = uatoms[0]
         if len(uatom.neighbors) == 3:
             unit_direction = direction_tetrahedron(*[np.array(neighbor.position) for neighbor in uatom.neighbors])
@@ -80,7 +80,7 @@ class Ligand(RMolecule):
             direction = np.sum(vectors, axis=0)
             unit_direction = -direction / (np.sum(direction ** 2) ** 0.5)
         else:
-            unit_direction = np.array([1, 0, 0])
+            unit_direction = np.array([0, 0, 1])
         return unit_direction
 
 
@@ -104,11 +104,12 @@ class MCenter(RMolecule):
 
 
 class Molecule(object):
-    def __init__(self, center, ligands, gfnff=True):
+    def __init__(self, center, ligands, gfnff=True, configuration="tetrahedron"):
         self.center = center
         self.ligands = ligands
         self.optimized_position = None
         self.gfnff = gfnff
+        self.configuration = configuration
 
         self.optimize()
 
@@ -271,10 +272,17 @@ class Molecule(object):
             unit_directions = np.array([(1, 0, 0)])
         elif len(self.ligands) == 2:
             unit_directions = np.array([(0, 1, 0), (0, -1, 0)])
-        elif len(self.ligands) == 4:
+        elif len(self.ligands) == 3:
             unit_directions = np.array(
-                [(0.26629634, 0.59716506, 0.75662418), (-0.78360941, -0.56477488, 0.2588158),
-                 (-0.26830478, 0.58738621, -0.7635378), (0.77721406, -0.57470191, -0.25623428)])
+                [(0.88861401, -0.45865581, -0.), (-0.84126513, -0.54062277, -0.), (-0.04736415, 0.99887769, 0.)])
+        elif len(self.ligands) == 4:
+            if self.configuration == "tetrahedron":
+                unit_directions = np.array(
+                    [(0.26629634, 0.59716506, 0.75662418), (-0.78360941, -0.56477488, 0.2588158),
+                     (-0.26830478, 0.58738621, -0.7635378), (0.77721406, -0.57470191, -0.25623428)])
+            elif self.configuration == "square":
+                unit_directions = np.array(
+                    [(0, 1, 0), (0, -1, 0), (1, 0, 0), (-1, 0, 0)])
         else:
             raise NotImplementedError(f"Number of ligands equal to {len(self.ligands)} is not supported now")
 
@@ -394,7 +402,7 @@ class Molecule(object):
         # ligand_positions = rotate_global(ligand_uatoms, ligand_positions)  # rotation ligand
         # ligand_positions = rotate_global_v2(ligand_uatoms, ligand_positions, ligand_directions)  # rotation ligand
         ligand_positions = symmetry(ligand_uatoms_order, ligand_positions, unit_directions)  # symmetry operation
-        # ligand_positions = rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions)  # rotation fragments
+        ligand_positions = rotate_fragment(fragments_info, ligand_uatoms_order, ligand_positions)  # rotation fragments
 
         # add symbols
         self.optimized_position = []
@@ -447,11 +455,11 @@ class Molecule(object):
 
 if __name__ == '__main__':
     # ligand = Ligand.from_file("P(PhOMe)3.mol")
-    ligand = Ligand.from_strings("P(Bu2PhPh)")
-    ligand2 = Ligand.from_file("NTf2.mol")
-    # ligand2 = Ligand.from_strings("Cl")
-    center = MCenter.from_strings("Au")
-    mol = Molecule(center, [ligand, ligand2], gfnff=False)
+    ligand = Ligand.from_strings("PPh3")
+    ligand3 = Ligand.from_file("1,3-dialkylimidazole.mol")
+    ligand2 = Ligand.from_strings("Cl")
+    center = MCenter.from_strings("Rh")
+    mol = Molecule(center, [ligand2, ligand2, ligand2], gfnff=False, configuration="square")
     mol.write_to_xyz()
     # mol = Molecule.file2parameter("Au(P(PhCF3)3)NTf2.mol")
 
