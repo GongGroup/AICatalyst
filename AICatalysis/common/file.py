@@ -37,6 +37,14 @@ def fcopy(file: Path):
     return file.parent / f"{file.stem}_copy{file.suffix}"
 
 
+class HtmlIO(object):
+    @staticmethod
+    def read(file, encoding='utf-8'):
+        with open(file, 'r', encoding=encoding) as f:
+            content = f.read()
+        return content
+
+
 class JsonIO(object):
 
     @staticmethod
