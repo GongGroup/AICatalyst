@@ -6,13 +6,21 @@ from pyquery import PyQuery
 from AICatalysis.common.file import HtmlIO
 
 if __name__ == '__main__':
-    html_file = "../../literature/0abda187a9c883fcab7a0f45826ba61e.html"
+    files = ["0a27913b8f8012e7ef719ef175978842.html", "0abda187a9c883fcab7a0f45826ba61e.html",
+             "0aed9192373c0cf784250adb59f7c9b6.html"]
+    html_file = "../../literature/" + files[-1]
     html = HtmlIO.read(html_file)
     doc = PyQuery(html)
-    tb1 = doc.find("#tbl1")
-    header = tb1("header").text()
+    tb = doc.find('div[class=article-table-content]')
+    header = tb("header")
 
-    content = tb1("div.article-table-content-wrapper")
+    tb_index = []
+    for index, item in enumerate(header.items()):
+        if "condition" in item.text() or "phenylboronate" in item.text():
+            tb_index.append(index)
+
+    header = tb("header").filter(lambda i: i in tb_index).text()
+    content = tb("div.article-table-content-wrapper").filter(lambda i: i in tb_index)
     thead = content("thead")
     tbody = content("tbody")
 
@@ -26,17 +34,23 @@ if __name__ == '__main__':
         for item1, item2 in zip_longest(*row):
             if len(item2):
                 if item1 is not None:
-                    thead_list.append(item1 + "-" + item2)
                     notation = item1
+                    if len(item1):  # solving the figure row
+                        thead_list.append(item1 + "-" + item2)
+                    else:
+                        thead_list.append(item2)
                 else:
-                    thead_list.append(notation + "-" + item2)
+                    if len(notation):
+                        thead_list.append(notation + "-" + item2)
+                    else:
+                        thead_list.append(item2)
             else:
                 thead_list.append(item1)
     else:
         raise NotImplementedError
 
     tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-    footnote = tb1("div.article-section__table-footnotes").text()
+    footnote = tb("div.article-section__table-footnotes").text()
 
     # ----- print information ----- #
     print(header)
