@@ -37,6 +37,7 @@ LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
 
 # Directory constant here
 ChemDir = Path("../../chemical")
+DataDir = Path("../../data")
 DrawDir = Path("../../draw")
 Calculator = Path("../calculator")
 
@@ -51,6 +52,9 @@ FRXconfig = ChemDir / "RX_config.json"
 FRXDconfig = ChemDir / "RXD_config.json"
 FReaxysXML = ChemDir / "reaxys_xml.xml"
 FSucReaxys = ChemDir / "suc_reaxys.json"
+
+MD5Name = DataDir / "md5_name.json"
+
 Elements = Calculator / "element.yaml"
 Angle = Calculator / "angle.dat"
 FQM1 = Calculator / "QM1.dat"
