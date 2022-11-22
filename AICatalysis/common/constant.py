@@ -1,6 +1,7 @@
 import inspect
 import os
 import time
+from collections import namedtuple
 from pathlib import Path
 
 from AICatalysis.common.file import JsonIO, YamlIO, QMIO
@@ -66,3 +67,5 @@ ChemInfo = {item['name']: {key: value for key, value in item.items() if key != '
 ElementInfo = YamlIO.read(Elements)
 QM1 = QMIO.read1(FQM1)
 QM2 = QMIO.read2(FQM2)
+
+_Table = namedtuple("_Table", ("caption", "thead", "tbody", "footnote"))
