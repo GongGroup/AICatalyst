@@ -130,45 +130,15 @@ class WileyPub(BasePub):
         tb = self.doc.find('div[class=article-table-content]')
         header = tb("header")
 
-        tb_index = WileyPub.search_table(header)
-        header = header.filter(lambda i: i in tb_index).text()
-        content = tb.filter(lambda i: i in tb_index)
-        thead = content("thead")
-        tbody = content("tbody")
+        self._parse_table(tb=tb, caption=header)
 
-        if len(thead("tr")) == 0:
-            logger.warning("Can't find Table, Please check the html!!")
-            exit(1)
-        elif len(thead("tr")) == 1:
-            thead_list = thead.text().splitlines()
-        elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-            row = []
-            for tr_item in thead.items("tr"):
-                row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
+        # rewrite the parse table-footnote
+        footnote_text = []
+        for tb_pq in tb.items():
+            footnote_pq = tb_pq("div.article-section__table-footnotes")
+            footnote_text.append(footnote_pq.text())
+        self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
-            thead_list = []
-            for item1, item2 in zip_longest(*row):
-                if len(item2):
-                    if item1 is not None:
-                        notation = item1
-                        if len(item1):  # solving the figure row
-                            thead_list.append(item1 + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                    else:
-                        if len(notation):
-                            thead_list.append(notation + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                else:
-                    thead_list.append(item1)
-        else:
-            raise NotImplementedError
-
-        tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-        footnote = tb("div.article-section__table-footnotes").text()
-
-        self._parse_table = header, thead_list, tbody_list, footnote
         self.print_table()
 
 
@@ -410,7 +380,7 @@ if __name__ == '__main__':
              "0b900e98361640e82d938116ea3f9adc.html", "0b6079b37eb029d14a852b38d5ec4010.html",
              "0b3155901fc7c96509c7776641cc0964.html", "0c919f91371e15e113a3cc772518c02b.html",
              "0c9734f494e6d610f9e8d44879db1e70.html"]
-    html_file = "../../literature/" + files[6]
+    html_file = "../../literature/" + files[2]
 
     parser = HtmlTableParser(html_file)
     parser.parse()
