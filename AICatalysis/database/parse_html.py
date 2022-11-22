@@ -22,8 +22,11 @@ class BasePub(metaclass=abc.ABCMeta):
         self._table = None
 
     @abc.abstractmethod
-    def parse_table(self):
-        pass
+    def parse_table(self, print=True, save=False, name="table.csv", url=None):
+        if print:
+            self.print_table()
+        if save:
+            self.save_table(name=name, url=url)
 
     def _parse_table(self, tb=None, caption=None, th="th"):
         tb_index = BasePub.search_table(caption)  # obtain the index of the valid tables
@@ -125,9 +128,20 @@ class BasePub(metaclass=abc.ABCMeta):
             print(footnote)
             print()
 
+    def save_table(self, name="table.csv", url=None):
+        with open(name, "w", encoding="utf-8") as f:
+            for caption, thead, tbody, footnote in zip(*self._table):
+                f.write(caption + "\n")
+                f.write(",".join(thead) + "\n")
+                for item in tbody:
+                    f.write(",".join(item) + "\n")
+                f.write(footnote + "\n")
+                f.write(url + "\n")
+                f.write("\n")
+
 
 class WileyPub(BasePub):
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('div[class=article-table-content]')
         header = tb("header")
 
@@ -140,7 +154,7 @@ class WileyPub(BasePub):
             footnote_text.append(footnote_pq.text())
         self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
-        self.print_table()
+        super(WileyPub, self).parse_table(**kargs)
 
 
 class SJOCPub(BasePub):
@@ -389,20 +403,20 @@ class HtmlTableParser(object):
     def __init__(self, file):
         self.file = file
         self.name = Path(self.file).stem
-        self.doi = JsonIO.read(MD5Name)[self.name]
-        self.pub = self.doi.split("=")[-1]
+        self.url = JsonIO.read(MD5Name)[self.name]
+        self.pub = self.url.split("=")[-1]
 
-    def parse(self):
-        logger.info(f"Start parse `{self.doi}`")
-        return HtmlTableParser.Allocator[self.pub](self.file).parse_table()
+    def parse(self, **kargs):
+        logger.info(f"Start parse `{self.url}`")
+        return HtmlTableParser.Allocator[self.pub](self.file).parse_table(**kargs)
 
 
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[4]
+    html_file = files[3]
 
     parser = HtmlTableParser(html_file)
-    parser.parse()
+    parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
 
     pass
