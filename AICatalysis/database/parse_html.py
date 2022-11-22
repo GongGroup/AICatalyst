@@ -346,53 +346,67 @@ class TaylorPub(BasePub):
 class ElsevierPub(BasePub):
     def parse_table(self):
         tb = self.doc.find('table').parent('div').parent('div')
-        header = tb(".captions")
+        headers = tb(".captions")
 
-        tb_index = BasePub.search_table(header)
-        header = header.filter(lambda i: i in tb_index)
+        tb_index = BasePub.search_table(headers)
+        headers = headers.filter(lambda i: i in tb_index)
         content = tb.filter(lambda i: i in tb_index)
         theads = content("thead")
         tbodys = content("tbody")
         logger.info(f"Match {len(theads)} tables, start parse~")
 
-        if len(theads("tr")) == 0:
-            logger.warning("Can't find Table, Please check the html!!")
-            exit(1)
-        elif len(theads("tr")) == 1:
-            thead_list = theads.text().splitlines()
-        elif len(theads("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-            row = []
-            for tr_item in theads.items("tr"):
-                row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
+        theads_list = []
+        for thead in theads.items():
+            if len(theads("tr")) == 0:
+                logger.warning("Can't find Table, Please check the html!!")
+                exit(1)
+            elif len(thead("tr")) == 1:
+                thead_list = thead.text().splitlines()
+                theads_list.append(thead_list)
+            elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
+                row = []
+                for tr_item in thead.items("tr"):
+                    row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
 
-            if row[1][0]:
-                for _ in range(len(row[0]) - 1):
-                    row[1].insert(0, '')
+                if row[1][0]:
+                    for _ in range(len(row[0]) - 1):
+                        row[1].insert(0, '')
 
-            thead_list = []
-            for item1, item2 in zip_longest(*row):
-                if len(item2):
-                    if item1 is not None:
-                        notation = item1
-                        if len(item1):  # solving the figure row
-                            thead_list.append(item1 + "-" + item2)
+                thead_list = []
+                for item1, item2 in zip_longest(*row):
+                    if len(item2):
+                        if item1 is not None:
+                            notation = item1
+                            if len(item1):  # solving the figure row
+                                thead_list.append(item1 + "-" + item2)
+                            else:
+                                thead_list.append(item2)
                         else:
-                            thead_list.append(item2)
+                            if len(notation):
+                                thead_list.append(notation + "-" + item2)
+                            else:
+                                thead_list.append(item2)
                     else:
-                        if len(notation):
-                            thead_list.append(notation + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                else:
-                    thead_list.append(item1)
-        else:
-            raise NotImplementedError
+                        thead_list.append(item1)
+                theads_list.append(thead_list)
+            else:
+                raise NotImplementedError
 
-        tbody_list = np.array(tbodys.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-        footnote = header.parent()('.footnotes').text()
+        tbodys_list = []
+        for tbody, thead_list in zip(tbodys.items(), theads_list):
+            tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
+            tbodys_list.append(tbody_list)
 
-        self._parse_table = header.text(), thead_list, tbody_list, footnote
-        self.print_table()
+        footnotes, header_texts = [], []
+        for header in headers.items():
+            footnote = header.parent()('.footnotes').text()
+            footnotes.append(footnote)
+            header_texts.append(header.text())
+
+        for header_text, thead_list, tbody_list, footnote in zip(header_texts, theads_list, tbodys_list, footnotes):
+            self._parse_table = header_text, thead_list, tbody_list, footnote
+            print()
+            self.print_table()
 
 
 class HtmlTableParser(object):
