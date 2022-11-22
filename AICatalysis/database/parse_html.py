@@ -9,6 +9,7 @@ from pyquery import PyQuery
 
 from AICatalysis.common.constant import MD5Name
 from AICatalysis.common.file import HtmlIO, JsonIO
+from AICatalysis.common.logger import init_root_logger
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +19,71 @@ class BasePub(metaclass=abc.ABCMeta):
         self._html = HtmlIO.read(file)
         self.doc = PyQuery(self._html)
 
-        self._parse_table = None
+        self._single_table = None
 
     @abc.abstractmethod
     def parse_table(self):
         pass
+
+    def _parse_table(self, tb=None, caption=None):
+        tb_index = BasePub.search_table(caption)  # obtain the index of the valid tables
+        caption = caption.filter(lambda i: i in tb_index)  # type -> PyQuery
+        content = tb.filter(lambda i: i in tb_index)  # type -> PyQuery
+        thead = content("thead")  # type -> PyQuery
+        tbody = content("tbody")  # type -> PyQuery
+        logger.info(f"Match {len(thead)} tables, start parse~")
+
+        # parse table-head
+        thead_list = []
+        for thead_pq in thead.items():  # type -> PyQuery
+            if len(thead_pq("tr")) == 0:
+                logger.warning("Can't find Table, Please check the html!!")
+                exit(1)
+            elif len(thead_pq("tr")) == 1:
+                thead_list.append(thead_pq.text().splitlines())
+            elif len(thead_pq("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
+                row = []
+                for tr_item in thead_pq.items("tr"):
+                    row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
+
+                if row[1][0]:
+                    for _ in range(len(row[0]) - 1):
+                        row[1].insert(0, '')
+
+                two_row_list = []
+                for item1, item2 in zip_longest(*row):
+                    if len(item2):
+                        if item1 is not None:
+                            notation = item1
+                            if len(item1):  # solving the figure row
+                                two_row_list.append(item1 + "-" + item2)
+                            else:
+                                two_row_list.append(item2)
+                        else:
+                            if len(notation):
+                                two_row_list.append(notation + "-" + item2)
+                            else:
+                                two_row_list.append(item2)
+                    else:
+                        two_row_list.append(item1)
+                thead_list.append(two_row_list)
+            else:
+                raise NotImplementedError
+
+        # parse table-content
+        tbody_list = []
+        for tbody_pq, thead_pq in zip(tbody.items(), thead_list):  # type -> PyQuery, list
+            tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
+            tbody_list.append(tbody_pq_list)
+
+        # parse table-caption and table-footnote
+        footnote_text, caption_text = [], []
+        for caption_pq in caption.items():  # type -> PyQuery
+            caption_text.append(caption_pq.text())
+            footnote_pq = caption_pq.parent()('.footnotes')  # type -> PyQuery
+            footnote_text.append(footnote_pq.text())
+
+        return caption_text, thead_list, tbody_list, footnote_text  # type -> list, list, list, list
 
     @staticmethod
     def search_table(header):
@@ -41,9 +102,9 @@ class BasePub(metaclass=abc.ABCMeta):
         return tb_index
 
     def print_table(self):
-        header, thead_list, tbody_list, footnote = self._parse_table
+        caption, thead_list, tbody_list, footnote = self._single_table
 
-        print(header)
+        print(caption)
         print()
 
         print("+" + "-".center(25 * len(thead_list) + 2 * (len(thead_list) - 1), "-") + "+")
@@ -346,65 +407,10 @@ class TaylorPub(BasePub):
 class ElsevierPub(BasePub):
     def parse_table(self):
         tb = self.doc.find('table').parent('div').parent('div')
-        headers = tb(".captions")
+        caption = tb(".captions")
 
-        tb_index = BasePub.search_table(headers)
-        headers = headers.filter(lambda i: i in tb_index)
-        content = tb.filter(lambda i: i in tb_index)
-        theads = content("thead")
-        tbodys = content("tbody")
-        logger.info(f"Match {len(theads)} tables, start parse~")
-
-        theads_list = []
-        for thead in theads.items():
-            if len(theads("tr")) == 0:
-                logger.warning("Can't find Table, Please check the html!!")
-                exit(1)
-            elif len(thead("tr")) == 1:
-                thead_list = thead.text().splitlines()
-                theads_list.append(thead_list)
-            elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-                row = []
-                for tr_item in thead.items("tr"):
-                    row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
-
-                if row[1][0]:
-                    for _ in range(len(row[0]) - 1):
-                        row[1].insert(0, '')
-
-                thead_list = []
-                for item1, item2 in zip_longest(*row):
-                    if len(item2):
-                        if item1 is not None:
-                            notation = item1
-                            if len(item1):  # solving the figure row
-                                thead_list.append(item1 + "-" + item2)
-                            else:
-                                thead_list.append(item2)
-                        else:
-                            if len(notation):
-                                thead_list.append(notation + "-" + item2)
-                            else:
-                                thead_list.append(item2)
-                    else:
-                        thead_list.append(item1)
-                theads_list.append(thead_list)
-            else:
-                raise NotImplementedError
-
-        tbodys_list = []
-        for tbody, thead_list in zip(tbodys.items(), theads_list):
-            tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-            tbodys_list.append(tbody_list)
-
-        footnotes, header_texts = [], []
-        for header in headers.items():
-            footnote = header.parent()('.footnotes').text()
-            footnotes.append(footnote)
-            header_texts.append(header.text())
-
-        for header_text, thead_list, tbody_list, footnote in zip(header_texts, theads_list, tbodys_list, footnotes):
-            self._parse_table = header_text, thead_list, tbody_list, footnote
+        for header_text, thead_list, tbody_list, footnote in zip(*self._parse_table(tb=tb, caption=caption)):
+            self._single_table = header_text, thead_list, tbody_list, footnote
             print()
             self.print_table()
 
@@ -430,6 +436,8 @@ class HtmlTableParser(object):
 
 
 if __name__ == '__main__':
+    init_root_logger("AICatalysis")
+
     files = ["0a27913b8f8012e7ef719ef175978842.html", "0abda187a9c883fcab7a0f45826ba61e.html",
              "0aed9192373c0cf784250adb59f7c9b6.html", "0b599ace8153b094978ce8de6d1b90a7.html",
              "0b900e98361640e82d938116ea3f9adc.html", "0b6079b37eb029d14a852b38d5ec4010.html",
