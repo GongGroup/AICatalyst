@@ -21,12 +21,21 @@ class BasePub(metaclass=abc.ABCMeta):
 
         self._table = None
 
-    @abc.abstractmethod
-    def parse_table(self, print=True, save=False, name="table.csv", url=None):
-        if print:
-            self.print_table()
-        if save:
-            self.save_table(name=name, url=url)
+    @staticmethod
+    def search_table(header):
+        def tfchoose(item):
+            CODs = ['condition', 'phenylboronate', 'screen', 'effect', 'optimization', 'control', 'condition']
+            for cod in CODs:
+                if cod in item.text().lower():
+                    return True
+            else:
+                return False
+
+        tb_index = []
+        for index, item in enumerate(header.items()):
+            if tfchoose(item):
+                tb_index.append(index)
+        return tb_index
 
     def _parse_table(self, tb=None, caption=None, th="th"):
         tb_index = BasePub.search_table(caption)  # obtain the index of the valid tables
@@ -91,24 +100,14 @@ class BasePub(metaclass=abc.ABCMeta):
 
         return thead  # type -> PyQuery
 
-    @staticmethod
-    def search_table(header):
-        def tfchoose(item):
-            CODs = ['condition', 'phenylboronate', 'screen', 'effect', 'optimization', 'control']
-            for cod in CODs:
-                if cod in item.text().lower():
-                    return True
-            else:
-                return False
-
-        tb_index = []
-        for index, item in enumerate(header.items()):
-            if tfchoose(item):
-                tb_index.append(index)
-        return tb_index
+    @abc.abstractmethod
+    def parse_table(self, print=True, save=False, name="table.csv", url=None):
+        if print:
+            self.print_table()
+        if save:
+            self.save_table(name=name, url=url)
 
     def print_table(self):
-
         for caption, thead_list, tbody_list, footnote in zip(*self._table):
             print(caption)
             print()
@@ -252,50 +251,20 @@ class RSCPub(BasePub):
 
 
 class ACSPub(BasePub):
-    def parse_table(self):
-        tb = self.doc.find('div[class=article-table-content]')
-        header = tb("header")
+    def parse_table(self, **kargs):
+        tb = self.doc.find('div[class=NLM_table-wrap]')
+        header = tb("div[class=NLM_caption]")
 
-        tb_index = WileyPub.search_table(header)
-        header = header.filter(lambda i: i in tb_index).text()
-        content = tb.filter(lambda i: i in tb_index)
-        thead = content("thead")
-        tbody = content("tbody")
+        self._parse_table(tb=tb, caption=header)
 
-        if len(thead("tr")) == 0:
-            logger.warning("Can't find Table, Please check the html!!")
-            exit(1)
-        elif len(thead("tr")) == 1:
-            thead_list = thead.text().splitlines()
-        elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-            row = []
-            for tr_item in thead.items("tr"):
-                row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
+        # rewrite the parse table-footnote
+        footnote_text = []
+        for tb_pq in tb.items():
+            footnote_pq = tb_pq("div[class=footnote]")
+            footnote_text.append(footnote_pq.text())
+        self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
-            thead_list = []
-            for item1, item2 in zip_longest(*row):
-                if len(item2):
-                    if item1 is not None:
-                        notation = item1
-                        if len(item1):  # solving the figure row
-                            thead_list.append(item1 + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                    else:
-                        if len(notation):
-                            thead_list.append(notation + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                else:
-                    thead_list.append(item1)
-        else:
-            raise NotImplementedError
-
-        tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-        footnote = tb("div.article-section__table-footnotes").text()
-
-        self._parse_table = header, thead_list, tbody_list, footnote
-        self.print_table()
+        super(ACSPub, self).parse_table(**kargs)
 
 
 class ThiemePub(BasePub):
@@ -414,9 +383,9 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[3]
+    html_file = files[5]
 
     parser = HtmlTableParser(html_file)
-    parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
+    parser.parse(save=False, name=f"{parser.name}.csv", url=parser.url)
 
     pass
