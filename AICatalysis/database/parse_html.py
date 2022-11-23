@@ -85,8 +85,14 @@ class BasePub(metaclass=abc.ABCMeta):
 
         # parse table-content
         tbody_list = []
-        for tbody_pq, thead_pq in zip(tbody.items(), thead_list):  # type -> PyQuery, list
-            tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
+        for tbody_pq, thead_pq in zip(tbody.items(), thead_list): # type -> PyQuery, list
+            try:
+                tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
+            except ValueError: # '' in tbody, columns for each row is not match
+                tbody_row_list = []
+                for td_pq in tbody_pq.items("td"):
+                    tbody_row_list.append(td_pq.text())
+                tbody_pq_list = np.array(tbody_row_list).reshape((-1, len(thead_pq))).tolist()
             tbody_list.append(tbody_pq_list)
 
         # parse table-caption and table-footnote
@@ -128,7 +134,13 @@ class BasePub(metaclass=abc.ABCMeta):
             print()
 
     def save_table(self, name="table.csv", url=None):
+
+        if not len(self._table[2]):
+            logger.warning(f"There is no information in parsed table!!")
+            return
+
         with open(name, "w", encoding="utf-8") as f:
+            logger.info(f"Store table in `{name}`")
             for caption, thead, tbody, footnote in zip(*self._table):
                 f.write(caption + "\n")
                 f.write(",".join(thead) + "\n")
@@ -204,50 +216,20 @@ class SJOCPub(BasePub):
 
 
 class RSCPub(BasePub):
-    def parse_table(self):
-        tb = self.doc.find('div[class=article-table-content]')
-        header = tb("header")
+    def parse_table(self, **kargs):
+        tb = self.doc.find('div[class=NLM_table-wrap]')
+        header = tb("div[class=NLM_caption]")
 
-        tb_index = WileyPub.search_table(header)
-        header = header.filter(lambda i: i in tb_index).text()
-        content = tb.filter(lambda i: i in tb_index)
-        thead = content("thead")
-        tbody = content("tbody")
+        self._parse_table(tb=tb, caption=header)
 
-        if len(thead("tr")) == 0:
-            logger.warning("Can't find Table, Please check the html!!")
-            exit(1)
-        elif len(thead("tr")) == 1:
-            thead_list = thead.text().splitlines()
-        elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-            row = []
-            for tr_item in thead.items("tr"):
-                row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
+        # rewrite the parse table-footnote
+        footnote_text = []
+        for tb_pq in tb.items():
+            footnote_pq = tb_pq("div[class=footnote]")
+            footnote_text.append(footnote_pq.text())
+        self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
-            thead_list = []
-            for item1, item2 in zip_longest(*row):
-                if len(item2):
-                    if item1 is not None:
-                        notation = item1
-                        if len(item1):  # solving the figure row
-                            thead_list.append(item1 + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                    else:
-                        if len(notation):
-                            thead_list.append(notation + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                else:
-                    thead_list.append(item1)
-        else:
-            raise NotImplementedError
-
-        tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-        footnote = tb("div.article-section__table-footnotes").text()
-
-        self._parse_table = header, thead_list, tbody_list, footnote
-        self.print_table()
+        super(RSCPub, self).parse_table(**kargs)
 
 
 class ACSPub(BasePub):
@@ -340,20 +322,20 @@ class ElsevierPub(BasePub):
 
 class PlosPub(BasePub):
 
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('table').parent('div').parent('div')
         caption = tb(".captions")
         self._parse_table(tb=tb, caption=caption)
-        self.print_table()
+        super(PlosPub, self).parse_table(**kargs)
 
 
 class SagePub(BasePub):
 
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('table').parent('div').parent('div')
         caption = tb(".captions")
         self._parse_table(tb=tb, caption=caption)
-        self.print_table()
+        super(SagePub, self).parse_table(**kargs)
 
 
 class HtmlTableParser(object):
@@ -383,9 +365,9 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[5]
+    html_file = files[8]
 
     parser = HtmlTableParser(html_file)
-    parser.parse(save=False, name=f"{parser.name}.csv", url=parser.url)
+    parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
 
     pass
