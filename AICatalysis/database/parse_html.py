@@ -85,10 +85,10 @@ class BasePub(metaclass=abc.ABCMeta):
 
         # parse table-content
         tbody_list = []
-        for tbody_pq, thead_pq in zip(tbody.items(), thead_list): # type -> PyQuery, list
+        for tbody_pq, thead_pq in zip(tbody.items(), thead_list):  # type -> PyQuery, list
             try:
                 tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
-            except ValueError: # '' in tbody, columns for each row is not match
+            except ValueError:  # '' in tbody, columns for each row is not match
                 tbody_row_list = []
                 for td_pq in tbody_pq.items("td"):
                     tbody_row_list.append(td_pq.text())
@@ -217,8 +217,8 @@ class SJOCPub(BasePub):
 
 class RSCPub(BasePub):
     def parse_table(self, **kargs):
-        tb = self.doc.find('div[class=NLM_table-wrap]')
-        header = tb("div[class=NLM_caption]")
+        tb = self.doc.find('figure[class=pnl--table]')
+        header = tb("figcaption")
 
         self._parse_table(tb=tb, caption=header)
 
@@ -338,6 +338,33 @@ class SagePub(BasePub):
         super(SagePub, self).parse_table(**kargs)
 
 
+class FunpecrpPub(BasePub):
+
+    def parse_table(self, **kargs):
+        tb = self.doc.find('table').parent('div').parent('div')
+        caption = tb(".captions")
+        self._parse_table(tb=tb, caption=caption)
+        super(FunpecrpPub, self).parse_table(**kargs)
+
+
+class EurekaselectPub(BasePub):
+
+    def parse_table(self, **kargs):
+        tb = self.doc.find('table').parent('div').parent('div')
+        caption = tb(".captions")
+        self._parse_table(tb=tb, caption=caption)
+        super(EurekaselectPub, self).parse_table(**kargs)
+
+
+class SpringerPub(BasePub):
+
+    def parse_table(self, **kargs):
+        tb = self.doc.find('table').parent('div').parent('div')
+        caption = tb(".captions")
+        self._parse_table(tb=tb, caption=caption)
+        super(SpringerPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -349,6 +376,9 @@ class HtmlTableParser(object):
         "Wiley+%28John+Wiley+%26+Sons%29": WileyPub,
         "Public+Library+of+Science": PlosPub,
         "Science+Reviews+2000+LTD.": SagePub,
+        "Genetics+and+Molecular+Research": FunpecrpPub,
+        'Bentham+Science': EurekaselectPub,
+        'Springer-Verlag': SpringerPub,
     }
 
     def __init__(self, file):
@@ -365,7 +395,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[8]
+    html_file = files[14]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
