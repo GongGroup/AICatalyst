@@ -328,6 +328,15 @@ class SpringerPub(BasePub):
         super(SpringerPub, self).parse_table(**kargs)
 
 
+class KoreaPub(BasePub):
+
+    def parse_table(self, **kargs):
+        tb = self.doc.find('table').parent('div').parent('div')
+        caption = tb(".captions")
+        self._parse_table(tb=tb, caption=caption)
+        super(KoreaPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -343,6 +352,7 @@ class HtmlTableParser(object):
         'Bentham+Science': EurekaselectPub,
         'Springer-Verlag': SpringerPub,
         'Pleiades+Publishing': SpringerPub,
+        'Korean+Chemical+Society': KoreaPub,
     }
 
     def __init__(self, file):
@@ -359,7 +369,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[35]
+    html_file = files[41]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
