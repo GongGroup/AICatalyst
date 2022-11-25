@@ -24,7 +24,8 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item):
-            CODs = ['condition', 'phenylboronate', 'screen', 'effect', 'optimization', 'control', 'condition']
+            CODs = ['condition', 'phenylboronate', 'screen', 'effect', 'optimization', 'control', 'various',
+                    'with and without']
             for cod in CODs:
                 if cod in item.text().lower():
                     return True
@@ -220,12 +221,12 @@ class RSCPub(BasePub):
         tb = self.doc.find('figure[class=pnl--table]')
         header = tb("figcaption")
 
-        self._parse_table(tb=tb, caption=header)
+        thead = self._parse_table(tb=tb, caption=header)
 
         # rewrite the parse table-footnote
         footnote_text = []
-        for tb_pq in tb.items():
-            footnote_pq = tb_pq("div[class=footnote]")
+        for tb_pq in thead.parent().items():
+            footnote_pq = tb_pq("tfoot")
             footnote_text.append(footnote_pq.text())
         self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
@@ -250,7 +251,7 @@ class ACSPub(BasePub):
 
 
 class ThiemePub(BasePub):
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('div.tableWrapper')
         header = tb("caption")
 
@@ -262,62 +263,24 @@ class ThiemePub(BasePub):
             footnote_text.append(footnote_pq.text())
         self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
-        self.print_table()
+        super(ThiemePub, self).parse_table(**kargs)
 
 
 class TaylorPub(BasePub):
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('div.tableWrapper')
         header = tb("caption")
 
-        tb_index = BasePub.search_table(header)
-        header = header.filter(lambda i: i in tb_index).text()
-        content = tb.filter(lambda i: i in tb_index)
-        thead = content("thead")
-        tbody = content("tbody")
-
-        if len(thead("tr")) == 0:
-            logger.warning("Can't find Table, Please check the html!!")
-            exit(1)
-        elif len(thead("tr")) == 1:
-            thead_list = thead.text().splitlines()
-        elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
-            row = []
-            for tr_item in thead.items("tr"):
-                row.append([th_item.text() for index, th_item in enumerate(tr_item.items("td"))])
-
-            thead_list = []
-            for item1, item2 in zip_longest(*row):
-                if len(item2):
-                    if item1 is not None:
-                        notation = item1
-                        if len(item1):  # solving the figure row
-                            thead_list.append(item1 + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                    else:
-                        if len(notation):
-                            thead_list.append(notation + "-" + item2)
-                        else:
-                            thead_list.append(item2)
-                else:
-                    thead_list.append(item1)
-        else:
-            raise NotImplementedError
-
-        tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
-        footnote = thead.parent().siblings("p").text()
-
-        self._parse_table = header, thead_list, tbody_list, footnote
-        self.print_table()
+        self._parse_table(tb=tb, caption=header)
+        super(TaylorPub, self).parse_table(**kargs)
 
 
 class ElsevierPub(BasePub):
-    def parse_table(self):
+    def parse_table(self, **kargs):
         tb = self.doc.find('table').parent('div').parent('div')
         caption = tb(".captions")
         self._parse_table(tb=tb, caption=caption)
-        self.print_table()
+        super(ElsevierPub, self).parse_table(**kargs)
 
 
 class PlosPub(BasePub):
@@ -379,6 +342,7 @@ class HtmlTableParser(object):
         "Genetics+and+Molecular+Research": FunpecrpPub,
         'Bentham+Science': EurekaselectPub,
         'Springer-Verlag': SpringerPub,
+        'Pleiades+Publishing': SpringerPub,
     }
 
     def __init__(self, file):
@@ -395,7 +359,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[14]
+    html_file = files[35]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
