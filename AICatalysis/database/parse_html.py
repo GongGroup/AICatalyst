@@ -41,23 +41,34 @@ class BasePub(metaclass=abc.ABCMeta):
     def _parse_table(self, tb=None, caption=None, th="th"):
         tb_index = BasePub.search_table(caption)  # obtain the index of the valid tables
         caption = caption.filter(lambda i: i in tb_index)  # type -> PyQuery
-        content = tb.filter(lambda i: i in tb_index)  # type -> PyQuery
-        thead = content("thead")  # type -> PyQuery
-        tbody = content("tbody")  # type -> PyQuery
-        logger.info(f"Match {len(thead)} tables, start parse~") if len(thead) \
-            else logger.warning(f"Search table failed")
+        table = tb.filter(lambda i: i in tb_index)  # type -> PyQuery
 
-        # parse table-head
-        thead_list = []
-        for thead_pq in thead.items():  # type -> PyQuery
-            if len(thead_pq("tr")) == 0:
-                logger.warning("Can't find Table, Please check the html!!")
-                exit(1)
-            elif len(thead_pq("tr")) == 1:
-                thead_list.append(thead_pq.text().splitlines())
-            elif len(thead_pq("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
+        if len(table):
+            logger.info(f"Match {len(table)} tables, start parse~")
+        else:
+            logger.warning(f"Search table failed")
+
+        def _parse_single_table(stb):
+            """
+            parse single table
+
+            Args:
+                stb: single table prepare to parse (PyQuery)
+
+            Returns:
+                thead_list, tbody_list
+            """
+            thead = stb("thead")
+            tbody = stb("tbody")
+
+            # parse table-head
+            if len(thead("tr")) == 0:
+                thead_list = []
+            elif len(thead("tr")) == 1:
+                thead_list = thead.text().splitlines()
+            elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
                 row = []
-                for tr_item in thead_pq.items("tr"):
+                for tr_item in thead.items("tr"):
                     row.append([th_item.text() for index, th_item in enumerate(tr_item.items(th))])
 
                 if row[1][0]:
@@ -80,21 +91,38 @@ class BasePub(metaclass=abc.ABCMeta):
                                 two_row_list.append(item2)
                     else:
                         two_row_list.append(item1)
-                thead_list.append(two_row_list)
+                thead_list = two_row_list
             else:
                 raise NotImplementedError
 
-        # parse table-content
-        tbody_list = []
-        for tbody_pq, thead_pq in zip(tbody.items(), thead_list):  # type -> PyQuery, list
-            try:
-                tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
-            except ValueError:  # '' in tbody, columns for each row is not match
+            # parse table-body
+            if len(thead_list):
+                tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
+            else:
                 tbody_row_list = []
-                for td_pq in tbody_pq.items("td"):
-                    tbody_row_list.append(td_pq.text())
-                tbody_pq_list = np.array(tbody_row_list).reshape((-1, len(thead_pq))).tolist()
-            tbody_list.append(tbody_pq_list)
+                for tr_pq in tbody.items("tr"):
+                    tbody_row_list.append(tr_pq.text().split("\n"))
+                tbody_list = tbody_row_list
+
+            return thead_list, tbody_list
+
+        thead_list, tbody_list = [], []
+        for stb in table.items():
+            stb_thead_list, stb_tbody_list = _parse_single_table(stb)
+            thead_list.append(stb_thead_list)
+            tbody_list.append(stb_tbody_list)
+
+        # # parse table-content
+        # tbody_list = []
+        # for tbody_pq, thead_pq in zip(tbody.items(), thead_list):  # type -> PyQuery, list
+        #     try:
+        #         tbody_pq_list = np.array(tbody_pq.text().splitlines()).reshape((-1, len(thead_pq))).tolist()
+        #     except ValueError:  # '' in tbody, columns for each row is not match
+        #         tbody_row_list = []
+        #         for td_pq in tbody_pq.items("td"):
+        #             tbody_row_list.append(td_pq.text())
+        #         tbody_pq_list = np.array(tbody_row_list).reshape((-1, len(thead_pq))).tolist()
+        #         tbody_list.append(tbody_pq_list)
 
         # parse table-caption and table-footnote
         footnote_text, caption_text = [], []
@@ -103,9 +131,11 @@ class BasePub(metaclass=abc.ABCMeta):
             footnote_pq = caption_pq.parent()('.footnotes')  # type -> PyQuery
             footnote_text.append(footnote_pq.text())
 
+        assert len(caption_text) == len(thead_list) == len(tbody_list) == len(footnote_text)
+
         self._table = _Table(caption_text, thead_list, tbody_list, footnote_text)  # type -> list, list, list, list
 
-        return thead  # type -> PyQuery
+        return table  # type -> PyQuery
 
     @abc.abstractmethod
     def parse_table(self, print=True, save=False, name="table.csv", url=None):
@@ -116,6 +146,9 @@ class BasePub(metaclass=abc.ABCMeta):
 
     def print_table(self):
         for caption, thead_list, tbody_list, footnote in zip(*self._table):
+            if not len(thead_list):
+                thead_list = [''] * len(tbody_list[0])
+
             print(caption)
             print()
 
@@ -238,12 +271,15 @@ class ACSPub(BasePub):
         tb = self.doc.find('div[class=NLM_table-wrap]')
         header = tb("div[class=NLM_caption]")
 
-        self._parse_table(tb=tb, caption=header)
+        tb = self._parse_table(tb=tb, caption=header)
 
         # rewrite the parse table-footnote
         footnote_text = []
         for tb_pq in tb.items():
-            footnote_pq = tb_pq("div[class=footnote]")
+            if len(tb_pq("div[class=footnote]")):
+                footnote_pq = tb_pq("div[class=footnote]")
+            else:
+                footnote_pq = tb_pq("div[class=NLM_table-wrap-foot]")
             footnote_text.append(footnote_pq.text())
         self._table = _Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
@@ -255,7 +291,7 @@ class ThiemePub(BasePub):
         tb = self.doc.find('div.tableWrapper')
         header = tb("caption")
 
-        thead = self._parse_table(tb=tb, caption=header, th="td")
+        thead, _ = self._parse_table(tb=tb, caption=header, th="td")
         # rewrite the parse table-footnote
         footnote_text = []
         for thead_pq in thead.items():
@@ -369,7 +405,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[41]
+    html_file = files[49]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
