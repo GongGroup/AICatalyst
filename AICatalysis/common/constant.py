@@ -68,4 +68,4 @@ ElementInfo = YamlIO.read(Elements)
 QM1 = QMIO.read1(FQM1)
 QM2 = QMIO.read2(FQM2)
 
-_Table = namedtuple("_Table", ("caption", "thead", "tbody", "footnote"))
+Table = namedtuple("Table", ("caption", "thead", "tbody", "footnote"))
