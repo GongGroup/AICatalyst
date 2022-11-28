@@ -24,8 +24,8 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item):
-            CODs = ['condition', 'control', 'effect', 'optimization', 'phenylboronate', 'screen', 'various',
-                    'with and without']
+            CODs = ['condition', 'control', 'effect', 'optimization', 'phenylboronate', 'screen', 'synthesis',
+                    'various', 'with and without']
             for cod in CODs:
                 if cod in item.text().lower():
                     return True
@@ -100,10 +100,21 @@ class BasePub(metaclass=abc.ABCMeta):
                 try:
                     tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
                 except ValueError:  # '' in tbody, columns for each row is not match
-                    tbody_row_list = []
-                    for td_pq in tbody.items("td"):
-                        tbody_row_list.append(td_pq.text())
-                    tbody_list = np.array(tbody_row_list).reshape((-1, len(thead_list))).tolist()
+                    tbody_list = []
+                    row_span = 1
+                    row_span_i, row_span_v = 0, None
+                    for tr_pq in tbody.items("tr"):
+                        tbody_row_list = []
+                        for td_i, td_pq in enumerate(tr_pq.items("td")):
+                            if row_span != 1 and td_i == row_span_i:
+                                tbody_row_list.append(row_span_v)
+                                row_span -= 1
+                            if td_pq.attr("rowspan"):  # <td rowspan=3>...</td>
+                                row_span = int(td_pq.attr("rowspan"))
+                                row_span_i = td_i
+                                row_span_v = td_pq.text()
+                            tbody_row_list.append(td_pq.text())
+                        tbody_list.append(tbody_row_list)
             else:
                 tbody_row_list = []
                 for tr_pq in tbody.items("tr"):
@@ -253,12 +264,13 @@ class RSCPub(BasePub):
         tb = self.doc.find('figure[class=pnl--table]')
         header = tb("figcaption")
 
-        thead = self._parse_table(tb=tb, caption=header)
+        table = self._parse_table(tb=tb, caption=header)
 
         # rewrite the parse table-footnote
         footnote_text = []
-        for tb_pq in thead.parent().items():
-            footnote_pq = tb_pq("tfoot")
+        for stb in table.items():
+            tbody = stb("thead").parent()
+            footnote_pq = tbody("tfoot")
             footnote_text.append(footnote_pq.text())
         self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
@@ -404,7 +416,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[53]
+    html_file = files[59]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
