@@ -24,8 +24,8 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item):
-            CODs = ['condition', 'control', 'effect', 'optimization', 'phenylboronate', 'screen', 'synthesis',
-                    'various', 'with and without']
+            CODs = ['catalytic', 'condition', 'control', 'effect', 'optimization', 'phenylboronate', 'screen',
+                    'synthesis', 'various', 'with and without']
             for cod in CODs:
                 if cod in item.text().lower():
                     return True
@@ -133,7 +133,10 @@ class BasePub(metaclass=abc.ABCMeta):
         footnote_text, caption_text = [], []
         for caption_pq in caption.items():  # type -> PyQuery
             caption_text.append(caption_pq.text())
-            footnote_pq = caption_pq.parent()('.footnotes')  # type -> PyQuery
+            if len(caption_pq.parent()('.footnotes')):  # type -> PyQuery
+                footnote_pq = caption_pq.parent()('.footnotes')
+            else:
+                footnote_pq = caption_pq.parent()('.legend').siblings('p')
             footnote_text.append(footnote_pq.text())
 
         assert len(caption_text) == len(thead_list) == len(tbody_list) == len(footnote_text)
@@ -416,7 +419,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[59]
+    html_file = files[81]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
