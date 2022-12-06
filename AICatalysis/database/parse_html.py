@@ -24,8 +24,8 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item):
-            CODs = ['catalytic', 'condition', 'control', 'effect', 'optimization', 'phenylboronate', 'screen',
-                    'synthesis', 'various', 'with and without']
+            CODs = ['catalytic', 'carbonylation', 'condition', 'control', 'effect', 'optimization', 'phenylboronate',
+                    'ratio', 'screen', 'synthesis', 'various', 'with and without']
             for cod in CODs:
                 if cod in item.text().lower():
                     return True
@@ -92,6 +92,16 @@ class BasePub(metaclass=abc.ABCMeta):
                     else:
                         two_row_list.append(item1)
                 thead_list = two_row_list
+            elif len(thead("tr")) == 3:  # solving thead in three rows, e.g., 10.1002/ejoc.201201708
+                thead_list = []
+                tr_items = thead("tr").filter(lambda i, this: not PyQuery(this).find("figure"))
+                assert len(tr_items) == 2, "tr_items length != 2"
+                tr_1 = tr_items.filter(lambda i: i == 0)
+                tr_2 = tr_items.filter(lambda i: i == 1)
+                for th_1, th_2 in zip(tr_1.items("th"), tr_2.items("th")):
+                    th_1.remove("span")
+                    th_2.remove("span")
+                    thead_list.append(th_1.text() + th_2.text())
             else:
                 raise NotImplementedError
 
@@ -305,11 +315,12 @@ class ThiemePub(BasePub):
         tb = self.doc.find('div.tableWrapper')
         header = tb("caption")
 
-        thead, _ = self._parse_table(tb=tb, caption=header, th="td")
+        table = self._parse_table(tb=tb, caption=header, th="td")
         # rewrite the parse table-footnote
         footnote_text = []
-        for thead_pq in thead.items():
-            footnote_pq = thead_pq.parent().siblings("p")
+        for stb in table.items():
+            thead = stb("thead")
+            footnote_pq = thead.parent().siblings("p")
             footnote_text.append(footnote_pq.text())
         self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
 
@@ -419,7 +430,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[81]
+    html_file = files[96]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
