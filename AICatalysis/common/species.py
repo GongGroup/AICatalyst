@@ -40,6 +40,8 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
+TransMetalElement = ['Pd']
+
 
 class ChemFormula(object):
     mapping = JsonIO.read(FFormula)
@@ -80,6 +82,22 @@ class Metal(object):
     def is_metal(name):
         try:
             Metal(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
+class TransMetal(object):
+    name = CatalystDescriptor('name', TransMetalElement)
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_transmetal(name):
+        try:
+            TransMetal(name)
         except ValueError:
             return False
         else:

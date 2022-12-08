@@ -1,4 +1,6 @@
 import itertools
+import tokenize
+from io import BytesIO
 
 
 def sort_defaultdict(ddict):
@@ -7,3 +9,11 @@ def sort_defaultdict(ddict):
 
 def get_combinations(sequence1, sequence2):
     return set(tuple([tuple(sorted(item)) for item in itertools.product(sequence1, sequence2) if item[0] != item[1]]))
+
+
+def get_tokens(lines: list):
+    tokens = []
+    for line in lines:
+        _tokens = tokenize.tokenize(BytesIO(line.encode('utf-8')).readline)
+        tokens.append([token for token in _tokens])
+    return tokens
