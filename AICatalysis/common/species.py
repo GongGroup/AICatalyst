@@ -2,7 +2,7 @@ import logging
 import shutil
 
 from AICatalysis.common.constant import FFormula, FChemical
-from AICatalysis.common.descriptor import CatalystDescriptor, FormulaDescriptor
+from AICatalysis.common.descriptor import MetalDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
 from AICatalysis.database.ichem import IChemCrawler
 
@@ -70,7 +70,7 @@ class ChemFormula(object):
 
 
 class Metal(object):
-    name = CatalystDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
+    name = MetalDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
 
     def __init__(self, name):
         self.name = name
@@ -79,7 +79,7 @@ class Metal(object):
         return f"<MCatalyst [{self.name}]>"
 
     @staticmethod
-    def is_metal(name):
+    def is_or_not(name):
         try:
             Metal(name)
         except ValueError:
@@ -89,13 +89,13 @@ class Metal(object):
 
 
 class TransMetal(object):
-    name = CatalystDescriptor('name', TransMetalElement)
+    name = MetalDescriptor('name', TransMetalElement)
 
     def __init__(self, name):
         self.name = name
 
     @staticmethod
-    def is_transmetal(name):
+    def is_or_not(name):
         try:
             TransMetal(name)
         except ValueError:
@@ -104,9 +104,89 @@ class TransMetal(object):
             return True
 
 
+class Ligand(object):
+    name = SolDescriptor('name', ["ligand"])
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Ligand(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
+class Solvent(object):
+    name = SolDescriptor('name', ['mL'])
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Solvent(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
+class Time(object):
+    name = TimeDescriptor('name')
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Time(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
+class Temperature(object):
+    name = SolDescriptor('name', ['RT'])
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Temperature(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
+class Gas(object):
+    name = SolDescriptor('name', ['N2'])
+
+    def __init__(self, name):
+        self.name = name
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Gas(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+
 if __name__ == '__main__':
     chemicals = JsonIO.read(FChemical)
-    catalysts = {chemical: Metal.is_metal(chemical) for chemical in chemicals[2500:]}
+    catalysts = {chemical: Metal.is_or_not(chemical) for chemical in chemicals[2500:]}
     # for chemical in chemicals:
     #     try:
     #         formula = ChemFormula(chemical)

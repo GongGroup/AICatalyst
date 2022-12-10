@@ -73,16 +73,35 @@ class FormulaDescriptor(Descriptor):
         super().__set__(instance, value)
 
 
-class CatalystDescriptor(ValueDescriptor):
+class MetalDescriptor(ValueDescriptor):
     """
-    CatalystDescriptor, check name is valid as catalyst
+    MetalDescriptor, check name has metal
     """
 
     # TODO: need add other conditions, e.g. Amino not but True, N,N-diethylisonicotinamide not but true
     def __set__(self, instance, value):
         for item in self.value:
-            if item in value:
+            if item in value and "Reaction" not in value:
                 break
         else:
+            raise ValueError(f"`{value}` is invalid name")
+        super().__set__(instance, value)
+
+
+class SolDescriptor(MetalDescriptor):
+    """
+    SolDescriptor, check name is valid as solvent
+    """
+
+    pass
+
+
+class TimeDescriptor(Descriptor):
+    """
+    TimeDescriptor, check name is valid as time
+    """
+
+    def __set__(self, instance, value):
+        if re.search('[0-9]+\s*h', value) is None:
             raise ValueError(f"`{value}` is invalid name")
         super().__set__(instance, value)

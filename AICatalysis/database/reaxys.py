@@ -238,7 +238,7 @@ class Reaxys(object):
         catalyst_type = defaultdict(list)
         for record in self.records(transform=transform):
             for item in record.reagent:
-                if Metal.is_metal(item):
+                if Metal.is_or_not(item):
                     catalyst_type[item].append(record)
         return sort_defaultdict(catalyst_type)
 

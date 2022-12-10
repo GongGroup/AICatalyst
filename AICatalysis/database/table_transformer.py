@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from AICatalysis.common.error import ParseError
-from AICatalysis.common.species import TransMetal
+from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand
 from AICatalysis.common.utils import get_tokens
 
 
@@ -71,14 +71,29 @@ class CSVReader(FileIO):
             line_split = [line[1].line[s:e] for s, e in zip(line_split_index[:-1], line_split_index[1:])]
             if 'condition' in line_split[0]:
                 bcon = re.split(r':|,', line_split[0])
-                for item in bcon:
-                    if TransMetal.is_transmetal(item):
-                        print(TransMetal(item).name)
-
                 print("Start analyse the `base reaction condition`...")
+                for item in bcon:
+                    if TransMetal.is_or_not(item):
+                        print("TM: " + TransMetal(item).name)
+                    elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
+                        print("M: " + Metal(item).name)
+                    elif Ligand.is_or_not(item):
+                        print("L: " + Ligand(item).name)
+                    elif Solvent.is_or_not(item):
+                        print("Sol: " + Solvent(item).name)
+                    elif Gas.is_or_not(item):
+                        print("Gas: " + Gas(item).name)
+                    elif Time.is_or_not(item):
+                        print("Time: " + Time(item).name)
+                    elif Temperature.is_or_not(item):
+                        print("Temperature: " + Temperature(item).name)
+                    elif "reaction" in item.lower():
+                        continue
+                    else:
+                        print(f"Can't recognize `{item}`")
+                print()
             else:
                 print("Can't find `base reaction condition` in footnotes!")
-            pass
 
         return footnotes
 
