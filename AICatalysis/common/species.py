@@ -74,6 +74,8 @@ class Metal(object):
 
     def __init__(self, name):
         self.name = name
+        self.formula = None
+        self.content = None
 
     def __repr__(self):
         return f"<MCatalyst [{self.name}]>"
@@ -87,12 +89,20 @@ class Metal(object):
         else:
             return True
 
+    def parse(self):
+        if "mol" in self.name or "equiv" in self.name:
+            self.formula, self.content = self.name.split()
+            self.content = self.content.replace("(", "").replace(")","")
+        else:
+            self.formula = self.name
 
 class TransMetal(object):
     name = MetalDescriptor('name', TransMetalElement)
 
     def __init__(self, name):
         self.name = name
+        self.formula = None
+        self.content = None
 
     @staticmethod
     def is_or_not(name):
@@ -103,12 +113,20 @@ class TransMetal(object):
         else:
             return True
 
+    def parse(self):
+        if "mol" in self.name:
+            self.formula, self.content = self.name.split()
+            self.content = self.content.replace("(", "").replace(")","")
+        else:
+            self.formula = self.name
 
 class Ligand(object):
     name = SolDescriptor('name', ["ligand"])
 
     def __init__(self, name):
         self.name = name
+        self.formula = None
+        self.content = None
 
     @staticmethod
     def is_or_not(name):
@@ -119,12 +137,20 @@ class Ligand(object):
         else:
             return True
 
+    def parse(self):
+        if "mol" in self.name:
+            self.formula, self.content = self.name.split()
+            self.content = self.content.replace("(", "").replace(")","")
+        else:
+            self.formula = self.name
 
 class Solvent(object):
     name = SolDescriptor('name', ['mL'])
 
     def __init__(self, name):
         self.name = name
+        self.formula = None
+        self.content = None
 
     @staticmethod
     def is_or_not(name):
@@ -135,6 +161,12 @@ class Solvent(object):
         else:
             return True
 
+    def parse(self):
+        if "mL" in self.name:
+            self.formula, self.content = self.name.split()
+            self.content = self.content.replace("(", "").replace(")","")
+        else:
+            self.formula = self.name
 
 class Time(object):
     name = TimeDescriptor('name')

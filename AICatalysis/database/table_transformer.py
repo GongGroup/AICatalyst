@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from pathlib import Path
 
 from AICatalysis.common.error import ParseError
@@ -57,7 +58,8 @@ class CSVReader(FileIO):
             body = table[2:foot_start]
             pass
 
-    def _parse_footnote(self, lines):
+    @staticmethod
+    def _parse_footnote(lines):
         footnotes = []
         tokens = get_tokens(lines)
 
@@ -69,24 +71,43 @@ class CSVReader(FileIO):
 
             # split every footnote into list, e.g., ['[a]xxxx', '[b]xxxx', ...]
             line_split = [line[1].line[s:e] for s, e in zip(line_split_index[:-1], line_split_index[1:])]
+            ReaCon = defaultdict(list)
             if 'condition' in line_split[0]:
-                bcon = re.split(r':|,', line_split[0])
+                bcon = re.split(r'[:,]', line_split[0])
                 print("Start analyse the `base reaction condition`...")
                 for item in bcon:
                     if TransMetal.is_or_not(item):
-                        print("TM: " + TransMetal(item).name)
+                        species = TransMetal(item)
+                        species.parse()
+                        ReaCon['TM'].append((species.formula, species.content))
+                        print("TM: " + species.formula, species.content)
                     elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
-                        print("M: " + Metal(item).name)
+                        species = Metal(item)
+                        species.parse()
+                        ReaCon['M'].append((species.formula, species.content))
+                        print("M: " + species.formula, species.content)
                     elif Ligand.is_or_not(item):
-                        print("L: " + Ligand(item).name)
+                        species = Ligand(item)
+                        species.parse()
+                        ReaCon['L'].append((species.formula, species.content))
+                        print("L: " + species.formula, species.content)
                     elif Solvent.is_or_not(item):
-                        print("Sol: " + Solvent(item).name)
+                        species = Solvent(item)
+                        species.parse()
+                        ReaCon['Sol'].append((species.formula, species.content))
+                        print("Sol: " + species.formula, species.content)
                     elif Gas.is_or_not(item):
-                        print("Gas: " + Gas(item).name)
+                        species = Gas(item)
+                        ReaCon['Gas'].append(species.name)
+                        print("Gas: " + species.name)
                     elif Time.is_or_not(item):
-                        print("Time: " + Time(item).name)
+                        species = Time(item)
+                        ReaCon['Time'].append(species.name)
+                        print("Time: " + species.name)
                     elif Temperature.is_or_not(item):
-                        print("Temperature: " + Temperature(item).name)
+                        species = Temperature(item)
+                        ReaCon['Temp'].append(species.name)
+                        print("Temperature: " + species.name)
                     elif "reaction" in item.lower():
                         continue
                     else:
@@ -94,6 +115,8 @@ class CSVReader(FileIO):
                 print()
             else:
                 print("Can't find `base reaction condition` in footnotes!")
+
+            footnotes.append(ReaCon)
 
         return footnotes
 
