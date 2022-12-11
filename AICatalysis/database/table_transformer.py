@@ -58,8 +58,8 @@ class CSVReader(FileIO):
 
             # parse body && footnotes
             body = self._parse_body(table[2:foot_start], checked_AllCol)  # type -> list(dict)
-            footnotes = self._parse_footnote(table[foot_start:-1])
-            records = self._merge_bf(body, footnotes[0])
+            base_i, footnotes = self._parse_footnote(table[foot_start:-1])
+            records = self._merge_bf(body, base_i, footnotes)
             pass
 
     @staticmethod
@@ -99,7 +99,7 @@ class CSVReader(FileIO):
             species.parse()
             return species.formula, species.content
 
-        footnotes = []
+        base_i, footnotes = None, []
         tokens = get_tokens(lines)
 
         for line in tokens:
@@ -110,11 +110,13 @@ class CSVReader(FileIO):
 
             # split every footnote into list, e.g., ['[a]xxxx', '[b]xxxx', ...]
             multi_foots = [line[1].line[s:e] for s, e in zip(line_split_index[:-1], line_split_index[1:])]
-            ReaCon = defaultdict(list)
-            if 'condition' in multi_foots[0]:
-                bcon = re.split(r'[:,]', multi_foots[0])
-                print("Start analyse the `base reaction condition`...")
-                for item in bcon:
+            for index, single_foot in enumerate(multi_foots):
+                ReaCon = defaultdict(list)
+                single_foot = re.sub(r'\[[a-z]\]', r'', single_foot)  # remove [a] in the first
+                cond = re.split(r'[:,;]', single_foot)
+                if 'condition' in single_foot:
+                    base_i = index
+                for item in cond:
                     if TransMetal.is_or_not(item):
                         ReaCon['metal'].append(sub_parse_species(TransMetal, item))
                     elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
@@ -137,15 +139,12 @@ class CSVReader(FileIO):
                     else:
                         print(f"Can't recognize `{item}`")
                 print()
-            else:
-                print("Can't find `base reaction condition` in footnotes!")
+                footnotes.append(ReaCon)
 
-            footnotes.append(ReaCon)
-
-        return footnotes
+        return base_i, footnotes
 
     @staticmethod
-    def _merge_bf(body, footnote):
+    def _merge_bf(body, base_i, footnotes):
         features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield']
         records = []
         for item in body:
@@ -153,8 +152,11 @@ class CSVReader(FileIO):
             for fea in features:
                 if item.get(fea, None) is not None:
                     temp_record[fea] = item[fea]
-                elif footnote.get(fea, None) is not None:
-                    temp_record[fea] = footnote[fea]
+                else:
+                    if base_i is not None:
+                        base_cond = footnotes[base_i]
+                        if base_cond.get(fea, None) is not None:
+                            temp_record[fea] = base_cond[fea]
             records.append(temp_record)
 
         return records
