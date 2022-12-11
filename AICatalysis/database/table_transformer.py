@@ -2,6 +2,8 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
+
 from AICatalysis.common.error import ParseError
 from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand
 from AICatalysis.common.utils import get_tokens
@@ -46,6 +48,7 @@ class CSVReader(FileIO):
             else:
                 raise ParseError("The table has not `entry` field, please check!!")
             columns = head.split(",")
+            checked_AllCol = self._parse_columns(columns)
 
             # obtain table footnote
             foot_start = -1
@@ -56,7 +59,36 @@ class CSVReader(FileIO):
             footnotes = self._parse_footnote(table[foot_start:-1])
 
             body = table[2:foot_start]
+            self._parse_body(body, checked_AllCol)
             pass
+
+    @staticmethod
+    def _parse_columns(columns):
+        AllCol = {'metal': None,
+                  'ligand': None,
+                  'gas': None,
+                  'solvent': None,
+                  'reagent': None,
+                  'time': None,
+                  'temperature': None,
+                  'yield': None}
+
+        for key in AllCol.keys():
+            for index, col in enumerate(columns):
+                if key in col.lower():
+                    AllCol[key] = index
+
+        return AllCol
+
+    @staticmethod
+    def _parse_body(lines, AllCol):
+        lines_np = np.array([line.split(",") for line in lines])
+        for key, value in AllCol.items():
+            if value is not None:
+                pass
+
+        for line in lines_np:
+            print(line)
 
     @staticmethod
     def _parse_footnote(lines):
