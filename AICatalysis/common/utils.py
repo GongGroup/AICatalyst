@@ -1,5 +1,6 @@
 import itertools
 import tokenize
+from collections.abc import Iterable
 from io import BytesIO
 
 
@@ -17,3 +18,11 @@ def get_tokens(lines: list):
         _tokens = tokenize.tokenize(BytesIO(line.encode('utf-8')).readline)
         tokens.append([token for token in _tokens])
     return tokens
+
+
+def flatten(items, ignore_types=(str, bytes)):
+    for x in items:
+        if isinstance(x, Iterable) and not isinstance(x, ignore_types):
+            yield from flatten(x)
+        else:
+            yield x

@@ -1,4 +1,6 @@
+import copy
 import re
+import string
 from collections import defaultdict
 from pathlib import Path
 
@@ -6,7 +8,7 @@ import numpy as np
 
 from AICatalysis.common.error import ParseError
 from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand
-from AICatalysis.common.utils import get_tokens
+from AICatalysis.common.utils import get_tokens, flatten
 
 
 class FileIO(object):
@@ -107,12 +109,14 @@ class CSVReader(FileIO):
             for index, token in enumerate(line):
                 if token.string == '[' and line[index + 2].string == ']':
                     line_split_index.append(token.start[1])
-
+            else:
+                line_split_index.append(line[index - 2].end[1])
             # split every footnote into list, e.g., ['[a]xxxx', '[b]xxxx', ...]
             multi_foots = [line[1].line[s:e] for s, e in zip(line_split_index[:-1], line_split_index[1:])]
+            print("\n".join(multi_foots))
             for index, single_foot in enumerate(multi_foots):
                 ReaCon = defaultdict(list)
-                single_foot = re.sub(r'\[[a-z]\]', r'', single_foot)  # remove [a] in the first
+                single_foot = re.sub(r'\[[a-z]+\]', r'', single_foot)  # remove [a] in the first
                 cond = re.split(r'[:,;]', single_foot)
                 if 'condition' in single_foot:
                     base_i = index
@@ -145,18 +149,47 @@ class CSVReader(FileIO):
 
     @staticmethod
     def _merge_bf(body, base_i, footnotes):
+
+        def parse_ref(ref: str):
+            symbol = re.search("\[([a-z]+)]", ref).groups()[0]
+            if symbol in string.ascii_lowercase:
+                return string.ascii_lowercase.index(symbol)
+
+        base_cond = footnotes[base_i] if base_i is not None else None
         features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield']
         records = []
         for item in body:
+            patten = re.compile("(\[[a-z]+])")
+            indicator = [patten.search(value).groups() if patten.search(value) is not None else None
+                         for value in item.values()]
+            indicator = [item for item in flatten(indicator) if item is not None]
+            symbols = [parse_ref(ii) for ii in indicator]
+            other_cond = [footnotes[ii] for ii in symbols] if len(symbols) else []
             temp_record = {}
             for fea in features:
+                if base_cond is not None and base_cond.get(fea, None) is not None:
+                    temp_record[fea] = copy.deepcopy(base_cond[fea])  # memory view may fail
                 if item.get(fea, None) is not None:
-                    temp_record[fea] = item[fea]
-                else:
-                    if base_i is not None:
-                        base_cond = footnotes[base_i]
-                        if base_cond.get(fea, None) is not None:
-                            temp_record[fea] = base_cond[fea]
+                    if temp_record.get(fea, None) is not None and fea == 'ligand':
+                        ll = Ligand(item[fea])
+                        ll.parse()
+                        if ll.formula is not None:
+                            temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
+                        if ll.content is not None:
+                            temp_record[fea][0] = (temp_record[fea][0][0], ll.content)
+                    else:
+                        temp_record[fea] = item[fea]
+            else:
+                if len(other_cond):
+                    for oc in other_cond:
+                        for key in oc.keys():
+                            if key == "ligand":
+                                if oc[key][0][0] == "Ligand":
+                                    temp_record[key][0] = (temp_record[key][0][0], oc[key][0][1])
+                                else:
+                                    temp_record[key][0] = oc[key][0]
+                            else:
+                                temp_record[key] = oc[key]
             records.append(temp_record)
 
         return records

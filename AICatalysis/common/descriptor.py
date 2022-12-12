@@ -73,6 +73,15 @@ class FormulaDescriptor(Descriptor):
         super().__set__(instance, value)
 
 
+def not_have_exclude(value):
+    excludes = ["Reaction", "Ligand"]
+    for item in excludes:
+        if item in value:
+            return False
+    else:
+        return True
+
+
 class MetalDescriptor(ValueDescriptor):
     """
     MetalDescriptor, check name has metal
@@ -81,7 +90,7 @@ class MetalDescriptor(ValueDescriptor):
     # TODO: need add other conditions, e.g. Amino not but True, N,N-diethylisonicotinamide not but true
     def __set__(self, instance, value):
         for item in self.value:
-            if item in value and "Reaction" not in value:
+            if item in value and not_have_exclude(value):
                 break
         else:
             raise ValueError(f"`{value}` is invalid name")
@@ -94,6 +103,20 @@ class SolDescriptor(MetalDescriptor):
     """
 
     pass
+
+
+class LigandDescriptor(ValueDescriptor):
+    """
+    LigandDescriptor, check name is valid as solvent
+    """
+
+    def __set__(self, instance, value):
+        for item in self.value:
+            if item in value:
+                break
+        else:
+            raise ValueError(f"`{value}` is invalid name")
+        super().__set__(instance, value)
 
 
 class TimeDescriptor(Descriptor):

@@ -2,7 +2,8 @@ import logging
 import shutil
 
 from AICatalysis.common.constant import FFormula, FChemical
-from AICatalysis.common.descriptor import MetalDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor
+from AICatalysis.common.descriptor import MetalDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
+    LigandDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
 from AICatalysis.database.ichem import IChemCrawler
 
@@ -41,6 +42,9 @@ MetalElementName = [
 ]
 
 TransMetalElement = ['Pd']
+
+LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
+              "Xantphos", "dppf", "DPEphos", '–']
 
 
 class ChemFormula(object):
@@ -92,9 +96,10 @@ class Metal(object):
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
             self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")","")
+            self.content = self.content.replace("(", "").replace(")", "")
         else:
             self.formula = self.name
+
 
 class TransMetal(object):
     name = MetalDescriptor('name', TransMetalElement)
@@ -116,12 +121,13 @@ class TransMetal(object):
     def parse(self):
         if "mol" in self.name:
             self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")","")
+            self.content = self.content.replace("(", "").replace(")", "")
         else:
             self.formula = self.name
 
+
 class Ligand(object):
-    name = SolDescriptor('name', ["ligand"])
+    name = LigandDescriptor('name', LigandType)
 
     def __init__(self, name):
         self.name = name
@@ -140,9 +146,10 @@ class Ligand(object):
     def parse(self):
         if "mol" in self.name:
             self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")","")
+            self.content = self.content.replace("(", "").replace(")", "")
         else:
             self.formula = self.name
+
 
 class Solvent(object):
     name = SolDescriptor('name', ['mL'])
@@ -164,9 +171,10 @@ class Solvent(object):
     def parse(self):
         if "mL" in self.name:
             self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")","")
+            self.content = self.content.replace("(", "").replace(")", "")
         else:
             self.formula = self.name
+
 
 class Time(object):
     name = TimeDescriptor('name')
