@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from AICatalysis.common.error import ParseError
-from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand
+from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand, Base, Additive
 from AICatalysis.common.utils import get_tokens, flatten
 
 
@@ -50,18 +50,22 @@ class CSVReader(FileIO):
             else:
                 raise ParseError("The table has not `entry` field, please check!!")
             checked_AllCol = self._parse_head(head.split(","))
+            if checked_AllCol['yield'] is None:
+                print("Warning: `yield` feature not exist, continue")
+                continue
 
             # locate table footnote
             foot_start = -1
             for index, line in enumerate(table):
-                if line.startswith('[a]'):
+                if line.startswith('[a]') or line.startswith('a'):
                     foot_start = index
                     break
 
             # parse body && footnotes
             body = self._parse_body(table[2:foot_start], checked_AllCol)  # type -> list(dict)
-            base_i, footnotes = self._parse_footnote(table[foot_start:-1])
+            multi_foots, base_i, footnotes = self._parse_footnote(table[foot_start:-1])
             records = self._merge_bf(body, base_i, footnotes)
+            print()
             pass
 
     @staticmethod
@@ -73,11 +77,17 @@ class CSVReader(FileIO):
                   'reagent': None,
                   'time': None,
                   'temperature': None,
-                  'yield': None}
+                  'yield': None,
+                  'base': None,
+                  'additive': None}
 
         for key in AllCol.keys():
             for index, col in enumerate(columns):
                 if key in col.lower():
+                    AllCol[key] = index
+                if "temp" in col and key == 'temperature':
+                    AllCol[key] = index
+                if "catalyst" in col and key == 'metal':
                     AllCol[key] = index
 
         return AllCol
@@ -101,8 +111,23 @@ class CSVReader(FileIO):
             species.parse()
             return species.formula, species.content
 
-        base_i, footnotes = None, []
-        tokens = get_tokens(lines)
+        def unify_ref(lines):
+            unify_lines = []
+            for l in lines:
+                if re.search(r'\[[a-z]+]', l) is not None:
+                    unify_lines.append(l)
+                else:
+                    patten1 = re.compile(r'^([a-z]{1})\s')
+                    patten2 = re.compile(r'\s([a-z]{1})\s')
+                    l = patten1.sub(r'[\1] ', l)
+                    l = patten2.sub(r'[\1] ', l)
+                    unify_lines.append(l)
+            return unify_lines
+
+        base_i, footnotes, multi_foots = None, [], []
+        join_lines = [' '.join(lines)]
+        unify_lines = unify_ref(join_lines)
+        tokens = get_tokens(unify_lines)
 
         for line in tokens:
             line_split_index = []
@@ -125,6 +150,10 @@ class CSVReader(FileIO):
                         ReaCon['metal'].append(sub_parse_species(TransMetal, item))
                     elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
                         ReaCon['reagent'].append(sub_parse_species(Metal, item))
+                    elif Base.is_or_not(item):
+                        ReaCon['base'].append(sub_parse_species(Base, item))
+                    elif Additive.is_or_not(item):
+                        ReaCon['additive'].append(sub_parse_species(Additive, item))
                     elif Ligand.is_or_not(item):
                         ReaCon['ligand'].append(sub_parse_species(Ligand, item))
                     elif Solvent.is_or_not(item):
@@ -141,11 +170,11 @@ class CSVReader(FileIO):
                     elif "reaction" in item.lower():
                         continue
                     else:
-                        print(f"Can't recognize `{item}`")
-                print()
+                        # print(f"Can't recognize `{item}`")
+                        pass
                 footnotes.append(ReaCon)
 
-        return base_i, footnotes
+        return multi_foots, base_i, footnotes
 
     @staticmethod
     def _merge_bf(body, base_i, footnotes):
@@ -156,7 +185,8 @@ class CSVReader(FileIO):
                 return string.ascii_lowercase.index(symbol)
 
         base_cond = footnotes[base_i] if base_i is not None else None
-        features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield']
+        features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield', 'base', 'additive']
+        species_class = {'ligand': Ligand, 'solvent': Solvent, 'metal': TransMetal, 'base': Base, 'additive': Additive}
         records = []
         for item in body:
             patten = re.compile("(\[[a-z]+])")
@@ -170,8 +200,9 @@ class CSVReader(FileIO):
                 if base_cond is not None and base_cond.get(fea, None) is not None:
                     temp_record[fea] = copy.deepcopy(base_cond[fea])  # memory view may fail
                 if item.get(fea, None) is not None:
-                    if temp_record.get(fea, None) is not None and fea == 'ligand':
-                        ll = Ligand(item[fea])
+                    if temp_record.get(fea, None) is not None and fea in ['metal', 'ligand', 'solvent', 'base',
+                                                                          'additive']:
+                        ll = species_class[fea](item[fea])
                         ll.parse()
                         if ll.formula is not None:
                             temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
@@ -198,6 +229,6 @@ class CSVReader(FileIO):
 if __name__ == '__main__':
     csv_dir = "."
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    csvreader = CSVReader(files[0])
+    csvreader = CSVReader(files[1])
     results = csvreader.parse()
     pass

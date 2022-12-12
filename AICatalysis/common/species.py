@@ -1,4 +1,5 @@
 import logging
+import re
 import shutil
 
 from AICatalysis.common.constant import FFormula, FChemical
@@ -41,10 +42,16 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
-TransMetalElement = ['Pd']
+TransMetalElement = ['Pd', 'catalyst']
 
 LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
               "Xantphos", "dppf", "DPEphos", '–']
+
+SolventType = ["mL", "dioxane", "ACN", "DMF", "NMP"]
+
+BaseType = ["base", "TEA", "DIEA", "Na2CO3", "Cs2CO3", "DBU"]
+
+AdditiveType = ["additive", "TBAB", "TBAC", "TBAI"]
 
 
 class ChemFormula(object):
@@ -95,8 +102,64 @@ class Metal(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")", "")
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
+        else:
+            self.formula = self.name
+
+
+class Base(object):
+    name = MetalDescriptor('name', BaseType)
+
+    def __init__(self, name):
+        self.name = name
+        self.formula = None
+        self.content = None
+
+    def __repr__(self):
+        return f"<MCatalyst [{self.name}]>"
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Base(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def parse(self):
+        if "mol" in self.name or "equiv" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
+        else:
+            self.formula = self.name
+
+
+class Additive(object):
+    name = MetalDescriptor('name', AdditiveType)
+
+    def __init__(self, name):
+        self.name = name
+        self.formula = None
+        self.content = None
+
+    def __repr__(self):
+        return f"<MCatalyst [{self.name}]>"
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Additive(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def parse(self):
+        if "mol" in self.name or "equiv" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
 
@@ -120,8 +183,8 @@ class TransMetal(object):
 
     def parse(self):
         if "mol" in self.name:
-            self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")", "")
+            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?mol.*)\)', self.name)
+            self.formula, self.content = match.groups()
         else:
             self.formula = self.name
 
@@ -152,7 +215,7 @@ class Ligand(object):
 
 
 class Solvent(object):
-    name = SolDescriptor('name', ['mL'])
+    name = SolDescriptor('name', SolventType)
 
     def __init__(self, name):
         self.name = name
@@ -170,8 +233,8 @@ class Solvent(object):
 
     def parse(self):
         if "mL" in self.name:
-            self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")", "")
+            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?mL)\)', self.name)
+            self.formula, self.content = match.groups()
         else:
             self.formula = self.name
 
