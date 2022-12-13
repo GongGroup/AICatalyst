@@ -4,7 +4,7 @@ import shutil
 
 from AICatalysis.common.constant import FFormula, FChemical
 from AICatalysis.common.descriptor import MetalDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
-    LigandDescriptor
+    LigandDescriptor, GasDescriptor, AdditiveDescriptor, OxidantDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
 from AICatalysis.database.ichem import IChemCrawler
 
@@ -47,11 +47,13 @@ TransMetalElement = ['Pd', 'catalyst']
 LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
               "Xantphos", "dppf", "DPEphos", '–']
 
-SolventType = ["mL", "dioxane", "ACN", "DMF", "NMP"]
+SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO"]
 
-BaseType = ["base", "TEA", "DIEA", "Na2CO3", "Cs2CO3", "DBU"]
+BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU"]
 
-AdditiveType = ["additive", "TBAB", "TBAC", "TBAI"]
+AdditiveType = ["", "additive", "MI", "TBAB", "TBAC", "TBAI", ]
+
+OxidantType = ["oxidant"]
 
 
 class ChemFormula(object):
@@ -102,7 +104,7 @@ class Metal(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -137,20 +139,42 @@ class Base(object):
 
 
 class Additive(object):
-    name = MetalDescriptor('name', AdditiveType)
+    name = AdditiveDescriptor('name', AdditiveType)
 
     def __init__(self, name):
         self.name = name
         self.formula = None
         self.content = None
 
-    def __repr__(self):
-        return f"<MCatalyst [{self.name}]>"
-
     @staticmethod
     def is_or_not(name):
         try:
             Additive(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def parse(self):
+        if "mol" in self.name or "equiv" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
+        else:
+            self.formula = self.name
+
+
+class Oxidant(object):
+    name = OxidantDescriptor('name', OxidantType)
+
+    def __init__(self, name):
+        self.name = name
+        self.formula = None
+        self.content = None
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Oxidant(name)
         except ValueError:
             return False
         else:
@@ -272,7 +296,7 @@ class Temperature(object):
 
 
 class Gas(object):
-    name = SolDescriptor('name', ['N2'])
+    name = GasDescriptor('name', ['N2', 'CO'])
 
     def __init__(self, name):
         self.name = name

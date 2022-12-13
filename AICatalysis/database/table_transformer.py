@@ -7,7 +7,8 @@ from pathlib import Path
 import numpy as np
 
 from AICatalysis.common.error import ParseError
-from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand, Base, Additive
+from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand, Base, Additive, \
+    Oxidant
 from AICatalysis.common.utils import get_tokens, flatten
 
 
@@ -70,7 +71,8 @@ class CSVReader(FileIO):
 
     @staticmethod
     def _parse_head(columns):
-        AllCol = {'metal': None,
+        AllCol = {'entry': None,
+                  'metal': None,
                   'ligand': None,
                   'gas': None,
                   'solvent': None,
@@ -79,7 +81,8 @@ class CSVReader(FileIO):
                   'temperature': None,
                   'yield': None,
                   'base': None,
-                  'additive': None}
+                  'additive': None,
+                  'oxidant': None}
 
         for key in AllCol.keys():
             for index, col in enumerate(columns):
@@ -94,11 +97,20 @@ class CSVReader(FileIO):
 
     @staticmethod
     def _parse_body(lines, AllCol):
+
+        def unify_value(value):
+            patten = re.compile("([0-9]+)([a-z])")
+            if patten.search(value) is not None:
+                symbol = patten.search(value).groups()
+                return symbol[0] + "[" + symbol[1] + "]"
+            else:
+                return value
+
         lines_np = np.array([line.split(",") for line in lines])
         search_tuple = [(key, index) for key, index in AllCol.items() if index is not None]
         body = []
         for line in lines_np:
-            record = {key: line[index] for key, index in search_tuple}
+            record = {key: unify_value(line[index]) for key, index in search_tuple}
             body.append(record)
 
         return body
@@ -142,7 +154,7 @@ class CSVReader(FileIO):
             for index, single_foot in enumerate(multi_foots):
                 ReaCon = defaultdict(list)
                 single_foot = re.sub(r'\[[a-z]+\]', r'', single_foot)  # remove [a] in the first
-                cond = re.split(r'[:,;]', single_foot)
+                cond = re.split(r': |,|;', single_foot)
                 if 'condition' in single_foot:
                     base_i = index
                 for item in cond:
@@ -150,10 +162,6 @@ class CSVReader(FileIO):
                         ReaCon['metal'].append(sub_parse_species(TransMetal, item))
                     elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
                         ReaCon['reagent'].append(sub_parse_species(Metal, item))
-                    elif Base.is_or_not(item):
-                        ReaCon['base'].append(sub_parse_species(Base, item))
-                    elif Additive.is_or_not(item):
-                        ReaCon['additive'].append(sub_parse_species(Additive, item))
                     elif Ligand.is_or_not(item):
                         ReaCon['ligand'].append(sub_parse_species(Ligand, item))
                     elif Solvent.is_or_not(item):
@@ -161,6 +169,12 @@ class CSVReader(FileIO):
                     elif Gas.is_or_not(item):
                         species = Gas(item)
                         ReaCon['gas'].append(species.name)
+                    elif Base.is_or_not(item):
+                        ReaCon['base'].append(sub_parse_species(Base, item))
+                    elif Oxidant.is_or_not(item):
+                        ReaCon['oxidant'].append(sub_parse_species(Oxidant, item))
+                    elif Additive.is_or_not(item):
+                        ReaCon['additive'].append(sub_parse_species(Additive, item))
                     elif Time.is_or_not(item):
                         species = Time(item)
                         ReaCon['time'].append(species.name)
@@ -185,8 +199,10 @@ class CSVReader(FileIO):
                 return string.ascii_lowercase.index(symbol)
 
         base_cond = footnotes[base_i] if base_i is not None else None
-        features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield', 'base', 'additive']
-        species_class = {'ligand': Ligand, 'solvent': Solvent, 'metal': TransMetal, 'base': Base, 'additive': Additive}
+        features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield', 'base', 'additive',
+                    'oxidant']
+        species_class = {'ligand': Ligand, 'solvent': Solvent, 'metal': TransMetal, 'base': Base, 'additive': Additive,
+                         'oxidant': Oxidant}
         records = []
         for item in body:
             patten = re.compile("(\[[a-z]+])")
@@ -197,20 +213,23 @@ class CSVReader(FileIO):
             other_cond = [footnotes[ii] for ii in symbols] if len(symbols) else []
             temp_record = {}
             for fea in features:
-                if base_cond is not None and base_cond.get(fea, None) is not None:
+                if base_cond is not None and base_cond.get(fea, None) is not None:  # base condition
                     temp_record[fea] = copy.deepcopy(base_cond[fea])  # memory view may fail
-                if item.get(fea, None) is not None:
+                if item.get(fea, None) is not None:  # sub base-condition with body content
                     if temp_record.get(fea, None) is not None and fea in ['metal', 'ligand', 'solvent', 'base',
-                                                                          'additive']:
-                        ll = species_class[fea](item[fea])
+                                                                          'additive', 'oxidant']:
+                        ll = species_class[fea](item[fea])  # body content
                         ll.parse()
-                        if ll.formula is not None:
-                            temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
-                        if ll.content is not None:
-                            temp_record[fea][0] = (temp_record[fea][0][0], ll.content)
+                        if len(temp_record[fea]) == 1:
+                            if ll.formula is not None:
+                                temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
+                            if ll.content is not None:
+                                temp_record[fea][0] = (temp_record[fea][0][0], ll.content)
+                        else:
+                            print("Multi-Match found, please check <merge_bf>")
                     else:
                         temp_record[fea] = item[fea]
-            else:
+            else:  # expand footnotes-ref
                 if len(other_cond):
                     for oc in other_cond:
                         for key in oc.keys():
@@ -229,6 +248,11 @@ class CSVReader(FileIO):
 if __name__ == '__main__':
     csv_dir = "."
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    csvreader = CSVReader(files[1])
+    file = files[3]
+    print(file)
+    csvreader = CSVReader(file)
     results = csvreader.parse()
     pass
+
+# --*--exclude--*--
+# 02215d7edfcd500d46ee0fc005b9422a.csv
