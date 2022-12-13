@@ -9,7 +9,7 @@ from rdkit import RDLogger
 
 from AICatalysis.common.constant import FChemical, FReactions, FReaxysYield, ChemInfo, FReaxys
 from AICatalysis.common.file import JsonIO, CatalystJsonIO
-from AICatalysis.common.species import Metal
+from AICatalysis.common.species import Reagent
 from AICatalysis.common.utils import sort_defaultdict
 
 # close the rdkit warning
@@ -119,7 +119,7 @@ class ReaxysReaction(object):
             for value in values:
                 if key in ["reactant", "reagent", "solvent"]:
                     try:
-                        catalyst = Metal(value)
+                        catalyst = Reagent(value)
                     except ValueError:
                         self.reagent.append(value)
                     else:
@@ -238,7 +238,7 @@ class Reaxys(object):
         catalyst_type = defaultdict(list)
         for record in self.records(transform=transform):
             for item in record.reagent:
-                if Metal.is_or_not(item):
+                if Reagent.is_or_not(item):
                     catalyst_type[item].append(record)
         return sort_defaultdict(catalyst_type)
 

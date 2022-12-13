@@ -13,7 +13,7 @@ from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.constant import QM1, QM2
 from AICatalysis.common.error import StructureError
 from AICatalysis.common.file import JsonIO
-from AICatalysis.common.species import Metal
+from AICatalysis.common.species import Reagent
 from AICatalysis.common.utils import get_combinations
 
 logger = logging.getLogger(__name__)
@@ -436,7 +436,7 @@ class Molecule(object):
         rmol, _ = RMolecule._from_mol_file(file)
         rmol = RMolecule(rmol)
         atoms = rmol.atoms
-        metals = [atom for atom in atoms if Metal.is_or_not(atom.symbol)]
+        metals = [atom for atom in atoms if Reagent.is_or_not(atom.symbol)]
         if len(metals) > 1:
             raise StructureError(f"The num of metal elements is `{len(metals)}`, should be `1`")
         metal = metals[0]

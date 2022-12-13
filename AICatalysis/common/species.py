@@ -3,7 +3,7 @@ import re
 import shutil
 
 from AICatalysis.common.constant import FFormula, FChemical
-from AICatalysis.common.descriptor import MetalDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
+from AICatalysis.common.descriptor import ReagentDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
     LigandDescriptor, GasDescriptor, AdditiveDescriptor, OxidantDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
 from AICatalysis.database.ichem import IChemCrawler
@@ -47,7 +47,8 @@ TransMetalElement = ['Pd', 'catalyst']
 LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
               "Xantphos", "dppf", "DPEphos", '–']
 
-SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO"]
+SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", "Benzene",
+               "Xylene", "DCE"]
 
 BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU"]
 
@@ -82,8 +83,8 @@ class ChemFormula(object):
                 raise RuntimeError("Create ChemFormula instance error")
 
 
-class Metal(object):
-    name = MetalDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
+class Reagent(object):
+    name = ReagentDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
 
     def __init__(self, name):
         self.name = name
@@ -96,7 +97,7 @@ class Metal(object):
     @staticmethod
     def is_or_not(name):
         try:
-            Metal(name)
+            Reagent(name)
         except ValueError:
             return False
         else:
@@ -105,13 +106,16 @@ class Metal(object):
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
-            self.formula, self.content = match.groups()[0:2]
+            if match is None:
+                self.formula = self.name
+            else:
+                self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
 
 
 class Base(object):
-    name = MetalDescriptor('name', BaseType)
+    name = ReagentDescriptor('name', BaseType)
 
     def __init__(self, name):
         self.name = name
@@ -189,7 +193,7 @@ class Oxidant(object):
 
 
 class TransMetal(object):
-    name = MetalDescriptor('name', TransMetalElement)
+    name = ReagentDescriptor('name', TransMetalElement)
 
     def __init__(self, name):
         self.name = name
@@ -207,7 +211,7 @@ class TransMetal(object):
 
     def parse(self):
         if "mol" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?mol.*)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m?mol.*)\)', self.name)
             self.formula, self.content = match.groups()
         else:
             self.formula = self.name
@@ -280,7 +284,7 @@ class Time(object):
 
 
 class Temperature(object):
-    name = SolDescriptor('name', ['RT'])
+    name = SolDescriptor('name', ['RT', "°C"])
 
     def __init__(self, name):
         self.name = name
@@ -313,7 +317,7 @@ class Gas(object):
 
 if __name__ == '__main__':
     chemicals = JsonIO.read(FChemical)
-    catalysts = {chemical: Metal.is_or_not(chemical) for chemical in chemicals[2500:]}
+    catalysts = {chemical: Reagent.is_or_not(chemical) for chemical in chemicals[2500:]}
     # for chemical in chemicals:
     #     try:
     #         formula = ChemFormula(chemical)

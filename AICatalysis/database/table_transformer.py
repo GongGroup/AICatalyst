@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from AICatalysis.common.error import ParseError
-from AICatalysis.common.species import TransMetal, Solvent, Metal, Time, Temperature, Gas, Ligand, Base, Additive, \
+from AICatalysis.common.species import TransMetal, Solvent, Reagent, Time, Temperature, Gas, Ligand, Base, Additive, \
     Oxidant
 from AICatalysis.common.utils import get_tokens, flatten
 
@@ -90,7 +90,7 @@ class CSVReader(FileIO):
                     AllCol[key] = index
                 if "temp" in col and key == 'temperature':
                     AllCol[key] = index
-                if "catalyst" in col and key == 'metal':
+                if ("catalyst" in col or "Palladium" == col or "[Pd]" == col) and key == 'metal':
                     AllCol[key] = index
 
         return AllCol
@@ -110,7 +110,7 @@ class CSVReader(FileIO):
         search_tuple = [(key, index) for key, index in AllCol.items() if index is not None]
         body = []
         for line in lines_np:
-            record = {key: unify_value(line[index]) for key, index in search_tuple}
+            record = {key: unify_value(line[index]) for key, index in search_tuple if index < len(line)}
             body.append(record)
 
         return body
@@ -155,17 +155,20 @@ class CSVReader(FileIO):
                 ReaCon = defaultdict(list)
                 single_foot = re.sub(r'\[[a-z]+\]', r'', single_foot)  # remove [a] in the first
                 cond = re.split(r': |,|;', single_foot)
-                if 'condition' in single_foot:
+                if 'condition' in single_foot.lower():
                     base_i = index
                 for item in cond:
                     if TransMetal.is_or_not(item):
                         ReaCon['metal'].append(sub_parse_species(TransMetal, item))
-                    elif not TransMetal.is_or_not(item) and Metal.is_or_not(item):
-                        ReaCon['reagent'].append(sub_parse_species(Metal, item))
+                    elif Time.is_or_not(item):
+                        species = Time(item)
+                        ReaCon['time'].append(species.name)
                     elif Ligand.is_or_not(item):
                         ReaCon['ligand'].append(sub_parse_species(Ligand, item))
                     elif Solvent.is_or_not(item):
                         ReaCon['solvent'].append(sub_parse_species(Solvent, item))
+                    elif not TransMetal.is_or_not(item) and Reagent.is_or_not(item):
+                        ReaCon['reagent'].append(sub_parse_species(Reagent, item))
                     elif Gas.is_or_not(item):
                         species = Gas(item)
                         ReaCon['gas'].append(species.name)
@@ -173,14 +176,11 @@ class CSVReader(FileIO):
                         ReaCon['base'].append(sub_parse_species(Base, item))
                     elif Oxidant.is_or_not(item):
                         ReaCon['oxidant'].append(sub_parse_species(Oxidant, item))
-                    elif Additive.is_or_not(item):
-                        ReaCon['additive'].append(sub_parse_species(Additive, item))
-                    elif Time.is_or_not(item):
-                        species = Time(item)
-                        ReaCon['time'].append(species.name)
                     elif Temperature.is_or_not(item):
                         species = Temperature(item)
                         ReaCon['temperature'].append(species.name)
+                    elif Additive.is_or_not(item):
+                        ReaCon['additive'].append(sub_parse_species(Additive, item))
                     elif "reaction" in item.lower():
                         continue
                     else:
@@ -248,7 +248,7 @@ class CSVReader(FileIO):
 if __name__ == '__main__':
     csv_dir = "."
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[3]
+    file = files[7]
     print(file)
     csvreader = CSVReader(file)
     results = csvreader.parse()
@@ -256,3 +256,5 @@ if __name__ == '__main__':
 
 # --*--exclude--*--
 # 02215d7edfcd500d46ee0fc005b9422a.csv
+# 0558c776679c8f021e1f74c348648d45.csv
+# 065f47cd7e8a3482f0a620c2fd3d7a87.csv
