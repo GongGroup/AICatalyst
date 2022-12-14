@@ -45,16 +45,18 @@ MetalElementName = [
 TransMetalElement = ['Pd', 'catalyst']
 
 LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
-              "Xantphos", "dppf", "DPEphos", '–']
+              "Xantphos", "dppf", "DPEphos", '–', 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2"]
 
 SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", "Benzene",
                "Xylene", "DCE"]
 
-BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU"]
+BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA"]
 
 AdditiveType = ["", "additive", "MI", "TBAB", "TBAC", "TBAI", ]
 
 OxidantType = ["oxidant"]
+
+AcidType = ["acid", "HCOOH", "HCO2H"]
 
 
 class ChemFormula(object):
@@ -114,6 +116,31 @@ class Reagent(object):
             self.formula = self.name
 
 
+class Acid(object):
+    name = ReagentDescriptor('name', AcidType)
+
+    def __init__(self, name):
+        self.name = name
+        self.formula = None
+        self.content = None
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            Acid(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def parse(self):
+        if "mol" in self.name or "equiv" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
+        else:
+            self.formula = self.name
+
+
 class Base(object):
     name = ReagentDescriptor('name', BaseType)
 
@@ -121,9 +148,6 @@ class Base(object):
         self.name = name
         self.formula = None
         self.content = None
-
-    def __repr__(self):
-        return f"<MCatalyst [{self.name}]>"
 
     @staticmethod
     def is_or_not(name):
@@ -136,7 +160,7 @@ class Base(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -161,7 +185,7 @@ class Additive(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -236,8 +260,8 @@ class Ligand(object):
 
     def parse(self):
         if "mol" in self.name:
-            self.formula, self.content = self.name.split()
-            self.content = self.content.replace("(", "").replace(")", "")
+            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m?mol.*)\)', self.name)
+            self.formula, self.content = match.groups()
         else:
             self.formula = self.name
 

@@ -88,7 +88,7 @@ class ReagentDescriptor(ValueDescriptor):
     """
     MetalDescriptor, check name has metal
     """
-    excludes = ["Ligand","CO "] + global_exclude
+    excludes = ["Ligand", "CO "] + global_exclude
 
     def __set__(self, instance, value):
         for item in self.value:
@@ -103,7 +103,7 @@ class SolDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "1 ", "2a", "TBD"]
+    excludes = ["1a", "1 ", "2a", "TBD", "3a", "iodobenzene", "equiv"]
 
     def __set__(self, instance, value):
         super(SolDescriptor, self).__set__(instance, value)
@@ -113,7 +113,7 @@ class GasDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = []
+    excludes = ["HCOOH"]
 
     def __set__(self, instance, value):
         super(GasDescriptor, self).__set__(instance, value)
@@ -123,7 +123,7 @@ class AdditiveDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "2a"] + global_exclude
+    excludes = ["1a", "2a", "3a"] + global_exclude
 
     def __set__(self, instance, value):
         super(AdditiveDescriptor, self).__set__(instance, value)

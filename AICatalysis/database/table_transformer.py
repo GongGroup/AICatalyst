@@ -8,8 +8,11 @@ import numpy as np
 
 from AICatalysis.common.error import ParseError
 from AICatalysis.common.species import TransMetal, Solvent, Reagent, Time, Temperature, Gas, Ligand, Base, Additive, \
-    Oxidant
+    Oxidant, Acid
 from AICatalysis.common.utils import get_tokens, flatten
+
+Features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield', 'acid', 'base', 'additive',
+            'oxidant']
 
 
 class FileIO(object):
@@ -26,12 +29,20 @@ class FileIO(object):
         return _strings
 
 
-class CSVReader(FileIO):
+class TableTransformer(FileIO):
     def __init__(self, file):
-        super(CSVReader, self).__init__(file)
+        super(TableTransformer, self).__init__(file)
+        self.records = []
+
+    def write(self):
+        print(",".join(Features))
+        for table in self.records:
+            for record in table:
+                for fea in Features:
+                    print(record.get(fea, ''), end=",")
+                print()
 
     def parse(self):
-
         # split tables
         start, end = [], []
         for index, line in enumerate(self.strings):
@@ -66,33 +77,23 @@ class CSVReader(FileIO):
             body = self._parse_body(table[2:foot_start], checked_AllCol)  # type -> list(dict)
             multi_foots, base_i, footnotes = self._parse_footnote(table[foot_start:-1])
             records = self._merge_bf(body, base_i, footnotes)
-            print()
-            pass
+            self.records.append(records)
 
     @staticmethod
     def _parse_head(columns):
-        AllCol = {'entry': None,
-                  'metal': None,
-                  'ligand': None,
-                  'gas': None,
-                  'solvent': None,
-                  'reagent': None,
-                  'time': None,
-                  'temperature': None,
-                  'yield': None,
-                  'base': None,
-                  'additive': None,
-                  'oxidant': None}
+        AllCol = {fea: None for fea in Features}
+        AllCol.update({'entry': None})
 
         for key in AllCol.keys():
             for index, col in enumerate(columns):
                 if key in col.lower():
                     AllCol[key] = index
-                if "temp" in col and key == 'temperature':
+                if "temp" in col.lower() and key == 'temperature':
                     AllCol[key] = index
                 if ("catalyst" in col or "Palladium" == col or "[Pd]" == col) and key == 'metal':
                     AllCol[key] = index
-
+                if "HCO2H" in col and key == 'acid':
+                    AllCol[key] = index
         return AllCol
 
     @staticmethod
@@ -163,6 +164,9 @@ class CSVReader(FileIO):
                     elif Time.is_or_not(item):
                         species = Time(item)
                         ReaCon['time'].append(species.name)
+                    elif Temperature.is_or_not(item):
+                        species = Temperature(item)
+                        ReaCon['temperature'].append(species.name)
                     elif Ligand.is_or_not(item):
                         ReaCon['ligand'].append(sub_parse_species(Ligand, item))
                     elif Solvent.is_or_not(item):
@@ -172,13 +176,12 @@ class CSVReader(FileIO):
                     elif Gas.is_or_not(item):
                         species = Gas(item)
                         ReaCon['gas'].append(species.name)
+                    elif Acid.is_or_not(item):
+                        ReaCon['acid'].append(sub_parse_species(Acid, item))
                     elif Base.is_or_not(item):
                         ReaCon['base'].append(sub_parse_species(Base, item))
                     elif Oxidant.is_or_not(item):
                         ReaCon['oxidant'].append(sub_parse_species(Oxidant, item))
-                    elif Temperature.is_or_not(item):
-                        species = Temperature(item)
-                        ReaCon['temperature'].append(species.name)
                     elif Additive.is_or_not(item):
                         ReaCon['additive'].append(sub_parse_species(Additive, item))
                     elif "reaction" in item.lower():
@@ -199,26 +202,28 @@ class CSVReader(FileIO):
                 return string.ascii_lowercase.index(symbol)
 
         base_cond = footnotes[base_i] if base_i is not None else None
-        features = ['metal', 'ligand', 'gas', 'solvent', 'reagent', 'time', 'temperature', 'yield', 'base', 'additive',
-                    'oxidant']
-        species_class = {'ligand': Ligand, 'solvent': Solvent, 'metal': TransMetal, 'base': Base, 'additive': Additive,
+        species_class = {'ligand': Ligand, 'solvent': Solvent, 'metal': TransMetal, 'acid': Acid, 'base': Base,
+                         'additive': Additive,
                          'oxidant': Oxidant}
         records = []
         for item in body:
             patten = re.compile("(\[[a-z]+])")
-            indicator = [patten.search(value).groups() if patten.search(value) is not None else None
+            indicator = [patten.findall(value) if patten.search(value) is not None else None
                          for value in item.values()]
             indicator = [item for item in flatten(indicator) if item is not None]
             symbols = [parse_ref(ii) for ii in indicator]
             other_cond = [footnotes[ii] for ii in symbols] if len(symbols) else []
             temp_record = {}
-            for fea in features:
+            for fea in Features:
                 if base_cond is not None and base_cond.get(fea, None) is not None:  # base condition
                     temp_record[fea] = copy.deepcopy(base_cond[fea])  # memory view may fail
                 if item.get(fea, None) is not None:  # sub base-condition with body content
-                    if temp_record.get(fea, None) is not None and fea in ['metal', 'ligand', 'solvent', 'base',
+                    if temp_record.get(fea, None) is not None and fea in ['metal', 'ligand', 'solvent', 'acid', 'base',
                                                                           'additive', 'oxidant']:
-                        ll = species_class[fea](item[fea])  # body content
+                        if re.search("[a-zA-Z]", item[fea]) is None:  # e.g.,item[fea] = 5.0 => acid (5.0)
+                            ll = species_class[fea](f"{fea} ({item[fea]} equiv)")
+                        else:
+                            ll = species_class[fea](item[fea])  # body content
                         ll.parse()
                         if len(temp_record[fea]) == 1:
                             if ll.formula is not None:
@@ -238,6 +243,8 @@ class CSVReader(FileIO):
                                     temp_record[key][0] = (temp_record[key][0][0], oc[key][0][1])
                                 else:
                                     temp_record[key][0] = oc[key][0]
+                            elif key == "additive":
+                                temp_record[key] += oc[key]
                             else:
                                 temp_record[key] = oc[key]
             records.append(temp_record)
@@ -248,10 +255,11 @@ class CSVReader(FileIO):
 if __name__ == '__main__':
     csv_dir = "."
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[7]
+    file = files[8]
     print(file)
-    csvreader = CSVReader(file)
-    results = csvreader.parse()
+    csvreader = TableTransformer(file)
+    csvreader.parse()
+    csvreader.write()
     pass
 
 # --*--exclude--*--
