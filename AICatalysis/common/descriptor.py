@@ -81,7 +81,7 @@ def not_have_exclude(value, excludes):
         return True
 
 
-global_exclude = ["Reaction", "Conditions", "General"]
+global_exclude = ["Reaction", "Conditions", "General", "1a"]
 
 
 class ReagentDescriptor(ValueDescriptor):
@@ -103,7 +103,7 @@ class SolDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "1 ", "2a", "TBD", "3a", "iodobenzene", "equiv"]
+    excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "1_", "bromobenzene"]
 
     def __set__(self, instance, value):
         super(SolDescriptor, self).__set__(instance, value)
@@ -139,18 +139,14 @@ class OxidantDescriptor(ReagentDescriptor):
         super(OxidantDescriptor, self).__set__(instance, value)
 
 
-class LigandDescriptor(ValueDescriptor):
+class LigandDescriptor(ReagentDescriptor):
     """
     LigandDescriptor, check name is valid as solvent
     """
+    excludes = ["bromobenzene"]
 
     def __set__(self, instance, value):
-        for item in self.value:
-            if item in value:
-                break
-        else:
-            raise ValueError(f"`{value}` is invalid name")
-        super().__set__(instance, value)
+        super(LigandDescriptor, self).__set__(instance, value)
 
 
 class TimeDescriptor(Descriptor):

@@ -42,15 +42,16 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
-TransMetalElement = ['Pd', 'catalyst']
+TransMetalElement = ['–', 'Pd', 'catalyst', 'metal']
 
-LigandType = ["ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp", "BINAP",
-              "Xantphos", "dppf", "DPEphos", '–', 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2"]
+LigandType = ["1", "ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp",
+              "BINAP", "Xantphos", "dppf", "DPEphos", '–', 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2",
+              "P(o-Tol)3"]
 
-SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", "Benzene",
-               "Xylene", "DCE"]
+SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF",
+               "Benzene", "Xylene", "DCE", "PhCH3", "4-BQ", "o-xylene", "CH3CN", "PhCl"]
 
-BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA"]
+BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA", "NEt3", "K2CO3", "K3PO4"]
 
 AdditiveType = ["", "additive", "MI", "TBAB", "TBAC", "TBAI", ]
 
@@ -160,7 +161,7 @@ class Base(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -185,7 +186,7 @@ class Additive(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -259,6 +260,7 @@ class Ligand(object):
             return True
 
     def parse(self):
+        patten2 = re.compile("(.*)\s(\([0-9]+\))")
         if "mol" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m?mol.*)\)', self.name)
             self.formula, self.content = match.groups()
@@ -324,10 +326,12 @@ class Temperature(object):
 
 
 class Gas(object):
-    name = GasDescriptor('name', ['N2', 'CO'])
+    name = GasDescriptor('name', ['N2', 'CO', 'gas'])
 
     def __init__(self, name):
         self.name = name
+        self.formula = None
+        self.content = None
 
     @staticmethod
     def is_or_not(name):
@@ -337,6 +341,13 @@ class Gas(object):
             return False
         else:
             return True
+
+    def parse(self):
+        if "MPa" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?MPa)\)', self.name)
+            self.formula, self.content = match.groups()
+        else:
+            self.formula = self.name
 
 
 if __name__ == '__main__':
