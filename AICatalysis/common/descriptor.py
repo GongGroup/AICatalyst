@@ -88,14 +88,14 @@ class ReagentDescriptor(ValueDescriptor):
     """
     MetalDescriptor, check name has metal
     """
-    excludes = ["Ligand", "CO "] + global_exclude
+    excludes = ["Ligand", "Yield"] + global_exclude
 
     def __set__(self, instance, value):
         for item in self.value:
             if item in value and not_have_exclude(value, self.excludes):
                 break
         else:
-            raise ValueError(f"`{value}` is invalid name")
+            raise ValueError(f"`{value}` is invalid `{instance.__class__.__name__}` name")
         super().__set__(instance, value)
 
 
@@ -103,7 +103,7 @@ class SolDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "1_", "bromobenzene"]
+    excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "1_", "bromobenzene", 'base', "1 bar"]
 
     def __set__(self, instance, value):
         super(SolDescriptor, self).__set__(instance, value)
@@ -113,7 +113,7 @@ class GasDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["HCOOH"]
+    excludes = ["HCOOH", 'carbonyl']
 
     def __set__(self, instance, value):
         super(GasDescriptor, self).__set__(instance, value)
@@ -123,7 +123,7 @@ class AdditiveDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "2a", "3a"] + global_exclude
+    excludes = ["1a", "2a", "3a", 'carbonyl', "Yield"] + global_exclude
 
     def __set__(self, instance, value):
         super(AdditiveDescriptor, self).__set__(instance, value)
@@ -143,7 +143,7 @@ class LigandDescriptor(ReagentDescriptor):
     """
     LigandDescriptor, check name is valid as solvent
     """
-    excludes = ["bromobenzene"]
+    excludes = ["bromobenzene", "1a", 'solvent', "CO (1 atm)", "base", "Et3SiH", "1 bar"]
 
     def __set__(self, instance, value):
         super(LigandDescriptor, self).__set__(instance, value)
@@ -155,6 +155,6 @@ class TimeDescriptor(Descriptor):
     """
 
     def __set__(self, instance, value):
-        if re.search('[0-9]+\s*h', value) is None:
+        if re.search('[0-9]*–?[0-9]+\s*h', value) is None:
             raise ValueError(f"`{value}` is invalid name")
         super().__set__(instance, value)

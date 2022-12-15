@@ -1,4 +1,5 @@
 import itertools
+import re
 import tokenize
 from collections.abc import Iterable
 from io import BytesIO
@@ -43,3 +44,10 @@ def is_number(s):
         pass
 
     return False
+
+
+def is_ratio(s):
+    if re.search(r"[0-9]:[0-9]", s) is not None:
+        return True
+    else:
+        return False

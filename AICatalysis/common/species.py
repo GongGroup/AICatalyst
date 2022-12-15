@@ -42,20 +42,26 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
-TransMetalElement = ['–', 'Pd', 'catalyst', 'metal']
+CarbonylCatalystType = ['–', 'Pd', 'catalyst', 'metal', 'NaI', "TBAI", "THAI", "KI"]
+
+ReagentType = ['Co2(CO)8', 'Fe2(CO)9', 'Mo(CO)6', 'Cr(CO)6', 'carbonyl'] + MetalElement + MetalElementName + [
+    item.lower() for item in MetalElementName]
 
 LigandType = ["1", "ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp",
               "BINAP", "Xantphos", "dppf", "DPEphos", '–', 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2",
-              "P(o-Tol)3"]
+              "P(o-Tol)3", "Xphos"]
 
-SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF",
-               "Benzene", "Xylene", "DCE", "PhCH3", "4-BQ", "o-xylene", "CH3CN", "PhCl"]
+SolventType = ["1", "mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", 'PEG-400',
+               "Glycol", "H2O",
+               "Benzene", "Xylene", "DCE", "PhCH3", "4-BQ", "o-xylene", "CH3CN", "PhCl", 'solvent']
 
-BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA", "NEt3", "K2CO3", "K3PO4"]
+BaseType = ["base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA", "NEt3", "K2CO3", "K3PO4",
+            "K2HPO4", "NaH2PO4", "KF",
+            "nBuONa", "CsF", "dbu", "dabco", "B1", "B2", "B3", "KOAc", "Na3PO4", "Li2CO3", "NaHCO3", "KHCO3"]
 
 AdditiveType = ["", "additive", "MI", "TBAB", "TBAC", "TBAI", ]
 
-OxidantType = ["oxidant"]
+OxidantType = ["oxidant", "BQ", "Cu(OAc)2", "AgOAc", "BzOOBz"]
 
 AcidType = ["acid", "HCOOH", "HCO2H"]
 
@@ -87,15 +93,12 @@ class ChemFormula(object):
 
 
 class Reagent(object):
-    name = ReagentDescriptor('name', MetalElement + MetalElementName + [item.lower() for item in MetalElementName])
+    name = ReagentDescriptor('name', ReagentType)
 
     def __init__(self, name):
         self.name = name
         self.formula = None
         self.content = None
-
-    def __repr__(self):
-        return f"<MCatalyst [{self.name}]>"
 
     @staticmethod
     def is_or_not(name):
@@ -108,7 +111,7 @@ class Reagent(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
+            match = re.search(r'(.*)\s\((.*?\s[0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             if match is None:
                 self.formula = self.name
             else:
@@ -211,14 +214,14 @@ class Oxidant(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]*\.?[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
 
 
-class TransMetal(object):
-    name = ReagentDescriptor('name', TransMetalElement)
+class CarbonylCatalyst(object):
+    name = ReagentDescriptor('name', CarbonylCatalystType)
 
     def __init__(self, name):
         self.name = name
@@ -228,16 +231,19 @@ class TransMetal(object):
     @staticmethod
     def is_or_not(name):
         try:
-            TransMetal(name)
+            CarbonylCatalyst(name)
         except ValueError:
             return False
         else:
             return True
 
     def parse(self):
-        if "mol" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m?mol.*)\)', self.name)
-            self.formula, self.content = match.groups()
+        if "mol" in self.name or "%" in self.name:
+            match1 = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m?(mol)?%?.*)\)', self.name)
+            if match1 is not None:
+                self.formula, self.content = match1.groups()[:2]
+            else:
+                self.formula = self.name
         else:
             self.formula = self.name
 
@@ -310,7 +316,7 @@ class Time(object):
 
 
 class Temperature(object):
-    name = SolDescriptor('name', ['RT', "°C"])
+    name = SolDescriptor('name', ['RT', "°C", "room"])
 
     def __init__(self, name):
         self.name = name
@@ -343,9 +349,9 @@ class Gas(object):
             return True
 
     def parse(self):
-        if "MPa" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?MPa)\)', self.name)
-            self.formula, self.content = match.groups()
+        if "MPa" in self.name or ":" in self.name or "atm" in self.name:
+            match = re.search(r'(.*)\s\(([0-9]+\.?:?[0-9]*\s?(MPa)?(atm)?)\)', self.name)
+            self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
 
