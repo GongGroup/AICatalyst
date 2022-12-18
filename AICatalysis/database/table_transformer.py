@@ -35,11 +35,11 @@ class TableTransformer(FileIO):
         self.records = []
 
     def write(self):
-        print(",".join(Features))
+        print(";".join(Features))
         for table in self.records:
             for record in table:
                 for fea in Features:
-                    print(record.get(fea, ''), end=",")
+                    print(record.get(fea, ''), end="; ")
                 print()
 
     def parse(self):
@@ -55,6 +55,7 @@ class TableTransformer(FileIO):
             table = self.strings[s:e + 1]
             caption = table[0]
             doi = table[-1]
+            print(doi)
 
             # obtain table head
             if table[1].lower().startswith('entry'):
@@ -88,19 +89,18 @@ class TableTransformer(FileIO):
 
         for key in AllCol.keys():
             for index, col in enumerate(columns):
-                unit = re.findall("\[(.*?)]", col)
-                if not len(unit):
-                    unit = re.findall("\((.*?)\)", col)
+                unit = re.findall("\((.*?)\)", col)  # unit use (); ref use []
                 COD1 = key in col.lower()
-                COD2 = key == 'temperature' and "temp" in col.lower()
+                COD2 = key == 'temperature' and ("temp" in col.lower() or "T " in col)
                 COD3 = key == 'metal' and ("catalyst" in col.lower() or "Palladium" == col or "Pd" in col or
                                            "LTA" in col or "cat." in col.lower())
                 COD4 = key == 'acid' and "HCO2H" in col
                 COD5 = key == 'gas' and ("PCO [MPa]" == col or "CO" in col)
                 COD6 = key == 'reagent' and ("carbonyl" in col)
-                COD7 = key == 'ligand' and 'PR3' in col
+                COD7 = key == 'ligand' and ('PR3' in col or 'L' == col)
+                COD8 = key == 'time' and 't ' in col
 
-                if COD1 or COD2 or COD3 or COD4 or COD5 or COD6 or COD7:
+                if COD1 or COD2 or COD3 or COD4 or COD5 or COD6 or COD7 or COD8:
                     AllCol[key] = (index, unit[-1]) if len(unit) else (index, '')
 
         return AllCol
@@ -170,7 +170,7 @@ class TableTransformer(FileIO):
                 cond = re.split(r': |,|;', single_foot)
                 if 'condition' in single_foot.lower():
                     base_i = index
-                for item in cond:
+                for item in cond:  # TODO: need merge
                     if Time.is_or_not(item):
                         species = Time(item)
                         ReaCon['time'].append(species.name)
@@ -212,10 +212,11 @@ class TableTransformer(FileIO):
             if symbol in string.ascii_lowercase:
                 return string.ascii_lowercase.index(symbol)
 
-        def parse_species(item, fea):
+        def parse_species(item, fea):  # TODO: need merge
             patten1 = re.compile("(.*?)\s\(([0-9]\.?[0-9]?)\)")  # e.g., PPh3 (3)
             patten2 = re.compile("(.*)/([0-9]\.?[0-9]?)")  # e.g., Pd(PPh3)2Cl2/5
             patten3 = re.compile("(.*)\(([0-9]+\.?[0-9]?)\)")  # e.g., AgOAc(1.5)
+            patten4 = re.compile("(.*?)\s\((–)\)")  # e.g., PdCl2 (–)
             if is_number(item[fea][0]):  # e.g.,item[fea] = 5.0 => acid (5.0)
                 ll = species_class[fea](f"{fea} ({item[fea][0]} {item[fea][1]})")
             elif is_ratio(item[fea][0]):
@@ -229,6 +230,11 @@ class TableTransformer(FileIO):
             elif patten3.search(item[fea][0]) is not None:
                 match = patten3.search(item[fea][0])
                 ll = species_class[fea](f"{match.groups()[0]} ({match.groups()[1] + item[fea][1]})")
+            elif patten4.search(item[fea][0]) is not None:
+                match = patten4.search(item[fea][0])
+                ll = species_class[fea](f"{match.groups()[0]}")
+            elif item[fea][0] == "–":
+                ll = species_class[fea](item[fea][0])
             else:
                 ll = species_class[fea](''.join(item[fea]))  # body content
             ll.parse()
@@ -248,46 +254,62 @@ class TableTransformer(FileIO):
             other_cond = [footnotes[ii] for ii in symbols] if len(symbols) else []
             temp_record = {}
             for fea in Features:
-                if base_cond is not None and base_cond.get(fea, None) is not None:  # base condition
+                # First: fill with base condition
+                if base_cond is not None and base_cond.get(fea, None) is not None:
                     temp_record[fea] = copy.deepcopy(base_cond[fea])  # memory view may fail
-                if body_item.get(fea, None) is not None:  # sub base-condition with body content
+                # Second: modify with the body item
+                if body_item.get(fea, None) is not None:
+                    # key in body and base-cond
                     if temp_record.get(fea, None) is not None and fea in ['metal', 'ligand', 'solvent', 'acid', 'base',
                                                                           'additive', 'oxidant', 'gas', 'reagent']:
                         ll = parse_species(body_item, fea)
                         if len(temp_record[fea]) == 1:
                             ll.formula = None if ll.formula == fea else ll.formula
                             if ll.formula is not None:
-                                temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
+                                if ll.formula != "–":
+                                    temp_record[fea][0] = (ll.formula, temp_record[fea][0][1])
+                                else:  # if formula == "–" => (–, None)
+                                    temp_record[fea][0] = (ll.formula, None)
                             if ll.content is not None:
                                 temp_record[fea][0] = (temp_record[fea][0][0], ll.content)
                         else:
                             print("Multi-Match found, please check <merge_bf>")
-                    else:  # key in body but not in base cond
-                        if fea in ['metal', 'oxidant', 'gas', 'base']:
+                    # key in body but not in base cond
+                    else:
+                        if fea in ['metal', 'oxidant', 'gas', 'base', 'reagent']:
                             ll = parse_species(body_item, fea)
                             temp_record[fea] = (ll.formula, ll.content)
                         else:
                             temp_record[fea] = ''.join(body_item[fea]) if body_item[fea][0] != '–' else body_item[fea][
                                 0]
-            else:  # expand footnotes-ref
+            # Three: Expand with other-conditions
+            else:
                 if len(other_cond):
                     for oc in other_cond:
+                        # TODO: need optimization
                         for key in oc.keys():
                             if key == "ligand":
                                 if oc[key][0][0].lower() == key:
                                     temp_record[key][0] = (temp_record[key][0][0], oc[key][0][1])
                                 else:
-                                    try:
-                                        temp_record[key][0] = oc[key][0]
-                                    except KeyError:
-                                        temp_record[key] = oc[key]
+                                    if temp_record[key][0][0] != "–":
+                                        try:
+                                            temp_record[key][0] = oc[key][0]
+                                        except KeyError:
+                                            temp_record[key] = oc[key]
                             elif key == "additive":
                                 if key in temp_record.keys():
                                     temp_record[key] += oc[key]
                                 else:
                                     temp_record[key] = oc[key]
                             else:
-                                temp_record[key] = oc[key]
+                                if temp_record[key][0][0] != "–":
+                                    temp_record[key] = oc[key]
+
+            for key, value in temp_record.items():
+                if isinstance(value, list) and len(value) != 1:
+                    raise ValueError(f"Warning: Length of `{key} <{value}>` is not equal to 1.")
+
             records.append(temp_record)
 
         return records
@@ -296,7 +318,7 @@ class TableTransformer(FileIO):
 if __name__ == '__main__':
     csv_dir = "."
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[20]
+    file = files[30]
     print(file)
     csvreader = TableTransformer(file)
     csvreader.parse()
@@ -307,3 +329,5 @@ if __name__ == '__main__':
 # 02215d7edfcd500d46ee0fc005b9422a.csv
 # 0558c776679c8f021e1f74c348648d45.csv
 # 065f47cd7e8a3482f0a620c2fd3d7a87.csv
+# 155a9f614f863ec1f3fc1b094f7569e5.csv
+# 17a6965ceeefdf8e491c794ad96643c6.csv

@@ -88,7 +88,7 @@ class ReagentDescriptor(ValueDescriptor):
     """
     MetalDescriptor, check name has metal
     """
-    excludes = ["Ligand", "Yield", "Table", "Run"] + global_exclude
+    excludes = ["Ligand", "Yield", "Table", "Run", "Ref"] + global_exclude
 
     def __set__(self, instance, value):
         for item in self.value:

@@ -42,26 +42,31 @@ MetalElementName = [
     'Copernicium', 'Nihonium', 'Flerovium', 'Moscovium', 'Livermorium',
 ]
 
-CarbonylCatalystType = ['–', 'Pd', 'catalyst', 'metal', 'NaI', "TBAI", "THAI", "KI", "LTA"]
+CarbonylCatalystType = ['–', 'Pd', 'catalyst', 'metal', 'NaI', "TBAI", "THAI", "KI", "LTA", "Pb(NO3)2", "CuCl2·2H2O",
+                        "NiCl2·DME", "NiCl2", "NiBr2",
+                        "Cu(NO3)2", "Cu(OAc)2", "CuCO3", "Cu(OTf)2", "CuI", "CuCl", "Cu2O"]
 
 ReagentType = ["reagent", 'Co2(CO)8', 'Fe2(CO)9', 'Mo(CO)6', 'Cr(CO)6', 'carbonyl',
                "NaBPh4"] + MetalElement + MetalElementName + [item.lower() for item in MetalElementName]
 
-LigandType = ['–', "ligand", "Ligand", "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P", "XPhos", "dppb", "dppe", "dppp",
-              "BINAP", "Xantphos", "dppf", "DPEphos", 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2",
-              "P(o-Tol)3", "Xphos", "PtBu3", "tBu2P(2-biphenyl)", "tBu2P(2;4;6-iPr3C6H2)"]
+LigandType = ['–', "ligand", "Ligand", "L1", 'L2', 'L3', 'L4', 'L5', 'L6', "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P",
+              "XPhos",
+              "dppb",
+              "dppe", "dppp", "BINAP", "Xantphos", "dppf", "DPEphos", 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3",
+              "BuPAd2", "P(o-Tol)3", "Xphos", "PtBu3", "tBu2P(2-biphenyl)", "tBu2P(2;4;6-iPr3C6H2)"]
 
-SolventType = ["mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", 'PEG-400',
-               "Glycol", "H2O", "CH2Cl2",
-               "Benzene", "Xylene", "DCE", "PhCH3", "4-BQ", "o-xylene", "CH3CN", "PhCl", 'solvent']
+SolventType = ["mL", "dioxane", "toluene", "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", 'PEG-400', 'DME',
+               'Dioxane', "Glycol", "H2O", "CH2Cl2", "1_4-Dioxane", "Benzene", "Xylene", "DCE", "PhCH3", "4-BQ",
+               "o-xylene", "CH3CN", "PhCl", 'solvent']
 
 BaseType = ['–', "base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA", "NEt3", "K2CO3", "K3PO4",
             "K2HPO4", "NaH2PO4", "KF", "NaOAc", "AgOAc",
             "nBuONa", "CsF", "dbu", "dabco", "B1", "B2", "B3", "KOAc", "Na3PO4", "Li2CO3", "NaHCO3", "KHCO3"]
 
-AdditiveType = ["additive", "MI", "TBAB", "TBAC", "TBAI", ]
+AdditiveType = ["–", "additive", "MI", "TBAB", "TBAC", "TBAI", "NaI", "Bu4NI", "I2", "KI", "K2CO3", "KOH", "t-BuOK",
+                "K3PO4", "AgOAc", "Ag2O", "K2S2O8", "Mn(OAc)2"]
 
-OxidantType = ["oxidant", "BQ", "Cu(OAc)2", "AgOAc", "BzOOBz"]
+OxidantType = ["oxidant", "BQ", "Cu(OAc)2", "AgOAc", "BzOOBz", "TBHP"]
 
 AcidType = ["acid", "HCOOH", "HCO2H"]
 
@@ -214,7 +219,7 @@ class Oxidant(object):
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
-            match = re.search(r'(.*)\s\(([0-9]*\.?[0-9]+\s?(mol)?(mmol)?(equiv)?)\)', self.name)
+            match = re.search(r'(.*)\s\(([0-9]*\.?[0-9]+\s?(mol)?(mmol)?(equiv\.?)?)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
@@ -291,7 +296,7 @@ class Solvent(object):
             return True
 
     def parse(self):
-        if "ml" in self.name:
+        if "ml" in self.name or "mL" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.*[0-9]*\s?m[lL])\)', self.name)
             self.formula, self.content = match.groups()
         else:
