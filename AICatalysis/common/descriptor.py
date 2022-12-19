@@ -103,7 +103,8 @@ class SolDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "1_", "bromobenzene", 'base', "1 bar", "PhI(OAc)2"]
+    excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "bromobenzene", 'base', "1 bar", "PhI(OAc)2",
+                'MePh2SiCO2H']
 
     def __set__(self, instance, value):
         super(SolDescriptor, self).__set__(instance, value)
@@ -113,7 +114,7 @@ class GasDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["HCOOH", 'carbonyl']
+    excludes = ["HCOOH", 'carbonyl', 'MePh2SiCO2H', 'Rh4(CO)12']
 
     def __set__(self, instance, value):
         super(GasDescriptor, self).__set__(instance, value)
@@ -155,6 +156,6 @@ class TimeDescriptor(Descriptor):
     """
 
     def __set__(self, instance, value):
-        if re.search('[0-9]*–?[0-9]+\s*h', value) is None:
+        if re.search('[0-9]*–?[0-9]+\s*(?:h|min)', value) is None:  # match with no-groups
             raise ValueError(f"`{value}` is invalid name")
         super().__set__(instance, value)
