@@ -43,25 +43,24 @@ MetalElementName = [
 ]
 
 CarbonylCatalystType = ['–', 'Pd', 'catalyst', 'metal', 'NaI', "TBAI", "THAI", "KI", "LTA", "Pb(NO3)2", "CuCl2·2H2O",
-                        "NiCl2·DME", "NiCl2", "NiBr2", 'Sulfur',
-                        "Cu(NO3)2", "Cu(OAc)2", "CuCO3", "Cu(OTf)2", "CuI", "CuCl", "Cu2O"]
+                        "NiCl2·DME", "NiCl2", "NiBr2", 'Sulfur', "Cu(NO3)2", "Cu(OAc)2", "CuCO3", "Cu(OTf)2", "CuI",
+                        "CuCl", "Cu2O"]
 
 ReagentType = ["reagent", 'Co2(CO)8', 'Fe2(CO)9', 'Mo(CO)6', 'Cr(CO)6', 'carbonyl', 'dioxane', 'Rh4(CO)12',
                "NaBPh4"] + MetalElement + MetalElementName + [item.lower() for item in MetalElementName]
 
 LigandType = ['–', "ligand", "Ligand", "L1", 'L2', 'L3', 'L4', 'L5', 'L6', "Ph3P", "Bu(Ad)2P", "Cy3P", "(o-tolyl)3P",
-              "XPhos", 'XantPhos', 'xantphos', 'dcpp', 'Sphos',
-              "dppb",
-              "dppe", "dppp", "BINAP", "Xantphos", "dppf", "DPEphos", 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3",
-              "BuPAd2", "P(o-Tol)3", "Xphos", "PtBu3", "tBu2P(2-biphenyl)", "tBu2P(2;4;6-iPr3C6H2)"]
+              "XPhos", 'XantPhos', 'xantphos', 'dcpp', 'Sphos', "dppb", "dppe", "dppp", "BINAP", "Xantphos", "dppf",
+              "DPEphos", 'PPh3', "P(o-tolyl)3", "P(p-anisyl)3", "PCy3", "BuPAd2", "P(o-Tol)3", "Xphos", "PtBu3",
+              "tBu2P(2-biphenyl)", "tBu2P(2;4;6-iPr3C6H2)"]
 
 SolventType = ["mL", 'solvent', "ACN", "DMF", "NMP", "MeCN", "DMSO", "Toluene", "THF", 'PEG-400', "Ph", "DCE", "PhCH3",
                "4-BQ", 'DME', "dioxane", "toluene", 'Dioxane', "Glycol", "H2O", "CH2Cl2", "1_4-Dioxane", "Benzene",
                "Xylene", "o-xylene", "CH3CN", '1_4-dioxane', 'BMImBF4', 'BMImCl', 'BMImPF6', 'Methanol']
 
 BaseType = ['–', "base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DIPEA", "TMEDA", "NEt3", "K2CO3", "K3PO4",
-            "K2HPO4", "NaH2PO4", "KF", "NaOAc", "AgOAc",
-            "nBuONa", "CsF", "dbu", "dabco", "B1", "B2", "B3", "KOAc", "Na3PO4", "Li2CO3", "NaHCO3", "KHCO3"]
+            "K2HPO4", "NaH2PO4", "KF", "NaOAc", "AgOAc", "nBuONa", "CsF", "dbu", "dabco", "B1", "B2", "B3", "KOAc",
+            "Na3PO4", "Li2CO3", "NaHCO3", "KHCO3"]
 
 AdditiveType = ["–", "additive", "MI", "TBAB", "TBAC", "TBAI", "NaI", "Bu4NI", "I2", "KI", "K2CO3", "KOH", "t-BuOK",
                 "K3PO4", "AgOAc", "Ag2O", "K2S2O8", "Mn(OAc)2", 'NaHCO3', 'NaBF4', 'KOAc', 'NaOAc']
@@ -80,6 +79,31 @@ class ChemFormula(object):
 
     def __repr__(self):
         return f"<ChemFormula [{self.name}]>"
+
+    @staticmethod
+    def is_or_not(name):
+        try:
+            ChemFormula(name)
+        except ValueError:
+            return False
+        else:
+            return True
+
+    def split(self):
+        patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3})\)[0-9]")  # Pd(OAc)2
+        patten2 = re.compile("([A-Z][a-z])([A-Za-z]{3})")  # NaOAc
+        patten3 = re.compile("([A-Z][a-z])[0-9]([A-Za-z]{2}[0-9])")  # NaOAc
+        if re.search(patten1, self.name) is not None:
+            match = re.search(patten1, self.name)
+            return match.groups()
+        elif re.search(patten2, self.name) is not None:
+            match = re.search(patten2, self.name)
+            return match.groups()
+        elif re.search(patten3, self.name) is not None:
+            match = re.search(patten3, self.name)
+            return match.groups()
+        else:
+            return self.name
 
     @staticmethod
     def new(name):

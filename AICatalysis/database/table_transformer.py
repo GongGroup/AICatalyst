@@ -11,7 +11,7 @@ from AICatalysis.common.species import CarbonylCatalyst, Solvent, Reagent, Time,
     Additive, Oxidant
 from AICatalysis.common.utils import get_tokens, flatten, is_number, is_ratio
 
-Features = ['catalyst', 'ligand', 'gas', 'solvent', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'time', 'yield',
+Features = ['catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligand', 'solvent', 'gas', 'time', 'yield',
             'temperature']
 SpeciesClass = {'catalyst': CarbonylCatalyst, 'ligand': Ligand, 'solvent': Solvent, 'gas': Gas, 'acid': Acid,
                 'base': Base, 'reagent': Reagent, 'additive': Additive, 'oxidant': Oxidant}
@@ -58,7 +58,7 @@ class TableTransformer(FileIO):
             table = self.strings[s:e + 1]
             caption = table[0]
             doi = table[-1]
-            print(doi)
+            # print(doi)
 
             # obtain table head
             if table[1].lower().startswith('entry'):
@@ -69,7 +69,7 @@ class TableTransformer(FileIO):
             # parse head
             checked_AllCol = self._parse_head(head.split(","))
             if checked_AllCol['yield'] is None:
-                print("Warning: `yield` feature not exist, continue")
+                # print("Warning: `yield` feature not exist, continue")
                 continue
 
             # locate table footnote
@@ -167,7 +167,7 @@ class TableTransformer(FileIO):
 
             # split every footnote into list, e.g., ['[a]xxxx', '[b]xxxx', ...]
             multi_foots = [line[1].line[s:e] for s, e in zip(line_split_index[:-1], line_split_index[1:])]
-            print("\n".join(multi_foots))
+            # print("\n".join(multi_foots))
             for index, single_foot in enumerate(multi_foots):
                 ReaCon = defaultdict(tuple)
                 single_foot = re.sub(r'\[[a-z]+\]', r'', single_foot)  # remove [a] in the first
@@ -199,7 +199,8 @@ class TableTransformer(FileIO):
                         if ex in item.lower():
                             break
                     else:
-                        print(f"Warning: Can't recognize `{item}`")
+                        # print(f"Warning: Can't recognize `{item}`")
+                        pass
 
                 footnotes.append(ReaCon)
 
@@ -308,16 +309,15 @@ class TableTransformer(FileIO):
 
         return records
 
-
-if __name__ == '__main__':
-    csv_dir = "."
-    files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[40]
-    print(file)
-    csvreader = TableTransformer(file)
-    csvreader.parse()
-    # csvreader.write()
-    pass
+# if __name__ == '__main__':
+# csv_dir = "tcsv"
+# files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
+# file = files[0]
+# print(file)
+# csvreader = TableTransformer(file)
+# csvreader.parse()
+# csvreader.write()
+# pass
 
 # --*--exclude--*--
 # 02215d7edfcd500d46ee0fc005b9422a.csv
