@@ -84,6 +84,13 @@ class BaseSelfDeterminator(object):
             return True
 
 
+class BaseSpecies(BaseSelfDeterminator):
+    def __init__(self, name):
+        super(BaseSpecies, self).__init__(name)
+        self.formula = None
+        self.content = None
+
+
 class ChemFormula(BaseSelfDeterminator):
     mapping = JsonIO.read(FFormula)
     name = FormulaDescriptor('name')
@@ -130,22 +137,8 @@ class ChemFormula(BaseSelfDeterminator):
                 raise RuntimeError("Create ChemFormula instance error")
 
 
-class Reagent(object):
+class Reagent(BaseSpecies):
     name = ReagentDescriptor('name', ReagentType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Reagent(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
@@ -158,22 +151,8 @@ class Reagent(object):
             self.formula = self.name
 
 
-class Acid(object):
+class Acid(BaseSpecies):
     name = ReagentDescriptor('name', AcidType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Acid(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
@@ -189,23 +168,9 @@ class Acid(object):
             self.formula = self.name
 
 
-class Base(object):
+class Base(BaseSpecies):
     name = ReagentDescriptor('name', BaseType)
 
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Base(name)
-        except ValueError:
-            return False
-        else:
-            return True
-
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
@@ -214,23 +179,9 @@ class Base(object):
             self.formula = self.name
 
 
-class Additive(object):
+class Additive(BaseSpecies):
     name = AdditiveDescriptor('name', AdditiveType)
 
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Additive(name)
-        except ValueError:
-            return False
-        else:
-            return True
-
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.?[0-9]*\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
@@ -239,22 +190,8 @@ class Additive(object):
             self.formula = self.name
 
 
-class Oxidant(object):
+class Oxidant(BaseSpecies):
     name = OxidantDescriptor('name', OxidantType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Oxidant(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "mol" in self.name or "equiv" in self.name:
@@ -264,22 +201,8 @@ class Oxidant(object):
             self.formula = self.name
 
 
-class CarbonylCatalyst(object):
+class CarbonylCatalyst(BaseSpecies):
     name = ReagentDescriptor('name', CarbonylCatalystType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            CarbonylCatalyst(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "mol" in self.name or "%" in self.name or "equiv" in self.name:
@@ -292,22 +215,8 @@ class CarbonylCatalyst(object):
             self.formula = self.name
 
 
-class Ligand(object):
+class Ligand(BaseSpecies):
     name = LigandDescriptor('name', LigandType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Ligand(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "mol" in self.name:
@@ -317,22 +226,8 @@ class Ligand(object):
             self.formula = self.name
 
 
-class Solvent(object):
+class Solvent(BaseSpecies):
     name = SolDescriptor('name', SolventType)
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Solvent(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "ml" in self.name or "mL" in self.name or "g" in self.name:
@@ -342,22 +237,8 @@ class Solvent(object):
             self.formula = self.name
 
 
-class Gas(object):
+class Gas(BaseSpecies):
     name = GasDescriptor('name', ['N2', 'CO', 'gas', 'ambient', 'argon'])
-
-    def __init__(self, name):
-        self.name = name
-        self.formula = None
-        self.content = None
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Gas(name)
-        except ValueError:
-            return False
-        else:
-            return True
 
     def parse(self):
         if "MPa" in self.name or ":" in self.name or "atm" in self.name or "bar" in self.name:
@@ -376,19 +257,3 @@ class Time(BaseSelfDeterminator):
 
 class Temperature(BaseSelfDeterminator):
     name = SolDescriptor('name', ['RT', "°C", "room", 'r.t.'])
-
-
-if __name__ == '__main__':
-    chemicals = JsonIO.read(FChemical)
-    catalysts = {chemical: Reagent.is_or_not(chemical) for chemical in chemicals[2500:]}
-    # for chemical in chemicals:
-    #     try:
-    #         formula = ChemFormula(chemical)
-    #     except ValueError:
-    #         print(chemical)
-    #         pass
-    #     else:
-    #         # print(formula.name)
-    #         pass
-    # ChemFormula("(C6H11)3P · HBF4")
-    print()
