@@ -8,7 +8,7 @@ import numpy as np
 
 from AICatalysis.common.error import ParseError
 from AICatalysis.common.species import CarbonylCatalyst, Solvent, Reagent, Time, Temperature, Gas, Ligand, Base, Acid, \
-    Additive, Oxidant
+    Additive, Oxidant, ChemFormula
 from AICatalysis.common.utils import get_tokens, flatten, is_number, is_ratio
 
 Features = ['catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligand', 'solvent', 'gas', 'time', 'yield',
@@ -82,8 +82,46 @@ class TableTransformer(FileIO):
             # parse body && footnotes
             body = self._parse_body(table[2:foot_start], checked_AllCol)  # type -> list(dict)
             multi_foots, base_i, footnotes = self._parse_footnote(table[foot_start:-1])
-            records = self._merge_bf(body, base_i, footnotes)
+            records = self._combine_bf(body, base_i, footnotes)
             self.records.append(records)
+
+    def merge(self):
+        total_merged = []
+        # print("catalyst;ligand;species;solvent;gas;temperature;time;yield")
+        for table in self.records:
+            for item in table:
+                merged_item = defaultdict(list)
+                for fea, value in item.items():
+                    if fea in Features[:6]:
+                        if ChemFormula.is_or_not(value[0]):
+                            species = ChemFormula(value[0])
+                            ions = species.split()
+                            if not isinstance(ions, tuple):
+                                ions = (ions, '')
+                                print(f"{value[0]} can't split")
+                            if fea == 'catalyst':
+                                merged_item[fea] = (*ions, value[1])
+                            else:
+                                merged_item['species'].append((*ions, value[1]))
+                        else:
+                            print(f"{value[0]} is not formula")
+                            if fea == 'catalyst':
+                                merged_item[fea] = (value[0], '', value[1])
+                            else:
+                                merged_item['species'].append((value[0], '', value[1]))
+                    else:
+                        merged_item[fea] = value
+                # print(merged_item.get('catalyst', None), end=";")
+                # print(merged_item.get('ligand', None), end=";")
+                # print(merged_item.get('species', None), end=";")
+                # print(merged_item.get('solvent', None), end=";")
+                # print(merged_item.get('gas', None), end=";")
+                # print(merged_item.get('temperature', None), end=";")
+                # print(merged_item.get('time', None), end=";")
+                # print(merged_item.get('yield', None), end=";")
+                # print()
+                total_merged.append(merged_item)
+        return total_merged
 
     @staticmethod
     def _parse_head(columns):
@@ -207,7 +245,7 @@ class TableTransformer(FileIO):
         return multi_foots, base_i, footnotes
 
     @staticmethod
-    def _merge_bf(body, base_i, footnotes):
+    def _combine_bf(body, base_i, footnotes):
 
         def parse_ref(ref: str):
             symbol = re.search("\[([a-z]+)]", ref).groups()[0]
@@ -309,15 +347,17 @@ class TableTransformer(FileIO):
 
         return records
 
-# if __name__ == '__main__':
-# csv_dir = "tcsv"
-# files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-# file = files[0]
-# print(file)
-# csvreader = TableTransformer(file)
-# csvreader.parse()
-# csvreader.write()
-# pass
+
+if __name__ == '__main__':
+    csv_dir = "tcsv"
+    files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
+    file = files[20]
+    print(file)
+    csvreader = TableTransformer(file)
+    csvreader.parse()
+    # csvreader.write()
+    merged_results = csvreader.merge()
+    pass
 
 # --*--exclude--*--
 # 02215d7edfcd500d46ee0fc005b9422a.csv
