@@ -62,7 +62,8 @@ BaseType = ['–', "base", "Na2CO3", "Cs2CO3", "TEA", "DIEA", "DBU", "Et3N", "DI
             "Na3PO4", "Li2CO3", "NaHCO3", "KHCO3"]
 
 AdditiveType = ["–", "additive", "MI", "TBAB", "TBAC", "TBAI", "NaI", "Bu4NI", "I2", "KI", "K2CO3", "KOH", "t-BuOK",
-                "K3PO4", "AgOAc", "Ag2O", "K2S2O8", "Mn(OAc)2", 'NaHCO3', 'NaBF4', 'KOAc', 'NaOAc']
+                "K3PO4", "AgOAc", "Ag2O", "K2S2O8", "Mn(OAc)2", 'NaHCO3', 'NaBF4', 'KOAc', 'NaOAc', 'Bu4NCl', 'Bu4NBr',
+                'Ph3PBnCl', 'PPNCl']
 
 OxidantType = ["oxidant", "BQ", "Cu(OAc)2", "AgOAc", "BzOOBz", "TBHP", "Oxone", "CuBr2"]
 
@@ -91,46 +92,25 @@ class ChemFormula(object):
     def split(self):
         patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4})\)[0-9]$")  # Pd(OAc)2, Pd(OPiv)2
         patten2 = re.compile("^(:?[A-Z][a-z]|K)([A-Za-z]{1,3})")  # NaI, NaOAc, KI
-        patten3 = re.compile("(:?[A-Z][a-z]|K)[0-9]([A-Za-z]{2}[0-9])")  # Na2CO3, K2CO3
+        patten3 = re.compile("(:?[A-Z][a-z]|K)[0-9]?([A-Za-z]{2,3}[0-9])")  # Na2CO3, K2CO3, K2HPO4, NaBPh4
         patten4 = re.compile("([A-Z][a-z])[0-9]\(([A-Za-z]{3})\)[0-9]")  # Pd3(dba)2
-        patten5 = re.compile("([A-Z][a-z])([A-Za-z]{2})[0-9]")  # PdCl2
-        patten6 = re.compile("([A-Z][a-z])\(([A-Za-z]{3}[0-9])\)[0-9]")  # Pd(PPh3)4
-        patten7 = re.compile("([A-Z][a-z][0-9]N)([A-Za-z]{1})")  # Bu4NI
+        patten5 = re.compile("^([A-Z][a-z])([A-Za-z]{2})[0-9]")  # PdCl2
+        patten6 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4}[0-9])\)[0-9]")  # Pd(PPh3)4, Pd(PtBu3)2
+        patten7 = re.compile("([A-Z][A-Za-z][0-9]?[NP](?:Bn)?)(Cl|Br|I)$")  # Bu4NX, Ph3PBnCl, PPNCl
         patten8 = re.compile("(H)(COOH)")  # HCOOH
         patten9 = re.compile("(K)[0-9](S2O8)")  # K2S2O8
-        patten10 = re.compile("(:?t-BuO|nBuO)(:?K|Na)")  # t-BuOK
-        if re.search(patten1, self.name) is not None:
-            match = re.search(patten1, self.name)
-            return match.groups()
-        elif re.search(patten2, self.name) is not None:
-            match = re.search(patten2, self.name)
-            return match.groups()
-        elif re.search(patten3, self.name) is not None:
-            match = re.search(patten3, self.name)
-            return match.groups()
-        elif re.search(patten4, self.name) is not None:
-            match = re.search(patten4, self.name)
-            return match.groups()
-        elif re.search(patten5, self.name) is not None:
-            match = re.search(patten5, self.name)
-            return match.groups()
-        elif re.search(patten6, self.name) is not None:
-            match = re.search(patten6, self.name)
-            return match.groups()
-        elif re.search(patten7, self.name) is not None:
-            match = re.search(patten7, self.name)
-            return match.groups()
-        elif re.search(patten8, self.name) is not None:
-            match = re.search(patten8, self.name)
-            return match.groups()
-        elif re.search(patten9, self.name) is not None:
-            match = re.search(patten9, self.name)
-            return match.groups()
-        elif re.search(patten10, self.name) is not None:
-            match = re.search(patten10, self.name)
-            return match.groups()[::-1]
-        else:
-            return self.name
+        patten10 = re.compile("(:?t-BuO|nBuO)(:?K|Na)")  # t-BuOK, nBuONa
+        patten11 = re.compile("\[{(Pd)(\(allyl\)Cl)}2]")  # [{Pd(allyl)Cl}2]
+
+        for i in range(1, 12):
+            patten = locals()[f'patten{i}']
+            match = re.search(patten, self.name)
+            if match is not None:
+                if i != 10:
+                    return match.groups()
+                else:
+                    return match.groups()[::-1]
+        return self.name
 
     @staticmethod
     def new(name):

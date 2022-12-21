@@ -72,7 +72,7 @@ class FormulaDescriptor(Descriptor):
         for element in PeriodicTable[::-1]:
             check_value = re.sub(element, '', check_value)
 
-        check_value = re.sub(r'[\d()\[\]*.·=/Xxnη+ -]+', '', check_value)
+        check_value = re.sub(r'[\d()\[\]*.·=/Xxnη+ -{}]+', '', check_value)
         if len(check_value):
             raise ValueError(f"`{value}` is invalid name")
 
@@ -110,7 +110,7 @@ class SolDescriptor(ReagentDescriptor):
     SolDescriptor, check name is valid as solvent
     """
     excludes = ["1a", "2a", "TBD", "3a", "iodobenzene", "CO (1", "bromobenzene", 'base', "1 bar", "PhI(OAc)2",
-                'MePh2SiCO2H']
+                'MePh2SiCO2H', 'NaBPh4']
 
     def __set__(self, instance, value):
         super(SolDescriptor, self).__set__(instance, value)

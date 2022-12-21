@@ -10,7 +10,7 @@ Features = ['catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligan
 if __name__ == '__main__':
     csv_dir = "tcsv"
     files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[11]
+    file = files[20]
     csvreader = TableTransformer(file)
     csvreader.parse()
     records = csvreader.records

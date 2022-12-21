@@ -274,7 +274,7 @@ class TableTransformer(FileIO):
 
                     # fea in body but not in base cond
                     else:
-                        if fea in ['catalyst', 'oxidant', 'gas', 'base', 'reagent']:
+                        if fea in ['catalyst', 'oxidant', 'gas', 'base', 'reagent', 'additive']:
                             ll = parse_species(body_item, fea)
                             temp_record[fea] = (ll.formula, ll.content)
                         else:
