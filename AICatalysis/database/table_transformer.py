@@ -32,9 +32,10 @@ class FileIO(object):
         return _strings
 
 
-class TableTransformer(FileIO):
+class CSVTableTransformer(FileIO):
     def __init__(self, file):
-        super(TableTransformer, self).__init__(file)
+        super(CSVTableTransformer, self).__init__(file)
+        self.url = None
         self.records = []
 
     def write(self):
@@ -46,6 +47,13 @@ class TableTransformer(FileIO):
                 print()
 
     def parse(self):
+        """
+        parse csv file from table_parser.
+
+        Returns:
+            self.records (list[defaultdict(tuple)]): key in Features, value in bi-element tuple (formula, content)
+        """
+
         # split tables
         start, end = [], []
         for index, line in enumerate(self.strings):
@@ -56,9 +64,8 @@ class TableTransformer(FileIO):
 
         for s, e in zip(start, end):
             table = self.strings[s:e + 1]
-            caption = table[0]
-            doi = table[-1]
-            # print(doi)
+            url = table[-1]
+            self.url = url
 
             # obtain table head
             if table[1].lower().startswith('entry'):
@@ -86,6 +93,12 @@ class TableTransformer(FileIO):
             self.records.append(records)
 
     def merge(self):
+        """
+        merge keys('reagent', 'acid', 'base', 'additive', 'oxidant') in 'species' and split their formula
+
+        Returns:
+            merged_results (list[defaultdict(tuple)]): value is (anion, cation, content) tri-element tuple
+        """
         total_merged = []
         # print("catalyst;ligand;species;solvent;gas;temperature;time;yield")
         for table in self.records:
@@ -130,7 +143,7 @@ class TableTransformer(FileIO):
 
         for key in AllCol.keys():
             for index, col in enumerate(columns):
-                unit = re.findall("\((.*?)\)", col)  # unit use (); ref use []
+                unit = re.findall(r"\((.*?)\)", col)  # unit use (); ref use []
                 COD1 = key in col.lower()
                 COD2 = key == 'temperature' and ("temp" in col.lower() or "T " in col)
                 COD3 = key == 'catalyst' and ("catalyst" in col.lower() or "Palladium" == col or "Pd" in col or
@@ -172,23 +185,23 @@ class TableTransformer(FileIO):
     @staticmethod
     def _parse_footnote(lines):
 
-        def sub_parse_species(class_name, item):
-            species = class_name(item)
-            species.parse()
-            return species.formula, species.content
+        def sub_parse_species(class_name, item_):
+            species_ = class_name(item_)
+            species_.parse()
+            return species_.formula, species_.content
 
-        def unify_ref(lines):
-            unify_lines = []
-            for l in lines:
-                if re.search(r'\[[a-z]+]', l) is not None:
-                    unify_lines.append(l)
+        def unify_ref(lines_):
+            unify_lines_ = []
+            for ll in lines_:
+                if re.search(r'\[[a-z]+]', ll) is not None:
+                    unify_lines_.append(ll)
                 else:
-                    patten1 = re.compile(r'^([a-z]{1})\s')
-                    patten2 = re.compile(r'\s([a-z]{1})\s')
-                    l = patten1.sub(r'[\1] ', l)
-                    l = patten2.sub(r'[\1] ', l)
-                    unify_lines.append(l)
-            return unify_lines
+                    patten1 = re.compile(r'^([a-z])\s')
+                    patten2 = re.compile(r'\s([a-z])\s')
+                    ll = patten1.sub(r'[\1] ', ll)
+                    ll = patten2.sub(r'[\1] ', ll)
+                    unify_lines_.append(ll)
+            return unify_lines_
 
         base_i, footnotes, multi_foots = None, [], []
         join_lines = [' '.join(lines)]
@@ -197,6 +210,7 @@ class TableTransformer(FileIO):
 
         for line in tokens:
             line_split_index = []
+            index = 0
             for index, token in enumerate(line):
                 if token.string == '[' and line[index + 2].string == ']':
                     line_split_index.append(token.start[1])
@@ -208,7 +222,7 @@ class TableTransformer(FileIO):
             # print("\n".join(multi_foots))
             for index, single_foot in enumerate(multi_foots):
                 ReaCon = defaultdict(tuple)
-                single_foot = re.sub(r'\[[a-z]+\]', r'', single_foot)  # remove [a] in the first
+                single_foot = re.sub(r'\[[a-z]+]', r'', single_foot)  # remove [a] in the first
                 cond = re.split(r': |,|;', single_foot)
                 if 'condition' in single_foot.lower():
                     base_i = index
@@ -246,46 +260,60 @@ class TableTransformer(FileIO):
 
     @staticmethod
     def _combine_bf(body, base_i, footnotes):
+        """
+        combine the table body and footnotes
+
+        Args:
+            body (list): record the table body
+            base_i (int): indicate the 'Reaction condition' in footnotes, usually equal to 0
+            footnotes (list[defaultdict(tuple)]): record the table footnotes
+
+        Returns:
+            records (list[defaultdict(tuple)]): parsed results after combined body and footnotes
+        """
 
         def parse_ref(ref: str):
-            symbol = re.search("\[([a-z]+)]", ref).groups()[0]
+            symbol = re.search(r"\[([a-z]+)]", ref).groups()[0]
             if symbol in string.ascii_lowercase:
                 return string.ascii_lowercase.index(symbol)
 
-        def parse_species(item, fea):  # TODO: need merge
-            patten1 = re.compile("(.*?)\s\(([0-9]\.?[0-9]?)\)")  # e.g., PPh3 (3)
-            patten2 = re.compile("(.*)/([0-9]\.?[0-9]?)")  # e.g., Pd(PPh3)2Cl2/5
-            patten3 = re.compile("(.*)\(([0-9]+\.?[0-9]?)\)")  # e.g., AgOAc(1.5)
-            patten4 = re.compile("(.*?)\s\((–)\)")  # e.g., PdCl2 (–)
-            if is_number(item[fea][0]):  # e.g.,item[fea] = 5.0 => acid (5.0)
-                ll = SpeciesClass[fea](f"{fea} ({item[fea][0]} {item[fea][1]})")
-            elif is_ratio(item[fea][0]):
-                ll = SpeciesClass[fea](f"{fea} ({item[fea][0]})")
-            elif patten1.search(item[fea][0]) is not None:
-                match = patten1.search(item[fea][0])
-                ll = SpeciesClass[fea](f"{match.groups()[0]} ({match.groups()[1] + item[fea][1]})")
-            elif patten2.search(item[fea][0]) is not None:
-                match = patten2.search(item[fea][0])
-                ll = SpeciesClass[fea](f"{match.groups()[0]} ({match.groups()[1] + item[fea][1]})")
-            elif patten3.search(item[fea][0]) is not None:
-                match = patten3.search(item[fea][0])
-                ll = SpeciesClass[fea](f"{match.groups()[0]} ({match.groups()[1] + item[fea][1]})")
-            elif patten4.search(item[fea][0]) is not None:
-                match = patten4.search(item[fea][0])
-                ll = SpeciesClass[fea](f"{match.groups()[0]}")
-            elif item[fea][0] == "–":
-                ll = SpeciesClass[fea](item[fea][0])
-            else:
-                ll = SpeciesClass[fea](''.join(item[fea]))  # body content
-            ll.parse()
+        def parse_species(item, fea_):  # TODO: need merge
+            patten1 = re.compile(r"(.*?)\s\(([0-9]\.?[0-9]?)\)")  # e.g., PPh3 (3)
+            patten2 = re.compile(r"(.*)/([0-9]\.?[0-9]?)")  # e.g., Pd(PPh3)2Cl2/5
+            patten3 = re.compile(r"(.*)\(([0-9]+\.?[0-9]?)\)")  # e.g., AgOAc(1.5)
+            patten4 = re.compile(r"(.*?)\s\((–)\)")  # e.g., PdCl2 (–)
 
-            return ll
+            def match_fc(pattens: list, s: str):
+                """match `formula content` mode"""
+                for pa in pattens:
+                    match = pa.search(s)
+                    if match is not None:
+                        return match
+                return None
+
+            if is_number(item[fea_][0]):  # e.g.,item[fea] = 5.0 => acid (5.0)
+                species_ll = SpeciesClass[fea_](f"{fea_} ({item[fea_][0]} {item[fea_][1]})")
+            elif is_ratio(item[fea_][0]):
+                species_ll = SpeciesClass[fea_](f"{fea_} ({item[fea_][0]})")
+            elif match_fc([patten1, patten2, patten3], item[fea_][0]) is not None:
+                match = match_fc([patten1, patten2, patten3], item[fea_][0])
+                species_ll = SpeciesClass[fea_](f"{match.groups()[0]} ({match.groups()[1] + item[fea_][1]})")
+            elif patten4.search(item[fea_][0]) is not None:
+                match = patten4.search(item[fea_][0])
+                species_ll = SpeciesClass[fea_](f"{match.groups()[0]}")
+            elif item[fea_][0] == "–":
+                species_ll = SpeciesClass[fea_](item[fea_][0])
+            else:
+                species_ll = SpeciesClass[fea_](''.join(item[fea_]))  # body content
+            species_ll.parse()
+
+            return species_ll
 
         base_cond = footnotes[base_i] if base_i is not None else None
 
         records = []
         for body_item in body:
-            patten = re.compile("(\[[a-z]+])")
+            patten = re.compile(r"(\[[a-z]+])")
             indicator = [patten.findall(value) if patten.search(value) is not None else None
                          for value, unit in body_item.values()]
             indicator = [item for item in flatten(indicator) if item is not None]
@@ -349,11 +377,10 @@ class TableTransformer(FileIO):
 
 
 if __name__ == '__main__':
-    csv_dir = "tcsv"
-    files = [file for file in Path(csv_dir).iterdir() if file.suffix == ".csv"]
-    file = files[20]
+    files = [file for file in Path("tcsv").iterdir() if file.suffix == ".csv"]
+    file = files[16]
     print(file)
-    csvreader = TableTransformer(file)
+    csvreader = CSVTableTransformer(file)
     csvreader.parse()
     # csvreader.write()
     merged_results = csvreader.merge()
