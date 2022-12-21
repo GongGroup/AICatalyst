@@ -286,9 +286,9 @@ class CSVTableTransformer(FileIO):
             def match_fc(pattens: list, s: str):
                 """match `formula content` mode"""
                 for pa in pattens:
-                    match = pa.search(s)
-                    if match is not None:
-                        return match
+                    match_ = pa.search(s)
+                    if match_ is not None:
+                        return match_
                 return None
 
             if is_number(item[fea_][0]):  # e.g.,item[fea] = 5.0 => acid (5.0)
@@ -378,7 +378,7 @@ class CSVTableTransformer(FileIO):
 
 if __name__ == '__main__':
     files = [file for file in Path("tcsv").iterdir() if file.suffix == ".csv"]
-    file = files[16]
+    file = files[20]
     print(file)
     csvreader = CSVTableTransformer(file)
     csvreader.parse()

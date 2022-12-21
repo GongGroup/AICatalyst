@@ -70,24 +70,26 @@ OxidantType = ["oxidant", "BQ", "Cu(OAc)2", "AgOAc", "BzOOBz", "TBHP", "Oxone", 
 AcidType = ["acid", "HCOOH", "HCO2H"]
 
 
-class ChemFormula(object):
-    mapping = JsonIO.read(FFormula)
-    name = FormulaDescriptor('name')
-
+class BaseSelfDeterminator(object):
     def __init__(self, name):
         self.name = name
 
-    def __repr__(self):
-        return f"<ChemFormula [{self.name}]>"
-
-    @staticmethod
-    def is_or_not(name):
+    @classmethod
+    def is_or_not(cls, name):
         try:
-            ChemFormula(name)
+            cls(name)
         except ValueError:
             return False
         else:
             return True
+
+
+class ChemFormula(BaseSelfDeterminator):
+    mapping = JsonIO.read(FFormula)
+    name = FormulaDescriptor('name')
+
+    def __repr__(self):
+        return f"<ChemFormula [{self.name}]>"
 
     def split(self):
         patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4})\)[0-9]$")  # Pd(OAc)2, Pd(OPiv)2
@@ -340,38 +342,6 @@ class Solvent(object):
             self.formula = self.name
 
 
-class Time(object):
-    name = TimeDescriptor('name')
-
-    def __init__(self, name):
-        self.name = name
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Time(name)
-        except ValueError:
-            return False
-        else:
-            return True
-
-
-class Temperature(object):
-    name = SolDescriptor('name', ['RT', "°C", "room", 'r.t.'])
-
-    def __init__(self, name):
-        self.name = name
-
-    @staticmethod
-    def is_or_not(name):
-        try:
-            Temperature(name)
-        except ValueError:
-            return False
-        else:
-            return True
-
-
 class Gas(object):
     name = GasDescriptor('name', ['N2', 'CO', 'gas', 'ambient', 'argon'])
 
@@ -398,6 +368,14 @@ class Gas(object):
                 self.formula = self.name
         else:
             self.formula = self.name
+
+
+class Time(BaseSelfDeterminator):
+    name = TimeDescriptor('name')
+
+
+class Temperature(BaseSelfDeterminator):
+    name = SolDescriptor('name', ['RT', "°C", "room", 'r.t.'])
 
 
 if __name__ == '__main__':
