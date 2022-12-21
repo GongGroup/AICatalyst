@@ -263,7 +263,7 @@ class TableTransformer(FileIO):
                     # fea in body and base-cond
                     if temp_record.get(fea, None) is not None and fea in SpeciesClass.keys():
                         ll = parse_species(body_item, fea)
-                        ll.formula = None if ll.formula == fea else ll.formula
+                        ll.formula = None if ll.formula.strip() == fea else ll.formula
                         if ll.formula is not None:
                             if ll.formula != "–":
                                 temp_record[fea] = (ll.formula, temp_record[fea][1])
@@ -291,8 +291,8 @@ class TableTransformer(FileIO):
                                     if oc[fea][0].strip().lower() == fea:
                                         temp_record[fea] = (temp_record[fea][0], oc[fea][1])
                                     else:
-                                        if temp_record[fea][0][0] != "–":
-                                            temp_record[fea][0] = oc[fea][0]
+                                        if temp_record[fea][0] != "–":
+                                            temp_record[fea] = oc[fea]
                                 elif fea == "additive":
                                     if fea in temp_record.keys():
                                         temp_record[fea] += oc[fea]

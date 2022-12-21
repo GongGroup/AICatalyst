@@ -43,8 +43,7 @@ MetalElementName = [
 ]
 
 CarbonylCatalystType = ['–', 'Pd', 'catalyst', 'metal', 'NaI', "TBAI", "THAI", "KI", "LTA", "Pb(NO3)2", "CuCl2·2H2O",
-                        "NiCl2·DME", "NiCl2", "NiBr2", 'Sulfur', "Cu(NO3)2", "Cu(OAc)2", "CuCO3", "Cu(OTf)2", "CuI",
-                        "CuCl", "Cu2O"]
+                        "NiCl2·DME", "NiCl2", "NiBr2", 'Sulfur', "Cu(NO3)2", "CuCO3", "Cu(OTf)2", "CuI", "CuCl", "Cu2O"]
 
 ReagentType = ["reagent", 'Co2(CO)8', 'Fe2(CO)9', 'Mo(CO)6', 'Cr(CO)6', 'carbonyl', 'dioxane', 'Rh4(CO)12',
                "NaBPh4"] + MetalElement + MetalElementName + [item.lower() for item in MetalElementName]
@@ -90,9 +89,16 @@ class ChemFormula(object):
             return True
 
     def split(self):
-        patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3})\)[0-9]")  # Pd(OAc)2
-        patten2 = re.compile("([A-Z][a-z])([A-Za-z]{3})")  # NaOAc
-        patten3 = re.compile("([A-Z][a-z])[0-9]([A-Za-z]{2}[0-9])")  # NaOAc
+        patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4})\)[0-9]$")  # Pd(OAc)2, Pd(OPiv)2
+        patten2 = re.compile("^(:?[A-Z][a-z]|K)([A-Za-z]{1,3})")  # NaI, NaOAc, KI
+        patten3 = re.compile("(:?[A-Z][a-z]|K)[0-9]([A-Za-z]{2}[0-9])")  # Na2CO3, K2CO3
+        patten4 = re.compile("([A-Z][a-z])[0-9]\(([A-Za-z]{3})\)[0-9]")  # Pd3(dba)2
+        patten5 = re.compile("([A-Z][a-z])([A-Za-z]{2})[0-9]")  # PdCl2
+        patten6 = re.compile("([A-Z][a-z])\(([A-Za-z]{3}[0-9])\)[0-9]")  # Pd(PPh3)4
+        patten7 = re.compile("([A-Z][a-z][0-9]N)([A-Za-z]{1})")  # Bu4NI
+        patten8 = re.compile("(H)(COOH)")  # HCOOH
+        patten9 = re.compile("(K)[0-9](S2O8)")  # K2S2O8
+        patten10 = re.compile("(:?t-BuO|nBuO)(:?K|Na)")  # t-BuOK
         if re.search(patten1, self.name) is not None:
             match = re.search(patten1, self.name)
             return match.groups()
@@ -102,6 +108,27 @@ class ChemFormula(object):
         elif re.search(patten3, self.name) is not None:
             match = re.search(patten3, self.name)
             return match.groups()
+        elif re.search(patten4, self.name) is not None:
+            match = re.search(patten4, self.name)
+            return match.groups()
+        elif re.search(patten5, self.name) is not None:
+            match = re.search(patten5, self.name)
+            return match.groups()
+        elif re.search(patten6, self.name) is not None:
+            match = re.search(patten6, self.name)
+            return match.groups()
+        elif re.search(patten7, self.name) is not None:
+            match = re.search(patten7, self.name)
+            return match.groups()
+        elif re.search(patten8, self.name) is not None:
+            match = re.search(patten8, self.name)
+            return match.groups()
+        elif re.search(patten9, self.name) is not None:
+            match = re.search(patten9, self.name)
+            return match.groups()
+        elif re.search(patten10, self.name) is not None:
+            match = re.search(patten10, self.name)
+            return match.groups()[::-1]
         else:
             return self.name
 
@@ -170,6 +197,12 @@ class Acid(object):
         if "mol" in self.name or "equiv" in self.name:
             match = re.search(r'(.*)\s\(([0-9]+\.[0-9]+\s?(mol)?(mmol)?(equiv)?.*)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
+        elif ":" in self.name:
+            match = re.search(r'(.*)\s?\(([0-9](:[0-9])+)\)', self.name)
+            if match is None:
+                self.formula = self.name
+            else:
+                self.formula, self.content = match.groups()[0:2]
         else:
             self.formula = self.name
 

@@ -1,6 +1,6 @@
 import re
 
-from AICatalysis.common.constant import PeriodicTable
+from AICatalysis.common.constant import PeriodicTable, Abbr
 
 
 class Descriptor(object):
@@ -62,10 +62,16 @@ class FormulaDescriptor(Descriptor):
         if value.islower():
             raise ValueError(f"`{value}` is invalid name")
 
-        # check element
         check_value = value
+
+        # check abbr
+        for element in Abbr[::-1]:
+            check_value = re.sub(element, '', check_value)
+
+        # check element
         for element in PeriodicTable[::-1]:
             check_value = re.sub(element, '', check_value)
+
         check_value = re.sub(r'[\d()\[\]*.·=/Xxnη+ -]+', '', check_value)
         if len(check_value):
             raise ValueError(f"`{value}` is invalid name")
@@ -114,7 +120,7 @@ class GasDescriptor(ReagentDescriptor):
     """
     SolDescriptor, check name is valid as solvent
     """
-    excludes = ["HCOOH", 'carbonyl', 'MePh2SiCO2H', 'Rh4(CO)12']
+    excludes = ["HCOOH", 'carbonyl', 'MePh2SiCO2H', 'Rh4(CO)12', 'HCO2H', 'K2CO3']
 
     def __set__(self, instance, value):
         super(GasDescriptor, self).__set__(instance, value)

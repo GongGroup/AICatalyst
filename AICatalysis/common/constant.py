@@ -18,6 +18,8 @@ PeriodicTable = [
     'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
 ]
 
+Abbr = ['dba', 'Ph', 'Bu', 'Piv', 't-Bu', 'Et', 'dppf', 'bpy']
+
 DATE = time.strftime("%Y-%m-%d", time.localtime())
 
 BLACK = "\033[1;30m"

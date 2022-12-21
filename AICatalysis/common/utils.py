@@ -47,7 +47,7 @@ def is_number(s):
 
 
 def is_ratio(s):
-    if re.search(r"[0-9]:[0-9]", s) is not None:
+    if re.search(r"^[0-9]:[0-9]", s) is not None:
         return True
     else:
         return False
