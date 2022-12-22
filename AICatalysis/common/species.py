@@ -2,7 +2,7 @@ import logging
 import re
 import shutil
 
-from AICatalysis.common.constant import FFormula, FChemical
+from AICatalysis.common.constant import FFormula
 from AICatalysis.common.descriptor import ReagentDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
     LigandDescriptor, GasDescriptor, AdditiveDescriptor, OxidantDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
@@ -99,17 +99,17 @@ class ChemFormula(BaseSelfDeterminator):
         return f"<ChemFormula [{self.name}]>"
 
     def split(self):
-        patten1 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4})\)[0-9]$")  # Pd(OAc)2, Pd(OPiv)2
-        patten2 = re.compile("^(:?[A-Z][a-z]|K)([A-Za-z]{1,3})")  # NaI, NaOAc, KI
-        patten3 = re.compile("(:?[A-Z][a-z]|K)[0-9]?([A-Za-z]{2,3}[0-9])")  # Na2CO3, K2CO3, K2HPO4, NaBPh4
-        patten4 = re.compile("([A-Z][a-z])[0-9]\(([A-Za-z]{3})\)[0-9]")  # Pd3(dba)2
-        patten5 = re.compile("^([A-Z][a-z])([A-Za-z]{2})[0-9]")  # PdCl2
-        patten6 = re.compile("([A-Z][a-z])\(([A-Za-z]{3,4}[0-9])\)[0-9]")  # Pd(PPh3)4, Pd(PtBu3)2
-        patten7 = re.compile("([A-Z][A-Za-z][0-9]?[NP](?:Bn)?)(Cl|Br|I)$")  # Bu4NX, Ph3PBnCl, PPNCl
-        patten8 = re.compile("(H)(COOH)")  # HCOOH
-        patten9 = re.compile("(K)[0-9](S2O8)")  # K2S2O8
-        patten10 = re.compile("(:?t-BuO|nBuO)(:?K|Na)")  # t-BuOK, nBuONa
-        patten11 = re.compile("\[{(Pd)(\(allyl\)Cl)}2]")  # [{Pd(allyl)Cl}2]
+        patten1 = re.compile(r"([A-Z][a-z])\(([A-Za-z]{3,4})\)[0-9]$")  # Pd(OAc)2, Pd(OPiv)2
+        patten2 = re.compile(r"^(:?[A-Z][a-z]|K)([A-Za-z]{1,3})")  # NaI, NaOAc, KI
+        patten3 = re.compile(r"(:?[A-Z][a-z]|K)[0-9]?([A-Za-z]{2,3}[0-9])")  # Na2CO3, K2CO3, K2HPO4, NaBPh4
+        patten4 = re.compile(r"([A-Z][a-z])[0-9]\(([A-Za-z]{3})\)[0-9]")  # Pd3(dba)2
+        patten5 = re.compile(r"^([A-Z][a-z])([A-Za-z]{2})[0-9]")  # PdCl2
+        patten6 = re.compile(r"([A-Z][a-z])\(([A-Za-z]{3,4}[0-9])\)[0-9]")  # Pd(PPh3)4, Pd(PtBu3)2
+        patten7 = re.compile(r"([A-Z][A-Za-z][0-9]?[NP](?:Bn)?)(Cl|Br|I)$")  # Bu4NX, Ph3PBnCl, PPNCl
+        patten8 = re.compile(r"(H)(COOH)")  # HCOOH
+        patten9 = re.compile(r"(K)[0-9](S2O8)")  # K2S2O8
+        patten10 = re.compile(r"(:?t-BuO|nBuO)(:?K|Na)")  # t-BuOK, nBuONa
+        patten11 = re.compile(r"\[{(Pd)(\(allyl\)Cl)}2]")  # [{Pd(allyl)Cl}2]
 
         for i in range(1, 12):
             patten = locals()[f'patten{i}']

@@ -1,3 +1,5 @@
+import urllib.error
+
 from selenium import webdriver
 import undetected_chromedriver as uc
 from selenium.webdriver.support.wait import WebDriverWait
@@ -24,7 +26,14 @@ class ChromeDriver(object):
                 options = uc.ChromeOptions()
                 options.add_argument(r"user-data-dir=C:\Users\hui_zhou\AppData\Local\Google\Chrome\User Data")
                 options.page_load_strategy = 'none'
-                self._driver = uc.Chrome(options=options)
+                retry = 0
+                while True:
+                    try:
+                        self._driver = uc.Chrome(options=options)
+                        break
+                    except urllib.error.URLError:
+                        retry += 1
+                        print(f"URLError occur, Retry {retry}")
             else:
                 self._driver = uc.Chrome()
             self._driver.set_window_position(1200, 10)

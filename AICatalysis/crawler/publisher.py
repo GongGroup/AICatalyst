@@ -15,11 +15,13 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 
-from AICatalysis.common import ChromeDriver
-from AICatalysis.common import logger
+from AICatalysis.common.driver import ChromeDriver
+from AICatalysis.common.logger import init_root_logger
 
 DataDir = Path("../../data")
-logger.setLevel(logging.INFO)
+
+init_root_logger()
+logger = logging.getLogger(__name__)
 
 
 class PublisherCrawler(object):
@@ -67,6 +69,10 @@ class PublisherCrawler(object):
                     elif "Thieme" in url.split("=")[-1]:
                         full_text = wait.until(
                             ec.element_to_be_clickable((By.CSS_SELECTOR, '#articleTabs > li:nth-child(2) > a')))
+                        full_text.click()
+                    elif "Pharmaceutical+Society+of+Japan" in url.split("=")[-1]:
+                        full_text = wait.until(ec.element_to_be_clickable(
+                            (By.CSS_SELECTOR, '#third-level-navigation > a.thirdlevel-active-btn')))
                         full_text.click()
                     elif url.split("=")[-1] in ["CHEMICAL+JOURNAL+OF+CHINESE+UNIVERSITIES-CHINESE",
                                                 "Shaghai+Institute+of+Organic+Chemistry",
