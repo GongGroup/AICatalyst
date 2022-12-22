@@ -1,4 +1,5 @@
 import abc
+import copy
 import logging
 from itertools import zip_longest
 from pathlib import Path
@@ -398,6 +399,19 @@ class KoreaPub(BasePub):
         super(KoreaPub, self).parse_table(**kargs)
 
 
+class PharSocJapan(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc.find('table').parent('div').parent('div')
+        caption = PyQuery(copy.deepcopy(tb.copy()))  # remove the children node
+        caption.find('div').remove()
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb("div:last-child").text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+        super(PharSocJapan, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -414,6 +428,7 @@ class HtmlTableParser(object):
         'Springer-Verlag': SpringerPub,
         'Pleiades+Publishing': SpringerPub,
         'Korean+Chemical+Society': KoreaPub,
+        'Pharmaceutical+Society+of+Japan': PharSocJapan,
     }
 
     def __init__(self, file):
@@ -430,9 +445,9 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[116]
+    html_file = files[123]
 
     parser = HtmlTableParser(html_file)
-    parser.parse(save=True, name=f"{parser.name}.csv", url=parser.url)
+    parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
 
     pass
