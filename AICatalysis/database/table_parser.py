@@ -24,11 +24,12 @@ class BasePub(metaclass=abc.ABCMeta):
 
     @staticmethod
     def search_table(header):
-        def tfchoose(item):
-            CODs = ['catalytic', 'carbonylation', 'condition', 'control', 'effect', 'optimization', 'phenylboronate',
-                    'ratio', 'screen', 'synthesis', 'various', 'with and without']
+        def tfchoose(item_):
+            CODs = ['catalytic', 'catalysts', 'carbonylative', 'carbonylation', 'condition', 'control', 'effect',
+                    'important', 'optimization', 'other', 'phenylboronate', 'ratio', 'screen', 'synthesis', 'various',
+                    'with and without']
             for cod in CODs:
-                if cod in item.text().lower():
+                if cod in item_.text().lower():
                     return True
             else:
                 return False
@@ -49,24 +50,24 @@ class BasePub(metaclass=abc.ABCMeta):
         else:
             logger.warning(f"Search table failed")
 
-        def parse_single_table(stb: PyQuery):
+        def parse_single_table(stb_: PyQuery):
             """
             parse single table
 
             Args:
-                stb: single table prepare to parse (PyQuery)
+                stb_: single table prepare to parse (PyQuery)
 
             Returns:
                 thead_list, tbody_list
             """
-            thead = stb("thead")  # type -> PyQuery
-            tbody = stb("tbody")  # type -> PyQuery
+            thead = stb_("thead")  # type -> PyQuery
+            tbody = stb_("tbody")  # type -> PyQuery
 
             # parse table-head
             if len(thead("tr")) == 0:
-                thead_list = []
+                thead_list_ = []
             elif len(thead("tr")) == 1:
-                thead_list = thead.text().splitlines()
+                thead_list_ = thead.text().splitlines()
             elif len(thead("tr")) == 2:  # solving many yields in two rows, e.g., yield (2a, 2b, 2c)
                 row = []
                 for tr_item in thead.items("tr"):
@@ -92,9 +93,9 @@ class BasePub(metaclass=abc.ABCMeta):
                                 two_row_list.append(item2)
                     else:
                         two_row_list.append(item1)
-                thead_list = two_row_list
+                thead_list_ = two_row_list
             elif len(thead("tr")) == 3:  # solving thead in three rows, e.g., 10.1002/ejoc.201201708
-                thead_list = []
+                thead_list_ = []
                 tr_items = thead("tr").filter(lambda i, this: not PyQuery(this).find("figure"))
                 assert len(tr_items) == 2, "tr_items length != 2"
                 tr_1 = tr_items.filter(lambda i: i == 0)
@@ -102,16 +103,16 @@ class BasePub(metaclass=abc.ABCMeta):
                 for th_1, th_2 in zip(tr_1.items("th"), tr_2.items("th")):
                     th_1.remove("span")
                     th_2.remove("span")
-                    thead_list.append(th_1.text() + th_2.text())
+                    thead_list_.append(th_1.text() + th_2.text())
             else:
                 raise NotImplementedError
 
             # parse table-body
-            if len(thead_list):
+            if len(thead_list_):
                 try:
-                    tbody_list = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list))).tolist()
+                    tbody_list_ = np.array(tbody.text().splitlines()).reshape((-1, len(thead_list_))).tolist()
                 except ValueError:  # '' in tbody, columns for each row is not match
-                    tbody_list = []
+                    tbody_list_ = []
                     row_span = 1
                     row_span_i, row_span_v = 0, None
                     for tr_pq in tbody.items("tr"):
@@ -125,14 +126,14 @@ class BasePub(metaclass=abc.ABCMeta):
                                 row_span_i = td_i
                                 row_span_v = td_pq.text()
                             tbody_row_list.append(td_pq.text())
-                        tbody_list.append(tbody_row_list)
+                        tbody_list_.append(tbody_row_list)
             else:
                 tbody_row_list = []
                 for tr_pq in tbody.items("tr"):
                     tbody_row_list.append(tr_pq.text().split("\n"))
-                tbody_list = tbody_row_list
+                tbody_list_ = tbody_row_list
 
-            return thead_list, tbody_list  # type -> list, list
+            return thead_list_, tbody_list_  # type -> list, list
 
         thead_list, tbody_list = [], []
         for stb in table.items():
@@ -157,8 +158,8 @@ class BasePub(metaclass=abc.ABCMeta):
         return table  # type -> PyQuery
 
     @abc.abstractmethod
-    def parse_table(self, print=True, save=False, name="table.csv", url=None):
-        if print:
+    def parse_table(self, printout=True, save=False, name="table.csv", url=None):
+        if printout:
             self.print_table()
         if save:
             self.save_table(name=name, url=url)
@@ -248,6 +249,7 @@ class SJOCPub(BasePub):
                 row.append([th_item.text() for index, th_item in enumerate(tr_item.items("th"))])
 
             thead_list = []
+            notation = ''
             for item1, item2 in zip_longest(*row):
                 if len(item2):
                     if item1 is not None:
@@ -399,7 +401,7 @@ class KoreaPub(BasePub):
         super(KoreaPub, self).parse_table(**kargs)
 
 
-class PharSocJapan(BasePub):
+class PharSocJapanPub(BasePub):
     def parse_table(self, **kargs):
         tb = self.doc.find('table').parent('div').parent('div')
         caption = PyQuery(copy.deepcopy(tb.copy()))  # remove the children node
@@ -409,7 +411,15 @@ class PharSocJapan(BasePub):
         # rewrite the parse table-footnote
         footnote_text = [stb("div:last-child").text() for stb in table.items()]
         self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
-        super(PharSocJapan, self).parse_table(**kargs)
+        super(PharSocJapanPub, self).parse_table(**kargs)
+
+
+class MDPIPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('table')
+        caption =  tb('caption')
+        self._parse_table(tb=tb, caption=caption)
+        super(MDPIPub, self).parse_table(**kargs)
 
 
 class HtmlTableParser(object):
@@ -428,7 +438,8 @@ class HtmlTableParser(object):
         'Springer-Verlag': SpringerPub,
         'Pleiades+Publishing': SpringerPub,
         'Korean+Chemical+Society': KoreaPub,
-        'Pharmaceutical+Society+of+Japan': PharSocJapan,
+        'Pharmaceutical+Society+of+Japan': PharSocJapanPub,
+        'MDPI+AG': MDPIPub,
     }
 
     def __init__(self, file):
@@ -445,7 +456,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[123]
+    html_file = files[176]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
