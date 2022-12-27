@@ -98,13 +98,23 @@ class BasePub(metaclass=abc.ABCMeta):
                 thead_list_ = []
                 tr_items = thead("tr").filter(
                     lambda i, this: not PyQuery(this).find("figure") and not PyQuery(this).find("img"))
-                assert len(tr_items) == 2, "tr_items length != 2"
-                tr_1 = tr_items.filter(lambda i: i == 0)
-                tr_2 = tr_items.filter(lambda i: i == 1)
-                for th_1, th_2 in zip(tr_1.items("th"), tr_2.items("th")):
-                    th_1.remove("span")
-                    th_2.remove("span")
-                    thead_list_.append(th_1.text() + th_2.text())
+                if len(tr_items) == 2:
+                    tr_1 = tr_items.filter(lambda i: i == 0)
+                    tr_2 = tr_items.filter(lambda i: i == 1)
+                    for th_1, th_2 in zip(tr_1.items("th"), tr_2.items("th")):
+                        th_1.remove("span")
+                        th_2.remove("span")
+                        thead_list_.append(th_1.text() + th_2.text())
+                else:  # https://www.sciencedirect.com/science/article/pii/S0010854505000329?via%3Dihub
+                    temp_thead_list_ = []
+                    for trr in tr_items.items():
+                        trr_list = []
+                        for child in trr.children().items():
+                            span = child.attr('colspan')
+                            span = 1 if span is None else span
+                            trr_list += [child.text()] * int(span)
+                        temp_thead_list_.append(trr_list)
+                    thead_list_ = [(i + "-" + j + "-" + k) for i, j, k in zip(*temp_thead_list_)]
             else:
                 raise NotImplementedError
 
@@ -467,7 +477,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[222]
+    html_file = files[232]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
