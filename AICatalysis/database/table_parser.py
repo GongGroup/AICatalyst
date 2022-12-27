@@ -96,7 +96,8 @@ class BasePub(metaclass=abc.ABCMeta):
                 thead_list_ = two_row_list
             elif len(thead("tr")) == 3:  # solving thead in three rows, e.g., 10.1002/ejoc.201201708
                 thead_list_ = []
-                tr_items = thead("tr").filter(lambda i, this: not PyQuery(this).find("figure"))
+                tr_items = thead("tr").filter(
+                    lambda i, this: not PyQuery(this).find("figure") and not PyQuery(this).find("img"))
                 assert len(tr_items) == 2, "tr_items length != 2"
                 tr_1 = tr_items.filter(lambda i: i == 0)
                 tr_2 = tr_items.filter(lambda i: i == 1)
@@ -417,7 +418,7 @@ class PharSocJapanPub(BasePub):
 class MDPIPub(BasePub):
     def parse_table(self, **kargs):
         tb = self.doc('table')
-        caption =  tb('caption')
+        caption = tb('caption')
         self._parse_table(tb=tb, caption=caption)
         super(MDPIPub, self).parse_table(**kargs)
 
@@ -456,7 +457,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[176]
+    html_file = files[205]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
