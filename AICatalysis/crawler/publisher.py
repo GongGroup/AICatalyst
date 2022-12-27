@@ -51,6 +51,8 @@ class PublisherCrawler(object):
         for line in content[:910]:
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
+            if md5_name != '3e76e6b41e7ee1925f4b0b3c00cce62d':
+                continue
             if Path(f"{self.output}/{md5_name}.html").exists():
                 logger.debug(f"{md5_name}.html exists, continue")
                 continue
@@ -114,6 +116,7 @@ class PublisherCrawler(object):
                 f.write(driver.page_source)
             logger.info(f"{md5_name}.html download successful")
             time.sleep(random.random() * 5)
+            exit()
 
         logger.info("All literatures download successful")
         driver.quit()

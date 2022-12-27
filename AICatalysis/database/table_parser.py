@@ -417,10 +417,20 @@ class PharSocJapanPub(BasePub):
 
 class MDPIPub(BasePub):
     def parse_table(self, **kargs):
-        tb = self.doc('table')
-        caption = tb('caption')
-        self._parse_table(tb=tb, caption=caption)
-        super(MDPIPub, self).parse_table(**kargs)
+        if len(self.doc('div .html-caption')):
+            tb = self.doc('div .html-table_show')
+            caption = tb('div .html-caption')
+            table = self._parse_table(tb=tb, caption=caption)
+
+            # rewrite the parse table-footnote
+            footnote_text = [stb('div .html-table_foot').text() for stb in table.items()]
+            self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+            super(MDPIPub, self).parse_table(**kargs)
+        else:
+            tb = self.doc('table')
+            caption = tb('caption')
+            self._parse_table(tb=tb, caption=caption)
+            super(MDPIPub, self).parse_table(**kargs)
 
 
 class HtmlTableParser(object):
@@ -457,7 +467,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[205]
+    html_file = files[222]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
