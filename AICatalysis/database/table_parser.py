@@ -26,7 +26,8 @@ class BasePub(metaclass=abc.ABCMeta):
     def search_table(header):
         def tfchoose(item_):
             CODs = ['catalytic', 'catalysts', 'carbonylative', 'carbonylation', 'condition', 'control', 'effect',
-                    'important', 'optimization', 'other', 'phenylboronate', 'ratio', 'screen', 'synthesis', 'various',
+                    'important', 'optimization', 'other', 'phenylboronate', 'poisoning', 'ratio', 'screen', 'synthesis',
+                    'various',
                     'with and without']
             for cod in CODs:
                 if cod in item_.text().lower():
@@ -41,6 +42,9 @@ class BasePub(metaclass=abc.ABCMeta):
         return tb_index
 
     def _parse_table(self, tb=None, caption=None, th="th"):
+        if not len(tb):
+            logger.info("There's no table in literature, exit now!")
+            exit(1)
         tb_index = BasePub.search_table(caption)  # obtain the index of the valid tables
         caption = caption.filter(lambda i: i in tb_index)  # type -> PyQuery
         table = tb.filter(lambda i: i in tb_index)  # type -> PyQuery
@@ -48,7 +52,7 @@ class BasePub(metaclass=abc.ABCMeta):
         if len(table):
             logger.info(f"Match {len(table)} tables, start parse~")
         else:
-            logger.warning(f"Search table failed")
+            logger.warning(f"No match table, please check!")
 
         def parse_single_table(stb_: PyQuery):
             """
@@ -443,6 +447,18 @@ class MDPIPub(BasePub):
             super(MDPIPub, self).parse_table(**kargs)
 
 
+class BeiInsPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('table').parent('div').parent('figure')
+        caption = tb('figcaption')
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb.next('p').text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+        super(BeiInsPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -461,6 +477,7 @@ class HtmlTableParser(object):
         'Korean+Chemical+Society': KoreaPub,
         'Pharmaceutical+Society+of+Japan': PharSocJapanPub,
         'MDPI+AG': MDPIPub,
+        'Beilstein-Institut': BeiInsPub,
     }
 
     def __init__(self, file):
@@ -477,7 +494,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[232]
+    html_file = files[279]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
