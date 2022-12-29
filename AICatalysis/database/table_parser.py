@@ -27,8 +27,7 @@ class BasePub(metaclass=abc.ABCMeta):
         def tfchoose(item_):
             CODs = ['catalytic', 'catalysts', 'carbonylative', 'carbonylation', 'condition', 'control', 'effect',
                     'important', 'optimization', 'other', 'phenylboronate', 'poisoning', 'ratio', 'screen', 'synthesis',
-                    'various',
-                    'with and without']
+                    'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -374,9 +373,13 @@ class PlosPub(BasePub):
 class SagePub(BasePub):
 
     def parse_table(self, **kargs):
-        tb = self.doc.find('table').parent('div').parent('div')
-        caption = tb(".captions")
-        self._parse_table(tb=tb, caption=caption)
+        tb = self.doc('div.table-wrap').parent('figure')
+        caption = tb("figcaption")
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb("div.notes").text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
         super(SagePub, self).parse_table(**kargs)
 
 
@@ -478,6 +481,7 @@ class HtmlTableParser(object):
         'Pharmaceutical+Society+of+Japan': PharSocJapanPub,
         'MDPI+AG': MDPIPub,
         'Beilstein-Institut': BeiInsPub,
+        'SAGE+Publications': SagePub,
     }
 
     def __init__(self, file):
@@ -494,7 +498,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[279]
+    html_file = files[342]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
