@@ -25,9 +25,10 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item_):
-            CODs = ['catalytic', 'catalysts', 'carbonylative', 'carbonylation', 'condition', 'control', 'effect',
-                    'important', 'optimization', 'other', 'phenylboronate', 'poisoning', 'ratio', 'screen', 'synthesis',
-                    'various', 'with']
+            CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'condition', 'control',
+                    'effect',
+                    'hydroformylation', 'important', 'optimization', 'other', 'phenylboronate', 'poisoning',
+                    'promoters', 'ratio', 'screen', 'synthesis', 'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -95,7 +96,10 @@ class BasePub(metaclass=abc.ABCMeta):
                             else:
                                 two_row_list.append(item2)
                     else:
-                        two_row_list.append(item1)
+                        if item1 is not None:
+                            two_row_list.append(item1)
+                        else:
+                            two_row_list.append("")
                 thead_list_ = two_row_list
             elif len(thead("tr")) == 3:  # solving thead in three rows, e.g., 10.1002/ejoc.201201708
                 thead_list_ = []
@@ -311,7 +315,6 @@ class ACSPub(BasePub):
     def parse_table(self, **kargs):
         tb = self.doc.find('div[class=NLM_table-wrap]')
         header = tb("div[class=NLM_caption]")
-
         tb = self._parse_table(tb=tb, caption=header)
 
         # rewrite the parse table-footnote
@@ -462,6 +465,18 @@ class BeiInsPub(BasePub):
         super(BeiInsPub, self).parse_table(**kargs)
 
 
+class NCBIPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('div.table-wrap')
+        caption = tb('div.caption')
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb('div.tblwrap-foot').text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+        super(NCBIPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -482,6 +497,7 @@ class HtmlTableParser(object):
         'MDPI+AG': MDPIPub,
         'Beilstein-Institut': BeiInsPub,
         'SAGE+Publications': SagePub,
+        'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7452727': NCBIPub,
     }
 
     def __init__(self, file):
@@ -498,7 +514,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[342]
+    html_file = files[409]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
