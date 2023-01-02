@@ -25,10 +25,10 @@ class BasePub(metaclass=abc.ABCMeta):
     @staticmethod
     def search_table(header):
         def tfchoose(item_):
-            CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'condition', 'control',
-                    'effect',
-                    'hydroformylation', 'important', 'optimization', 'other', 'phenylboronate', 'poisoning',
-                    'promoters', 'ratio', 'screen', 'synthesis', 'various', 'with']
+            CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'comparison', 'condition',
+                    'control', 'effect', 'hydroformylation', 'important', 'influence', 'mechanistic', 'optimization',
+                    'other', 'phenylboronate', 'poisoning', 'promoters', 'ratio', 'screen', 'source', 'synthesis',
+                    'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -83,7 +83,7 @@ class BasePub(metaclass=abc.ABCMeta):
 
                 two_row_list = []
                 for item1, item2 in zip_longest(*row):
-                    if len(item2):
+                    if item2 is not None and len(item2):
                         if item1 is not None:
                             notation = item1
                             if len(item1):  # solving the figure row
@@ -477,6 +477,18 @@ class NCBIPub(BasePub):
         super(NCBIPub, self).parse_table(**kargs)
 
 
+class IopSciPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('table').parent('div')
+        caption = self.doc('table').prev('p')
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb('table').next('p').text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+        super(IopSciPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -498,6 +510,7 @@ class HtmlTableParser(object):
         'Beilstein-Institut': BeiInsPub,
         'SAGE+Publications': SagePub,
         'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7452727': NCBIPub,
+        'The+Electrochemical+Society': IopSciPub,
     }
 
     def __init__(self, file):
@@ -514,7 +527,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[409]
+    html_file = files[504]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
