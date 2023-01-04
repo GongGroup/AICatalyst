@@ -26,9 +26,9 @@ class BasePub(metaclass=abc.ABCMeta):
     def search_table(header):
         def tfchoose(item_):
             CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'comparison', 'condition',
-                    'control', 'effect', 'hydroformylation', 'important', 'influence', 'mechanistic', 'optimization',
-                    'other', 'phenylboronate', 'poisoning', 'promoters', 'ratio', 'screen', 'source', 'synthesis',
-                    'various', 'with']
+                    'control', 'development', 'effect', 'hydroformylation', 'important', 'influence', 'mechanistic',
+                    'optimization', 'other', 'phenylboronate', 'poisoning', 'promoters', 'ratio', 'screen', 'source',
+                    'synthesis', 'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -489,6 +489,14 @@ class IopSciPub(BasePub):
         super(IopSciPub, self).parse_table(**kargs)
 
 
+class HindawiPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('table').parent('div').parent('div')
+        caption = tb("div.floats-partial-footer")
+        self._parse_table(tb=tb, caption=caption)
+        super(HindawiPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -511,6 +519,7 @@ class HtmlTableParser(object):
         'SAGE+Publications': SagePub,
         'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7452727': NCBIPub,
         'The+Electrochemical+Society': IopSciPub,
+        'Hindawi+Limited': HindawiPub,
     }
 
     def __init__(self, file):
@@ -527,7 +536,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[504]
+    html_file = files[605]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
