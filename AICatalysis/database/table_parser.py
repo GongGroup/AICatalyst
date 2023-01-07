@@ -27,8 +27,8 @@ class BasePub(metaclass=abc.ABCMeta):
         def tfchoose(item_):
             CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'comparison', 'condition',
                     'control', 'development', 'effect', 'hydroformylation', 'important', 'influence', 'mechanistic',
-                    'optimization', 'other', 'phenylboronate', 'poisoning', 'promoters', 'ratio', 'screen', 'source',
-                    'synthesis', 'various', 'with']
+                    'optimization', 'other', 'parameters', 'phenylboronate', 'poisoning', 'process', 'promoters',
+                    'ratio', 'screen', 'source', 'synthesis', 'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -497,6 +497,26 @@ class HindawiPub(BasePub):
         super(HindawiPub, self).parse_table(**kargs)
 
 
+class NaturePub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('div.c-article-table')
+        caption = tb("figcaption")
+        self._parse_table(tb=tb, caption=caption)
+        super(NaturePub, self).parse_table(**kargs)
+
+
+class CSJPub(BasePub):
+    def parse_table(self, **kargs):
+        tb = self.doc('div.NLM_table-wrap')
+        caption = tb("div.caption")
+        table = self._parse_table(tb=tb, caption=caption)
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb('div.NLM_table-wrap-foot').text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
+        super(CSJPub, self).parse_table(**kargs)
+
+
 class HtmlTableParser(object):
     Allocator = {
         "American+Chemical+Society": ACSPub,
@@ -520,6 +540,8 @@ class HtmlTableParser(object):
         'https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7452727': NCBIPub,
         'The+Electrochemical+Society': IopSciPub,
         'Hindawi+Limited': HindawiPub,
+        'Springer+Science+and+Business+Media+LLC': NaturePub,
+        'The+Chemical+Society+of+Japan': CSJPub,
     }
 
     def __init__(self, file):
@@ -536,7 +558,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[605]
+    html_file = files[773]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)
