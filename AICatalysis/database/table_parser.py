@@ -5,6 +5,7 @@ from itertools import zip_longest
 from pathlib import Path
 
 import numpy as np
+import requests
 from pyquery import PyQuery
 
 from AICatalysis.common.constant import MD5Name, Table
@@ -28,7 +29,7 @@ class BasePub(metaclass=abc.ABCMeta):
             CODs = ['catalytic', 'catalysts', 'catalyzed', 'carbonylative', 'carbonylation', 'comparison', 'condition',
                     'control', 'development', 'effect', 'hydroformylation', 'important', 'influence', 'mechanistic',
                     'optimization', 'other', 'parameters', 'phenylboronate', 'poisoning', 'process', 'promoters',
-                    'ratio', 'screen', 'source', 'synthesis', 'various', 'with']
+                    'ratio', 'screen', 'selection', 'source', 'synthesis', 'various', 'with']
             for cod in CODs:
                 if cod in item_.text().lower():
                     return True
@@ -407,9 +408,20 @@ class EurekaselectPub(BasePub):
 class SpringerPub(BasePub):
 
     def parse_table(self, **kargs):
-        tb = self.doc.find('table').parent('div').parent('div')
-        caption = tb(".captions")
-        self._parse_table(tb=tb, caption=caption)
+        atb = self.doc('div.c-article-table')
+        url = atb('a')
+        tb, caption = [], []
+        for surl in url.items():
+            href = surl.attr("href")
+            real_href = 'https://link.springer.com' + href
+            doc = PyQuery(requests.get(real_href).text)
+            tb.append(doc('main'))
+            caption.append(tb[-1]('h1'))
+        table = self._parse_table(tb=PyQuery(tb), caption=PyQuery(caption))
+
+        # rewrite the parse table-footnote
+        footnote_text = [stb("div.c-article-table-footer").text() for stb in table.items()]
+        self._table = Table(self._table.caption, self._table.thead, self._table.tbody, footnote_text)
         super(SpringerPub, self).parse_table(**kargs)
 
 
@@ -440,6 +452,8 @@ class MDPIPub(BasePub):
         if len(self.doc('div .html-caption')):
             tb = self.doc('div .html-table_show')
             caption = tb('div .html-caption')
+            if not len(caption):
+                caption = tb('caption')
             table = self._parse_table(tb=tb, caption=caption)
 
             # rewrite the parse table-footnote
@@ -558,7 +572,7 @@ class HtmlTableParser(object):
 if __name__ == '__main__':
     literature_dir = "../../literature/"
     files = [file for file in Path(literature_dir).iterdir()]
-    html_file = files[773]
+    html_file = files[817]
 
     parser = HtmlTableParser(html_file)
     parser.parse(save=True, name=f"tcsv/{parser.name}.csv", url=parser.url)

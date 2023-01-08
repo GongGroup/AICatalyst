@@ -51,7 +51,7 @@ class PublisherCrawler(object):
         for line in content[:910]:
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
-            if md5_name != 'd2279315a2e9fc1e7741b9f942dd892a':
+            if md5_name != 'e5dcb67b00fe8fc04da2a08aabab0ed9':
                 continue
             if Path(f"{self.output}/{md5_name}.html").exists():
                 logger.debug(f"{md5_name}.html exists, continue")
