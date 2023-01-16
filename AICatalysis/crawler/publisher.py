@@ -48,11 +48,11 @@ class PublisherCrawler(object):
         driver, wait = chrome.driver, chrome.wait
         scroll_height = 1000
 
-        for line in content[:910]:
+        for line in content[:1600]:
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
-            if md5_name != 'e5dcb67b00fe8fc04da2a08aabab0ed9':
-                continue
+            # if md5_name != 'f8c988df481e3046f1f90c81a1b98d90':
+            #     continue
             if Path(f"{self.output}/{md5_name}.html").exists():
                 logger.debug(f"{md5_name}.html exists, continue")
                 continue
@@ -116,7 +116,7 @@ class PublisherCrawler(object):
                 f.write(driver.page_source)
             logger.info(f"{md5_name}.html download successful")
             time.sleep(random.random() * 5)
-            exit()
+            # exit()
 
         logger.info("All literatures download successful")
         driver.quit()
@@ -171,6 +171,6 @@ class PublisherCrawler(object):
 
 
 if __name__ == '__main__':
-    crawler = PublisherCrawler(index_file=DataDir / "datafile.csv", output="literature")
+    crawler = PublisherCrawler(index_file=DataDir / "datafile.csv", output="../../literature")
     crawler.get_htmls()
     # crawler.check_htmls()
