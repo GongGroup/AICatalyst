@@ -48,7 +48,7 @@ class PublisherCrawler(object):
         driver, wait = chrome.driver, chrome.wait
         scroll_height = 1000
 
-        for line in content[:1600]:
+        for index, line in enumerate(content[:3300]):
             url, doi = line.strip().split(",")[-2:]
             md5_name = hashlib.md5(url.encode(encoding='utf-8')).hexdigest()
             # if md5_name != 'f8c988df481e3046f1f90c81a1b98d90':
@@ -91,7 +91,10 @@ class PublisherCrawler(object):
                     except JavascriptException:
                         logger.info(f"Loading {md5_name}.html failed, retry {retry_num}")
                         retry_num += 1
-                        continue
+                        if retry_num >= 10:
+                            break
+                        else:
+                            continue
                     else:
                         break
             except TimeoutException:
@@ -114,7 +117,7 @@ class PublisherCrawler(object):
             # write to *.html files
             with open(f"{self.output}/{md5_name}.html", "w", encoding='utf-8') as f:
                 f.write(driver.page_source)
-            logger.info(f"{md5_name}.html download successful")
+            logger.info(f"{index:6d}: {md5_name}.html download successful")
             time.sleep(random.random() * 5)
             # exit()
 
