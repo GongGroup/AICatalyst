@@ -4,7 +4,7 @@ import shutil
 
 from AICatalysis.common.constant import FFormula
 from AICatalysis.common.descriptor import ReagentDescriptor, FormulaDescriptor, SolDescriptor, TimeDescriptor, \
-    LigandDescriptor, GasDescriptor, AdditiveDescriptor, OxidantDescriptor
+    LigandDescriptor, GasDescriptor, AdditiveDescriptor, OxidantDescriptor, ReactantDescriptor, ProductDescriptor
 from AICatalysis.common.file import JsonIO, ftemp
 from AICatalysis.database.ichem import IChemCrawler
 
@@ -197,6 +197,30 @@ class Oxidant(BaseSpecies):
         if "mol" in self.name or "equiv" in self.name:
             match = re.search(r'(.*)\s\(([0-9]*\.?[0-9]+\s?(mol)?(mmol)?(equiv\.?)?)\)', self.name)
             self.formula, self.content = match.groups()[0:2]
+        else:
+            self.formula = self.name
+
+
+class Reactant(BaseSpecies):
+    name = ReactantDescriptor('name')
+
+    def parse(self):
+        match1 = re.search(r'reactant\[(.*)\s\((.*)\)?]', self.name)
+        if match1 is not None:
+            self.formula, self.content = match1.groups()[:2]
+        else:
+            self.formula = self.name
+
+
+class Product(BaseSpecies):
+    name = ProductDescriptor('name')
+
+    def parse(self):
+        match1 = re.search(r'product\[(.*)\s?\(?(.*)?\)?]', self.name)
+        if match1 is not None:
+            self.formula, self.content = match1.groups()[:2]
+            if not len(self.content):
+                self.content = None
         else:
             self.formula = self.name
 

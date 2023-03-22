@@ -87,6 +87,28 @@ def not_have_exclude(value, excludes):
         return True
 
 
+class ReactantDescriptor(Descriptor):
+    """
+    ReactantDescriptor, check name is valid as time
+    """
+
+    def __set__(self, instance, value):
+        if re.search('reactant', value) is None:  # match with no-groups
+            raise ValueError(f"`{value}` is invalid name")
+        super().__set__(instance, value)
+
+
+class ProductDescriptor(Descriptor):
+    """
+    ProductDescriptor, check name is valid as time
+    """
+
+    def __set__(self, instance, value):
+        if re.search('^ product', value) is None:  # match with no-groups
+            raise ValueError(f"`{value}` is invalid name")
+        super().__set__(instance, value)
+
+
 global_exclude = ["Reaction", "Conditions", "General", "1a"]
 
 

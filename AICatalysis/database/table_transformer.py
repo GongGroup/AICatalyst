@@ -10,13 +10,14 @@ import numpy as np
 from AICatalysis.common.error import ParseError
 from AICatalysis.common.logger import init_root_logger
 from AICatalysis.common.species import CarbonylCatalyst, Solvent, Reagent, Time, Temperature, Gas, Ligand, Base, Acid, \
-    Additive, Oxidant, ChemFormula
+    Additive, Oxidant, ChemFormula, Reactant, Product
 from AICatalysis.common.utils import get_tokens, flatten, is_number, is_ratio
 
-Features = ['catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligand', 'solvent', 'gas', 'time', 'yield',
-            'temperature']
-SpeciesClass = {'catalyst': CarbonylCatalyst, 'ligand': Ligand, 'solvent': Solvent, 'gas': Gas, 'acid': Acid,
-                'base': Base, 'reagent': Reagent, 'additive': Additive, 'oxidant': Oxidant}
+Features = ['reactant', 'product', 'catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligand', 'solvent',
+            'gas', 'time', 'yield', 'temperature']
+SpeciesClass = {'reactant': Reactant, 'product': Product, 'catalyst': CarbonylCatalyst, 'ligand': Ligand,
+                'solvent': Solvent, 'gas': Gas, 'acid': Acid, 'base': Base, 'reagent': Reagent, 'additive': Additive,
+                'oxidant': Oxidant}
 GlobalExclude = ["reaction", "1a (", "yield"]
 
 init_root_logger()
@@ -134,7 +135,7 @@ class CSVTableTransformer(FileIO):
             for item in table:
                 merged_item = defaultdict(list)
                 for fea, value in item.items():
-                    if fea in Features[:6]:
+                    if fea in Features[2:8]:
                         if ChemFormula.is_or_not(value[0]):
                             species = ChemFormula(value[0])
                             ions = species.split()
