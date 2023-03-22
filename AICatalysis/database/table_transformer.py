@@ -1,4 +1,5 @@
 import copy
+import logging
 import re
 import string
 from collections import defaultdict
@@ -7,6 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from AICatalysis.common.error import ParseError
+from AICatalysis.common.logger import init_root_logger
 from AICatalysis.common.species import CarbonylCatalyst, Solvent, Reagent, Time, Temperature, Gas, Ligand, Base, Acid, \
     Additive, Oxidant, ChemFormula
 from AICatalysis.common.utils import get_tokens, flatten, is_number, is_ratio
@@ -16,6 +18,9 @@ Features = ['catalyst', 'reagent', 'acid', 'base', 'additive', 'oxidant', 'ligan
 SpeciesClass = {'catalyst': CarbonylCatalyst, 'ligand': Ligand, 'solvent': Solvent, 'gas': Gas, 'acid': Acid,
                 'base': Base, 'reagent': Reagent, 'additive': Additive, 'oxidant': Oxidant}
 GlobalExclude = ["reaction", "1a (", "yield"]
+
+init_root_logger()
+logger = logging.getLogger(__name__)
 
 
 class FileIO(object):
@@ -91,6 +96,30 @@ class CSVTableTransformer(FileIO):
             multi_foots, base_i, footnotes = self._parse_footnote(table[foot_start:-1])
             records = self._combine_bf(body, base_i, footnotes)
             self.records.append(records)
+
+    @property
+    def species(self):
+        """
+        Extract the species in the records.
+
+        Returns:
+            species (set[string]): store the species (catalyst, reagent, base, ligand, et al.).
+
+        """
+        _species = []
+        for item_list in self.records:
+            for item in item_list:
+                for key, value in item.items():
+                    if key not in ('time', 'yield', 'temperature') and value[0] != '–':
+                        _species.append(value[0].rstrip().lstrip())
+
+        _species = set(_species)
+
+        for sp in _species:
+            if sp + ".gjf" not in Path("chemical-gjf").iterdir():
+                logger.warning(f"`{sp}` not in database, please check!!")
+
+        return _species
 
     def merge(self):
         """
@@ -378,11 +407,13 @@ class CSVTableTransformer(FileIO):
 
 if __name__ == '__main__':
     files = [file for file in Path("tcsv").iterdir() if file.suffix == ".csv"]
-    file = files[20]
+    file = files[0]
     print(file)
     csvreader = CSVTableTransformer(file)
     csvreader.parse()
-    # csvreader.write()
+    species = csvreader.species
+    exit()
+    csvreader.write()
     merged_results = csvreader.merge()
     pass
 
