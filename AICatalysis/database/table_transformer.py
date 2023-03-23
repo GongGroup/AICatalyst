@@ -117,7 +117,7 @@ class CSVTableTransformer(FileIO):
         _species = set(_species)
 
         for sp in _species:
-            if sp + ".gjf" not in Path("chemical-gjf").iterdir():
+            if not Path("chemical-gjf/"+ sp + ".gjf").exists():
                 logger.warning(f"`{sp}` not in database, please check!!")
 
         return _species

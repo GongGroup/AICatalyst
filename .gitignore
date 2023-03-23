@@ -19,3 +19,4 @@ common/*.png
 *.gjf
 *.xyz
 *.mol
+*.out
