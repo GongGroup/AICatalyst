@@ -150,6 +150,10 @@ class RMolecule(object):
         return Chem.MolToSmiles(self._rmol)
 
     @property
+    def weight(self):
+        return Chem.rdMolDescriptors.CalcExactMolWt(self._rmol)
+
+    @property
     def atoms(self):
         return [RAtom(atom, self._rmol.GetConformer().GetAtomPosition(index), self) for index, atom in
                 enumerate(self._rmol.GetAtoms())]
@@ -184,6 +188,29 @@ class RMolecule(object):
             _groups.append(_in_groups)
 
         return _groups
+
+    @property
+    def rings(self):
+        ssr = Chem.GetSymmSSSR(self._rmol)
+
+        return [list(ring) for ring in ssr]
+
+    @property
+    def aromatic_rings(self):
+        ring_info = self._rmol.GetRingInfo()
+        atoms_in_rings = ring_info.AtomRings()
+
+        _aromatic_rings = []
+        for ring in atoms_in_rings:
+            aromatic_atom_in_ring = 0
+            for atom_id in ring:
+                atom = self._rmol.GetAtomWithIdx(atom_id)
+                if atom.GetIsAromatic():
+                    aromatic_atom_in_ring += 1
+            if aromatic_atom_in_ring == len(ring):
+                _aromatic_rings.append(ring)
+
+        return _aromatic_rings
 
     @property
     def rotate_bonds(self):
@@ -248,7 +275,8 @@ class RMolecule(object):
 
 if __name__ == '__main__':
     # smiles = "CC([O-])=O"
-    smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
+    # smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
+    smiles = 'C1=CC=CC=C1'
     rmol = RMolecule._from_smiles(smiles)
     rmol = RMolecule(rmol)
     print()
