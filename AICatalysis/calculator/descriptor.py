@@ -3,6 +3,7 @@ from collections import Counter
 
 from AICatalysis.calculator.gaussian import OUTFile
 from AICatalysis.calculator.rbase import RMolecule
+from AICatalysis.common.utils import flatten
 
 
 class Descriptor(object):
@@ -46,7 +47,9 @@ class Descriptor(object):
         absolute and relative numbers of certain chemical groups and functionalities in the molecule
 
         """
-        return
+        _groups = self._rmol.groups
+
+        return list(Counter(flatten(_groups)).keys())
 
 
 if __name__ == '__main__':

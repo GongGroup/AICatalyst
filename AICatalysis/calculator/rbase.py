@@ -1,7 +1,11 @@
+import os
+
 import numpy as np
 from rdkit import Chem
 from rdkit import RDLogger
 from rdkit.Chem import AllChem
+from rdkit.Chem import FragmentCatalog
+from rdkit.Chem import RDConfig
 
 from AICatalysis.common.constant import ElementInfo
 from AICatalysis.common.error import FileFormatError
@@ -162,6 +166,26 @@ class RMolecule(object):
                  "end": bond.GetEndAtomIdx()} for bond in self._rmol.GetBonds()]
 
     @property
+    def groups(self):
+        fName = os.path.join(RDConfig.RDDataDir, 'FunctionalGroups.txt')
+        fparams = FragmentCatalog.FragCatParams(1, 6, fName)
+        fcat = FragmentCatalog.FragCatalog(fparams)
+        fcgen = FragmentCatalog.FragCatGenerator()
+        fcgen.AddFragsFromMol(self._rmol, fcat)
+        mol_frags = [fcat.GetEntryDescription(index) for index in range(fcat.GetNumEntries())]
+
+        _groups = []
+        for index in range(len(mol_frags)):
+            mol_frag_groups = list(fcat.GetEntryFuncGroupIds(index))
+            _in_groups = []
+            for fg in mol_frag_groups:
+                funcgroup = fparams.GetFuncGroup(fg)
+                _in_groups.append(funcgroup.GetProp('_Name'))
+            _groups.append(_in_groups)
+
+        return _groups
+
+    @property
     def rotate_bonds(self):
         _rotate_bonds = []
         for bond in self.bonds:
@@ -224,8 +248,7 @@ class RMolecule(object):
 
 if __name__ == '__main__':
     # smiles = "CC([O-])=O"
-    smiles = "C1(=CC=CC=C1)P(C1=CC=CC=C1)C1=CC=CC=C1"
+    smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
     rmol = RMolecule._from_smiles(smiles)
     rmol = RMolecule(rmol)
-
     print()
