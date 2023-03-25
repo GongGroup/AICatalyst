@@ -22,7 +22,7 @@ class Descriptor(object):
             f.write("\n".join(lines))
         rmol, _ = RMolecule._from_mol_file("temp.mol")
 
-        return RMolecule(rmol)
+        return RMolecule(rmol, remove_H=False)
 
     @property
     def Weight(self):
@@ -101,11 +101,31 @@ class Descriptor(object):
     @property
     def WienerIndex(self):
         """
+        Wiener Index (non-hydrogen atoms)
 
-        Returns:
+            W = \frac{1}{2} \sum_{(i,j)}^{N_{SA}}d_{ij}
 
         """
-        return
+        rmol = RMolecule(self._rmol._rmol, remove_H=True)
+
+        res = 0
+        for i in range(rmol._rmol.GetNumAtoms()):
+            for j in range(i + 1, rmol._rmol.GetNumAtoms()):
+                res += rmol.distance_matrix[i][j]
+
+        return res
+
+    @property
+    def RandićIndex(self):
+        """
+        Randić's molecular connectivity index (non-hydrogen atoms)
+
+            \chi =\sum_{edges\, ij}(D_iD_j)^{-1/2}
+
+        """
+        rmol = RMolecule(self._rmol._rmol, remove_H=True)
+
+        return sum([bond['degree'] for bond in rmol.bonds])
 
 
 if __name__ == '__main__':

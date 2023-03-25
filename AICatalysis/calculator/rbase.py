@@ -139,9 +139,11 @@ class RAtom(object):
 
 class RMolecule(object):
 
-    def __init__(self, rmol):
-        self._rmol = rmol
-        self._rmol_rH = Chem.RemoveHs(self._rmol)
+    def __init__(self, rmol, remove_H=False):
+        if not remove_H:
+            self._rmol = rmol
+        else:
+            self._rmol = Chem.RemoveHs(rmol)
 
     def __repr__(self):
         return f"<{self.__class__.__name__} : {self.rsmiles}>"
@@ -180,17 +182,20 @@ class RMolecule(object):
         return Chem.GetDistanceMatrix(self._rmol)
 
     @property
-    def distance_matrix_rH(self):
-        return Chem.GetDistanceMatrix(self._rmol_rH)
+    def adjacency_matrix(self):
+        return Chem.rdmolops.GetAdjacencyMatrix(self._rmol)
 
     @property
     def bonds(self):
+
         return [{"idx": bond.GetIdx(),
                  "bond_type": bond.GetBondType(),
                  "bond_type_as_double": bond.GetBondTypeAsDouble(),
                  "aromatic": bond.GetIsAromatic(),
                  "conjugated": bond.GetIsConjugated(),
                  "in_ring": bond.IsInRing(),
+                 "degree": (self.atoms[bond.GetBeginAtomIdx()].degree * self.atoms[
+                     bond.GetEndAtomIdx()].degree) ** -0.5,
                  "begin": bond.GetBeginAtomIdx(),
                  "end": bond.GetEndAtomIdx()} for bond in self._rmol.GetBonds()]
 
@@ -264,20 +269,6 @@ class RMolecule(object):
             frags.append(((begin_idx, end_idx), sorted(self.atoms[end_idx].get_connected_without_idx([begin_idx])),))
         return frags
 
-    @property
-    def wiener_index(self):
-        """
-        Wiener Index (non-hydrogen atoms)
-
-            W = \frac{1}{2} \sum_{(i,j)}^{N_{SA}}d_{ij}
-        """
-        res = 0
-        for i in range(self._rmol_rH.GetNumAtoms()):
-            for j in range(i + 1, self._rmol_rH.GetNumAtoms()):
-                res += self.distance_matrix_rH[i][j]
-
-        return res
-
     @staticmethod
     def _from_smiles(smiles, addHs=True):
         rmol = Chem.MolFromSmiles(smiles)
@@ -300,5 +291,5 @@ if __name__ == '__main__':
     # smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
     smiles = 'C1=CC=CC=C1'
     rmol = RMolecule._from_smiles(smiles)
-    rmol = RMolecule(rmol)
+    rmol = RMolecule(rmol, remove_H=True)
     print()
