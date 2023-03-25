@@ -98,6 +98,15 @@ class Descriptor(object):
 
         return len(self._rmol.aromatic_rings)
 
+    @property
+    def WienerIndex(self):
+        """
+
+        Returns:
+
+        """
+        return
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")

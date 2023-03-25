@@ -141,6 +141,7 @@ class RMolecule(object):
 
     def __init__(self, rmol):
         self._rmol = rmol
+        self._rmol_rH = Chem.RemoveHs(self._rmol)
 
     def __repr__(self):
         return f"<{self.__class__.__name__} : {self.rsmiles}>"
@@ -159,6 +160,30 @@ class RMolecule(object):
                 enumerate(self._rmol.GetAtoms())]
 
     @property
+    def positions(self):
+        return np.array([atom.position for atom in self.atoms])
+
+    @property
+    def mass_center(self):
+        return np.mean(self.positions, axis=0)
+
+    @property
+    def num_atoms(self):
+        return self._rmol.GetNumAtoms()
+
+    @property
+    def rfrags(self):
+        return [rmol for rmol in Chem.GetMolFrags(self._rmol, asMols=True)]
+
+    @property
+    def distance_matrix(self):
+        return Chem.GetDistanceMatrix(self._rmol)
+
+    @property
+    def distance_matrix_rH(self):
+        return Chem.GetDistanceMatrix(self._rmol_rH)
+
+    @property
     def bonds(self):
         return [{"idx": bond.GetIdx(),
                  "bond_type": bond.GetBondType(),
@@ -168,6 +193,28 @@ class RMolecule(object):
                  "in_ring": bond.IsInRing(),
                  "begin": bond.GetBeginAtomIdx(),
                  "end": bond.GetEndAtomIdx()} for bond in self._rmol.GetBonds()]
+
+    @property
+    def rings(self):
+        ssr = Chem.GetSymmSSSR(self._rmol)
+        return [list(ring) for ring in ssr]
+
+    @property
+    def aromatic_rings(self):
+        ring_info = self._rmol.GetRingInfo()
+        atoms_in_rings = ring_info.AtomRings()
+
+        _aromatic_rings = []
+        for ring in atoms_in_rings:
+            aromatic_atom_in_ring = 0
+            for atom_id in ring:
+                atom = self._rmol.GetAtomWithIdx(atom_id)
+                if atom.GetIsAromatic():
+                    aromatic_atom_in_ring += 1
+            if aromatic_atom_in_ring == len(ring):
+                _aromatic_rings.append(ring)
+
+        return _aromatic_rings
 
     @property
     def groups(self):
@@ -190,29 +237,6 @@ class RMolecule(object):
         return _groups
 
     @property
-    def rings(self):
-        ssr = Chem.GetSymmSSSR(self._rmol)
-
-        return [list(ring) for ring in ssr]
-
-    @property
-    def aromatic_rings(self):
-        ring_info = self._rmol.GetRingInfo()
-        atoms_in_rings = ring_info.AtomRings()
-
-        _aromatic_rings = []
-        for ring in atoms_in_rings:
-            aromatic_atom_in_ring = 0
-            for atom_id in ring:
-                atom = self._rmol.GetAtomWithIdx(atom_id)
-                if atom.GetIsAromatic():
-                    aromatic_atom_in_ring += 1
-            if aromatic_atom_in_ring == len(ring):
-                _aromatic_rings.append(ring)
-
-        return _aromatic_rings
-
-    @property
     def rotate_bonds(self):
         _rotate_bonds = []
         for bond in self.bonds:
@@ -223,38 +247,6 @@ class RMolecule(object):
             if bond_type == Chem.rdchem.BondType.SINGLE and not conjugated and begin_atom.symbol != "H" and end_atom.symbol != "H":
                 _rotate_bonds.append(bond)
         return _rotate_bonds
-
-    @property
-    def positions(self):
-        return np.array([atom.position for atom in self.atoms])
-
-    @property
-    def mass_center(self):
-        return np.mean(self.positions, axis=0)
-
-    @property
-    def num_atoms(self):
-        return self._rmol.GetNumAtoms()
-
-    @staticmethod
-    def _from_smiles(smiles, addHs=True):
-        rmol = Chem.MolFromSmiles(smiles)
-        if addHs:
-            rmol = AllChem.AddHs(rmol)
-        AllChem.EmbedMolecule(rmol)
-        AllChem.MMFFOptimizeMolecule(rmol)
-        return rmol
-
-    @staticmethod
-    def _from_mol_file(file, removeHs=False):
-        rmol = Chem.MolFromMolFile(file, removeHs=removeHs)
-        if rmol is None:
-            raise FileFormatError(f"The format of {file} is not correct")
-        return rmol, Chem.MolToSmiles(rmol)
-
-    @property
-    def rfrags(self):
-        return [rmol for rmol in Chem.GetMolFrags(self._rmol, asMols=True)]
 
     @property
     def fragments(self):
@@ -271,6 +263,36 @@ class RMolecule(object):
             frags.append(((begin_idx, end_idx), sorted(self.atoms[begin_idx].get_connected_without_idx([end_idx])),))
             frags.append(((begin_idx, end_idx), sorted(self.atoms[end_idx].get_connected_without_idx([begin_idx])),))
         return frags
+
+    @property
+    def wiener_index(self):
+        """
+        Wiener Index (non-hydrogen atoms)
+
+            W = \frac{1}{2} \sum_{(i,j)}^{N_{SA}}d_{ij}
+        """
+        res = 0
+        for i in range(self._rmol_rH.GetNumAtoms()):
+            for j in range(i + 1, self._rmol_rH.GetNumAtoms()):
+                res += self.distance_matrix_rH[i][j]
+
+        return res
+
+    @staticmethod
+    def _from_smiles(smiles, addHs=True):
+        rmol = Chem.MolFromSmiles(smiles)
+        if addHs:
+            rmol = AllChem.AddHs(rmol)
+        AllChem.EmbedMolecule(rmol)
+        AllChem.MMFFOptimizeMolecule(rmol)
+        return rmol
+
+    @staticmethod
+    def _from_mol_file(file, removeHs=False):
+        rmol = Chem.MolFromMolFile(file, removeHs=removeHs)
+        if rmol is None:
+            raise FileFormatError(f"The format of {file} is not correct")
+        return rmol, Chem.MolToSmiles(rmol)
 
 
 if __name__ == '__main__':
