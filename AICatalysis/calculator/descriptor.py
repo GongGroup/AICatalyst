@@ -1,6 +1,8 @@
 import subprocess
 from collections import Counter
 
+from rdkit.Chem import GraphDescriptors
+
 from AICatalysis.calculator.gaussian import OUTFile
 from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.utils import flatten
@@ -116,16 +118,65 @@ class Descriptor(object):
         return res
 
     @property
-    def RandićIndex(self):
+    def ChiIndex(self):
         """
-        Randić's molecular connectivity index (non-hydrogen atoms)
+        Chi0 = \sum(\delta _i)^{-1/2}
 
-            \chi =\sum_{edges\, ij}(D_iD_j)^{-1/2}
+        Chi0v = \sum(\delta _i^v)^{-1/2}, \delta _i^v = Z_i^v-b_i
+                Z_i^v is number of valence electrons, b_i is number of H atoms bonded to i
+
+        Chi0n is similar to Chi0v, but use nVal instead of valence
+
+        Chi1 = \sum(\delta _i \delta _j)^{-1/2}
+
+        References:
+            https://doi.org/10.1002/9780470125793.ch9
+        """
+
+        rmol = RMolecule(self._rmol._rmol, remove_H=True)
+
+        _chi_index = {'chi0': GraphDescriptors.Chi0(rmol._rmol),
+                      'chi0v': GraphDescriptors.Chi0v(rmol._rmol),
+                      'chi0n': GraphDescriptors.Chi0n(rmol._rmol),
+                      'chi1': GraphDescriptors.Chi1(rmol._rmol),
+                      'chi1v': GraphDescriptors.Chi1v(rmol._rmol),
+                      'chi1n': GraphDescriptors.Chi1n(rmol._rmol),
+                      'chi2n': GraphDescriptors.Chi2n(rmol._rmol),
+                      'chi2v': GraphDescriptors.Chi2v(rmol._rmol),
+                      'chi3n': GraphDescriptors.Chi3n(rmol._rmol),
+                      'chi3v': GraphDescriptors.Chi3v(rmol._rmol),
+                      'chi4n': GraphDescriptors.Chi4n(rmol._rmol),  # GraphDescriptors.ChiNn_(rmol._rmol, n)
+                      'chi4v': GraphDescriptors.Chi4v(rmol._rmol)}  # GraphDescriptors.ChiNv_(rmol._rmol, n)
+
+        return _chi_index
+
+    @property
+    def BalabanIndex(self):
+        """
+        J=\frac{m}{\gamma +1}\sum_{(i,j)\in E(G)}(D_iD_j)^{-1/2}
 
         """
         rmol = RMolecule(self._rmol._rmol, remove_H=True)
 
-        return sum([bond['degree'] for bond in rmol.bonds])
+        return GraphDescriptors.BalabanJ(rmol._rmol)
+
+    @property
+    def KierShapeIndex(self):
+        """
+        Kappa1 = (A+\alpha)(A+\alpha-1)^2/(^1P+\alpha)^2
+        Kappa2 = (A+\alpha-1)(A+\alpha-2)^2/(^2P+\alpha)^2
+        Kappa3 = (A+\alpha-1)(A+\alpha-3)^2/(^3P+\alpha)^2      (A is odd)
+        Kappa3 = (A+\alpha-2)(A+\alpha-3)^2/(^3P+\alpha)^2      (A is even)
+
+        """
+
+        rmol = RMolecule(self._rmol._rmol, remove_H=True)
+
+        _kier_shape_index = {'kappa1': GraphDescriptors.Kappa1(rmol._rmol),
+                             'kappa2': GraphDescriptors.Kappa2(rmol._rmol),
+                             'kappa3': GraphDescriptors.Kappa3(rmol._rmol)}
+
+        return _kier_shape_index
 
 
 if __name__ == '__main__':
