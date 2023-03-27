@@ -192,23 +192,36 @@ class Descriptor(object):
         return self.KierShapeIndex['kappa1'] * self.KierShapeIndex['kappa2'] / N_SA
 
     @property
-    def IC(self):
+    def InfoContentIndex(self):
         """
-        Mean information content index
+        information content index
 
         IC = -\sum_{i}p_i\cdot  log_2\,p_i
+        SIC = IC / log_2\,N
+        CIC = log_2\,N -IC
+        BIC = IC / log_2\,q
 
         References:
             https://doi.org/10.1002/jps.2600730403
 
         """
-        N = self._rmol.num_atoms
-        p = [value / N for value in self._rmol.coordination_info.values()]
-        _ic = -sum([item * math.log2(item) for item in p])
+        N = self._rmol.num_atoms  # Number of atoms
+        q = len(self._rmol.bonds)  # Number of edges
+        p = [value / N for value in self._rmol.coordination_info.values()]  # number of type-i atom / N (coordination)
 
-        return _ic
+        ic = -sum([item * math.log2(item) for item in p]) # Mean information content index
+        sic = ic / math.log2(N) # Structural information content index
+        cic = math.log2(N) - ic # Complementary information content index
+        bic = ic / math.log2(q) # Bonding information content index
+
+        _info_content = {"ic": ic,
+                         "sic": sic,
+                         "cic": cic,
+                         "bic": bic}
+
+        return _info_content
 
 
 if __name__ == '__main__':
-    m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")
+    m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
     pass
