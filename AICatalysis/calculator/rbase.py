@@ -198,6 +198,10 @@ class RMolecule(object):
         return [rmol for rmol in Chem.GetMolFrags(self._rmol, asMols=True)]
 
     @property
+    def distance_matrix_3d(self):
+        return Chem.Get3DDistanceMatrix(self._rmol)
+
+    @property
     def distance_matrix(self):
         return Chem.GetDistanceMatrix(self._rmol)
 

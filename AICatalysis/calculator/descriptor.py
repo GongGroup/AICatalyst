@@ -226,6 +226,23 @@ class Descriptor(object):
 
         return _info_content
 
+    @property
+    def TopologicalElectronicIndes(self):
+        """
+        T^E = \sum_{(i,j)}^{N_{SA}}\frac{|q_i-q_j|}{r_{ij}^2} (i = 1..N, j=i+1..N)
+
+        References:
+            https://doi.org/10.1016/S0021-9673(01)86894-1
+        """
+
+        _topo_elect = 0.
+        for i in range(self._rmol.num_atoms):
+            for j in range(i + 1, self._rmol.num_atoms):
+                _topo_elect += math.fabs(self._rmol.atoms[i].mulliken_charge - self._rmol.atoms[j].mulliken_charge) / \
+                               (self._rmol.distance_matrix_3d[i][j]) ** 2
+
+        return _topo_elect
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")

@@ -58,7 +58,6 @@ class OUTFile(object):
         mulliken_charge = self._strings[mulliken_index[-1] + 2:mulliken_index[-1] + 2 + len(self.input_atoms)]
         self.mulliken_charge = [float(line.split()[2]) for line in mulliken_charge]
 
-        pass
         return self
 
 
