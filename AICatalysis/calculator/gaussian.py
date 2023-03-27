@@ -33,11 +33,13 @@ class OUTFile(object):
     def __init__(self, name="result.out"):
         self.name = name
         self.input_atoms = None
+        self.mulliken_charge = None
 
     def read(self):
         with open(self.name, "r") as f:
             self._strings = f.readlines()
 
+        # read input_atoms
         lns, lne = None, None
         for index, line in enumerate(self._strings):
             if line.startswith(" Symbolic Z-matrix"):
@@ -50,7 +52,12 @@ class OUTFile(object):
         _format = lambda x: [str(x[0]), float(x[1]), float(x[2]), float(x[3])]
         atom_lines = [l.split() for l in self._strings[lns + 2:lne - 2]]
         self.input_atoms = list(map(_format, atom_lines))
-        
+
+        # read Mulliken charges
+        mulliken_index = [index for index, line in enumerate(self._strings) if line.startswith(" Mulliken charges:")]
+        mulliken_charge = self._strings[mulliken_index[-1] + 2:mulliken_index[-1] + 2 + len(self.input_atoms)]
+        self.mulliken_charge = [float(line.split()[2]) for line in mulliken_charge]
+
         pass
         return self
 

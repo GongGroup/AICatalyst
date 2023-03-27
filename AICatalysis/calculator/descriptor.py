@@ -23,9 +23,14 @@ class Descriptor(object):
         lines = content.splitlines()[:-4]
         with open("temp.mol", "w") as f:
             f.write("\n".join(lines))
-        rmol, _ = RMolecule._from_mol_file("temp.mol")
+        _rmol, _ = RMolecule._from_mol_file("temp.mol")
+        rmol = RMolecule(_rmol, remove_H=False)
 
-        return RMolecule(rmol, remove_H=False)
+        mulliken_charge = self._out_gaussian.mulliken_charge
+        for atom, charge in zip(rmol.atoms, mulliken_charge):
+            atom.mulliken_charge = charge
+
+        return rmol
 
     @property
     def Weight(self):
@@ -209,10 +214,10 @@ class Descriptor(object):
         q = len(self._rmol.bonds)  # Number of edges
         p = [value / N for value in self._rmol.coordination_info.values()]  # number of type-i atom / N (coordination)
 
-        ic = -sum([item * math.log2(item) for item in p]) # Mean information content index
-        sic = ic / math.log2(N) # Structural information content index
-        cic = math.log2(N) - ic # Complementary information content index
-        bic = ic / math.log2(q) # Bonding information content index
+        ic = -sum([item * math.log2(item) for item in p])  # Mean information content index
+        sic = ic / math.log2(N)  # Structural information content index
+        cic = math.log2(N) - ic  # Complementary information content index
+        bic = ic / math.log2(q)  # Bonding information content index
 
         _info_content = {"ic": ic,
                          "sic": sic,
@@ -223,5 +228,5 @@ class Descriptor(object):
 
 
 if __name__ == '__main__':
-    m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
+    m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")
     pass

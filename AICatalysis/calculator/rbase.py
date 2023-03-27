@@ -63,6 +63,17 @@ class RAtom(object):
         return self._ratom.GetFormalCharge()
 
     @property
+    def mulliken_charge(self):
+        try:
+            return self._ratom.GetDoubleProp("MullikenCharge")
+        except KeyError:
+            return
+
+    @mulliken_charge.setter
+    def mulliken_charge(self, value: float):
+        self._ratom.SetDoubleProp("MullikenCharge", value)
+
+    @property
     def _bonds(self):
         return self._ratom.GetBonds()
 
@@ -278,6 +289,18 @@ class RMolecule(object):
             frags.append(((begin_idx, end_idx), sorted(self.atoms[end_idx].get_connected_without_idx([begin_idx])),))
         return frags
 
+    @property
+    def coordination_info(self):
+        """
+        Used for calculating IC descriptor
+
+        """
+        _coord = []
+        for atom in self.atoms:
+            _coord.append(tuple(sorted(atom.coordination_info)))
+
+        return Counter(tuple(_coord))
+
     @staticmethod
     def _from_smiles(smiles, addHs=True):
         rmol = Chem.MolFromSmiles(smiles)
@@ -293,18 +316,6 @@ class RMolecule(object):
         if rmol is None:
             raise FileFormatError(f"The format of {file} is not correct")
         return rmol, Chem.MolToSmiles(rmol)
-
-    @property
-    def coordination_info(self):
-        """
-        Used for calculating IC descriptor
-
-        """
-        _coord = []
-        for atom in self.atoms:
-            _coord.append(tuple(sorted(atom.coordination_info)))
-
-        return Counter(tuple(_coord))
 
 
 if __name__ == '__main__':
