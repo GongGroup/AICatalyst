@@ -1,4 +1,5 @@
 import os
+from collections import Counter
 
 import numpy as np
 from rdkit import Chem
@@ -80,6 +81,14 @@ class RAtom(object):
     @property
     def neighbors(self):
         return [self._mol.atoms[atom.GetIdx()] for atom in self._ratom.GetNeighbors()]
+
+    @property
+    def coordination_info(self):
+        """
+        Used for calculating IC descriptor
+
+        """
+        return [atom.total_valence for atom in self.neighbors]
 
     @property
     def connected(self):
@@ -285,11 +294,23 @@ class RMolecule(object):
             raise FileFormatError(f"The format of {file} is not correct")
         return rmol, Chem.MolToSmiles(rmol)
 
+    @property
+    def coordination_info(self):
+        """
+        Used for calculating IC descriptor
+
+        """
+        _coord = []
+        for atom in self.atoms:
+            _coord.append(tuple(sorted(atom.coordination_info)))
+
+        return Counter(tuple(_coord))
+
 
 if __name__ == '__main__':
     # smiles = "CC([O-])=O"
     # smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
-    smiles = 'C1=CC=CC=C1'
+    smiles = 'C(C)(C)O'
     rmol = RMolecule._from_smiles(smiles)
-    rmol = RMolecule(rmol, remove_H=True)
+    rmol = RMolecule(rmol, remove_H=False)
     print()

@@ -1,3 +1,4 @@
+import math
 import subprocess
 from collections import Counter
 
@@ -177,6 +178,35 @@ class Descriptor(object):
                              'kappa3': GraphDescriptors.Kappa3(rmol._rmol)}
 
         return _kier_shape_index
+
+    @property
+    def KierFlexIndex(self):
+        """
+        \Phi =\frac{^1\kappa ^2\kappa}{N_{SA}}
+
+        """
+
+        rmol = RMolecule(self._rmol._rmol, remove_H=True)
+        N_SA = rmol.num_atoms
+
+        return self.KierShapeIndex['kappa1'] * self.KierShapeIndex['kappa2'] / N_SA
+
+    @property
+    def IC(self):
+        """
+        Mean information content index
+
+        IC = -\sum_{i}p_i\cdot  log_2\,p_i
+
+        References:
+            https://doi.org/10.1002/jps.2600730403
+
+        """
+        N = self._rmol.num_atoms
+        p = [value / N for value in self._rmol.coordination_info.values()]
+        _ic = -sum([item * math.log2(item) for item in p])
+
+        return _ic
 
 
 if __name__ == '__main__':
