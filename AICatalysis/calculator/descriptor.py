@@ -246,16 +246,17 @@ class Descriptor(object):
         return _topo_elect
 
     @property
-    def MolSurfArea(self):
+    def WfnSurfVolume(self):
         """
-        Use Gaussian + Multiwfn method to calculate the molecule surface area
+        Use Gaussian + Multiwfn method to calculate the molecule surface area && Volume
 
         References:
-            http://sobereva.com/487
+            http://sobereva.com/487, http://sobereva.com/102
 
         """
         cal_log = "log"
-        _surf_area = None  # (unit: Bohr^2)
+        _surf_area = None  # (unit: Angstrom^2)
+        _volume = None  # (unit: Angstrom^3)
 
         out_file = Path(self.name)
         wfn_file = out_file.parent / (out_file.stem + ".wfn")
@@ -269,11 +270,15 @@ class Descriptor(object):
         os.remove(cal_log)
 
         for line in _content:
+            if line.startswith(' Volume:'):
+                _volume = float(line.split()[4])
+
             if line.startswith(' Overall surface area'):
-                _surf_area = float(line.split()[3])
+                _surf_area = float(line.split()[6])
                 break
 
-        return _surf_area
+        return {'surface area': _surf_area,
+                'volume': _volume}
 
     @property
     def SolAccMolSurfArea(self):
@@ -289,6 +294,5 @@ class Descriptor(object):
 
 
 if __name__ == '__main__':
-    m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")
-    print(m_descriptor.MolSurfArea)
+    m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
     pass
