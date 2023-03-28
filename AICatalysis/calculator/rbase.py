@@ -4,7 +4,7 @@ from collections import Counter
 import numpy as np
 from rdkit import Chem
 from rdkit import RDLogger
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, MolSurf, rdFreeSASA
 from rdkit.Chem import FragmentCatalog
 from rdkit.Chem import RDConfig
 
@@ -304,6 +304,19 @@ class RMolecule(object):
             _coord.append(tuple(sorted(atom.coordination_info)))
 
         return Counter(tuple(_coord))
+
+    @property
+    def TPSA(self):
+        return MolSurf.TPSA(self._rmol)
+
+    @property
+    def FreeSASA(self):
+        radii = rdFreeSASA.classifyAtoms(self._rmol)
+        return rdFreeSASA.CalcSASA(self._rmol, radii)
+
+    @property
+    def volume(self):
+        return Chem.AllChem.ComputeMolVolume(self._rmol)
 
     @staticmethod
     def _from_smiles(smiles, addHs=True):

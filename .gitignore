@@ -20,3 +20,4 @@ common/*.png
 *.xyz
 *.mol
 *.out
+*.wfn

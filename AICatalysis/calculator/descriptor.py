@@ -1,6 +1,8 @@
 import math
+import os
 import subprocess
 from collections import Counter
+from pathlib import Path
 
 from rdkit.Chem import GraphDescriptors
 
@@ -243,7 +245,50 @@ class Descriptor(object):
 
         return _topo_elect
 
+    @property
+    def MolSurfArea(self):
+        """
+        Use Gaussian + Multiwfn method to calculate the molecule surface area
+
+        References:
+            http://sobereva.com/487
+
+        """
+        cal_log = "log"
+        _surf_area = None  # (unit: Bohr^2)
+
+        out_file = Path(self.name)
+        wfn_file = out_file.parent / (out_file.stem + ".wfn")
+        if not Path(wfn_file).exists():
+            return _surf_area
+
+        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log}")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+        os.remove(cal_log)
+
+        for line in _content:
+            if line.startswith(' Overall surface area'):
+                _surf_area = float(line.split()[3])
+                break
+
+        return _surf_area
+
+    @property
+    def SolAccMolSurfArea(self):
+        """
+        Solvent-accessible molecular surface area
+
+        """
+        return self._rmol.FreeSASA
+
+    @property
+    def Volume(self):
+        return self._rmol.volume
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/Ac2O.out")
+    print(m_descriptor.MolSurfArea)
     pass
