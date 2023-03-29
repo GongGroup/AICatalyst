@@ -363,6 +363,10 @@ class Descriptor(object):
 
         return {"P": P, "P1": P1, "P2": P2}
 
+    @property
+    def DipoleMoment(self):
+        return self._out_gaussian.dipole_moment
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")

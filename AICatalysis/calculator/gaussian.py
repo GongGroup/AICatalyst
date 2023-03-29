@@ -34,6 +34,7 @@ class OUTFile(object):
         self.name = name
         self.input_atoms = None
         self.mulliken_charge = None
+        self.dipole_moment = None
 
     def read(self):
         with open(self.name, "r") as f:
@@ -57,6 +58,12 @@ class OUTFile(object):
         mulliken_index = [index for index, line in enumerate(self._strings) if line.startswith(" Mulliken charges:")]
         mulliken_charge = self._strings[mulliken_index[-1] + 2:mulliken_index[-1] + 2 + len(self.input_atoms)]
         self.mulliken_charge = [float(line.split()[2]) for line in mulliken_charge]
+
+        # read Dipole moment
+        dipole_index = [index for index, line in enumerate(self._strings) if line.startswith(" Dipole moment")][-1] + 1
+        dipole_moment = list(map(float, self._strings[dipole_index].split()[1::2]))
+        self.dipole_moment = {"X": dipole_moment[0], "Y": dipole_moment[1], "Z": dipole_moment[2],
+                              "Tot": dipole_moment[3]}
 
         return self
 
