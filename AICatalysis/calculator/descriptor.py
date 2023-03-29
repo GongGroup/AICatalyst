@@ -11,6 +11,21 @@ from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.utils import flatten
 
 
+def charge_selector(charge):
+    def inner(func):
+        def wrapper(self, *args, **kargs):
+            if charge == "mulliken":
+                self._partial_charge = self.MullikenCharge
+            elif charge == "gasteiger":
+                self._partial_charge = self.GasteigerCharge
+
+            return func(self, *args, **kargs)
+
+        return wrapper
+
+    return inner
+
+
 class Descriptor(object):
 
     def __init__(self, name):
@@ -326,7 +341,30 @@ class Descriptor(object):
         pass
         return
 
+    @property
+    def GasteigerCharge(self):
+        return [atom.gasteiger_charge for atom in self._rmol.atoms]
+
+    @property
+    def MullikenCharge(self):
+        return [atom.mulliken_charge for atom in self._rmol.atoms]
+
+    @property
+    @charge_selector(charge="mulliken")
+    def PolarityParam(self):
+
+        Q_max, Q_min = max(self._partial_charge), min(self._partial_charge)
+        Q_max_arg, Q_min_arg = self._partial_charge.index(Q_max), self._partial_charge.index(Q_min)
+        R_mm = self._rmol.distance_matrix_3d[Q_max_arg][Q_min_arg]
+
+        P = Q_max - Q_min
+        P1 = P / R_mm
+        P2 = P1 / R_mm
+
+        return {"P": P, "P1": P1, "P2": P2}
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
+    print(m_descriptor.PolarityParam)
     pass
