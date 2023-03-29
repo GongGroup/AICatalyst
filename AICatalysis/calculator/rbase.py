@@ -4,7 +4,7 @@ from collections import Counter
 import numpy as np
 from rdkit import Chem
 from rdkit import RDLogger
-from rdkit.Chem import AllChem, MolSurf, rdFreeSASA
+from rdkit.Chem import AllChem, MolSurf, rdFreeSASA, Descriptors3D, rdPartialCharges
 from rdkit.Chem import FragmentCatalog
 from rdkit.Chem import RDConfig
 
@@ -43,6 +43,10 @@ class RAtom(object):
         return self._ratom.GetIdx()
 
     @property
+    def mass(self):
+        return self._ratom.GetMass()
+
+    @property
     def symbol(self):
         return self._ratom.GetSymbol()
 
@@ -72,6 +76,10 @@ class RAtom(object):
     @mulliken_charge.setter
     def mulliken_charge(self, value: float):
         self._ratom.SetDoubleProp("MullikenCharge", value)
+
+    @property
+    def gasteiger_charge(self):
+        return float(self._ratom.GetProp("_GasteigerCharge"))
 
     @property
     def _bonds(self):
@@ -317,6 +325,21 @@ class RMolecule(object):
     @property
     def volume(self):
         return Chem.AllChem.ComputeMolVolume(self._rmol)
+
+    @property
+    def PMI1(self):
+        return Descriptors3D.PMI1(self._rmol)
+
+    @property
+    def PMI2(self):
+        return Descriptors3D.PMI2(self._rmol)
+
+    @property
+    def PMI3(self):
+        return Descriptors3D.PMI3(self._rmol)
+
+    def compute_gasteiger_charge(self):
+        rdPartialCharges.ComputeGasteigerCharges(self._rmol)
 
     @staticmethod
     def _from_smiles(smiles, addHs=True):

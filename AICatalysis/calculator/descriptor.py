@@ -32,6 +32,8 @@ class Descriptor(object):
         for atom, charge in zip(rmol.atoms, mulliken_charge):
             atom.mulliken_charge = charge
 
+        rmol.compute_gasteiger_charge()
+
         return rmol
 
     @property
@@ -291,6 +293,38 @@ class Descriptor(object):
     @property
     def Volume(self):
         return self._rmol.volume
+
+    @property
+    def GravitationalIndex(self):
+        """
+        G = \sum_{(i,j)}^{N_{SA}}\frac{m_im_j}{r_{ij}^2} (i = 1..N, j=i+1..N)
+
+        """
+
+        _grav = 0.
+        for i in range(self._rmol.num_atoms):
+            for j in range(i + 1, self._rmol.num_atoms):
+                _grav += self._rmol.atoms[i].mass * self._rmol.atoms[j].mass / (
+                    self._rmol.distance_matrix_3d[i][j]) ** 2
+
+        return _grav
+
+    @property
+    def PMI(self):
+        """
+        Principal moments of inertia of a molecule
+
+        I_k = \sum_{i}m_ir_{ik}^2
+
+        """
+        return {"PMI1": self._rmol.PMI1,
+                "PMI2": self._rmol.PMI2,
+                "PMI3": self._rmol.PMI3}
+
+    @property
+    def ShadowArea(self):
+        pass
+        return
 
 
 if __name__ == '__main__':
