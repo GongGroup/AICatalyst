@@ -400,11 +400,11 @@ class Descriptor(object):
         _ALIE = None
 
         out_file = Path(self.name)
-        polar_out_file = out_file.parent / (out_file.stem + ".wfn")
-        if not Path(polar_out_file).exists():
+        wfn_file = out_file.parent / (out_file.stem + ".wfn")
+        if not Path(wfn_file).exists():
             return
 
-        os.system(f"bash multiwfn.sh {polar_out_file.as_posix()} {cal_log} -j ALIE ")
+        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log} -j ALIE")
 
         with open(cal_log, "r") as f:
             _content = f.readlines()
@@ -417,10 +417,39 @@ class Descriptor(object):
 
         return _ALIE
 
+    @property
+    def ElectroStaticPotential(self):
+        cal_log = "log"
+        _min, _max, _variance, _balance, _polarity = None, None, None, None, None
 
+        out_file = Path(self.name)
+        wfn_file = out_file.parent / (out_file.stem + ".wfn")
+        if not Path(wfn_file).exists():
+            return
+
+        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log} -j ESP")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+        os.remove(cal_log)
+
+        for line in _content:
+            if line.startswith(' Global surface minimum:'):
+                _min = float(line.split()[3])
+            elif line.startswith(' Global surface maximum:'):
+                _max = float(line.split()[3])
+            elif line.startswith(' Overall variance (sigma^2_tot):'):
+                _variance = float(line.split()[3])
+            elif line.startswith(' Balance of charges (nu):'):
+                _balance = float(line.split()[4])
+            elif line.startswith(' Molecular polarity index (MPI):'):
+                _polarity = float(line.split()[4])
+                break
+
+        return {"min": _min, "max": _max, "variance": _variance, 'balance': _balance, "polarity": _polarity}
 
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
-    print(m_descriptor.AveIonEnergy)
+    print(m_descriptor.ElectroStaticPotential)
     pass
