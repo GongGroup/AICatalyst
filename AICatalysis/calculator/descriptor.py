@@ -367,8 +367,35 @@ class Descriptor(object):
     def DipoleMoment(self):
         return self._out_gaussian.dipole_moment
 
+    @property
+    def Polarizability(self):
+        cal_log = "log"
+        _alpha = None  # (unit: Angstrom^2)
+        _beta = None  # (unit: Angstrom^3)
+
+        out_file = Path(self.name)
+        polar_out_file = out_file.parent / (out_file.stem + "_polar" + ".out")
+        if not Path(polar_out_file).exists():
+            return
+
+        os.system(f"bash multiwfn.sh {polar_out_file.as_posix()} {cal_log}")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+        os.remove(cal_log)
+
+        for line in _content:
+            if line.startswith(' Isotropic average polarizability:'):
+                _alpha = float(line.split()[3])
+
+            if line.startswith(' Magnitude of first hyperpolarizability:'):
+                _beta = float(line.split()[4])
+                break
+
+        return {"alpha": _alpha, "beta": _beta}
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
-    print(m_descriptor.PolarityParam)
+    print(m_descriptor.Polarizability)
     pass
