@@ -4,6 +4,7 @@ import subprocess
 from collections import Counter
 from pathlib import Path
 
+import pychem.cpsa
 from rdkit.Chem import GraphDescriptors
 
 from AICatalysis.calculator.gaussian import OUTFile
@@ -448,8 +449,35 @@ class Descriptor(object):
 
         return {"min": _min, "max": _max, "variance": _variance, 'balance': _balance, "polarity": _polarity}
 
+    @property
+    def CPSA(self):
+        """
+        Use `pychem` module to get various CPSA descriptors
+
+        temp file (MOPAC arc file format, e.g.):
+
+                          FINAL GEOMETRY OBTAINED                                    CHARGE
+         AM1 PRTCHAR
+
+
+          C    -0.34068787 +1  -1.32952465 +1   0.01731945 +1                        -0.2339
+
+        """
+        atoms = self._rmol.atoms
+        with open("temp", "w") as f:
+            f.write("          FINAL GEOMETRY OBTAINED                                    CHARGE\n")
+            f.write(" AM1 PRTCHAR\n")
+            f.write("\n")
+            f.write("\n")
+            for atom in atoms:
+                f.write(
+                    f"{atom.symbol}\t{atom.position[0]:>+.4f}\t1\t{atom.position[1]:>+.4f}\t1\t"
+                    f"{atom.position[2]:>+.4f}\t1\t{atom.mulliken_charge:>+.6f}\n")
+
+        return pychem.cpsa.GetCPSA()
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
-    print(m_descriptor.ElectroStaticPotential)
+    print(m_descriptor.CPSA)
     pass

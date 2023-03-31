@@ -21,3 +21,4 @@ common/*.png
 *.mol
 *.out
 *.wfn
+temp
