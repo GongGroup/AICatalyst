@@ -476,6 +476,14 @@ class Descriptor(object):
 
         return pychem.cpsa.GetCPSA()
 
+    @property
+    def HOMO(self):
+        return self._out_gaussian.homo
+
+    @property
+    def LUMO(self):
+        return self._out_gaussian.lumo
+
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")

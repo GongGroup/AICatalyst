@@ -35,6 +35,7 @@ class OUTFile(object):
         self.input_atoms = None
         self.mulliken_charge = None
         self.dipole_moment = None
+        self.homo, self.lumo = None, None
 
     def read(self):
         with open(self.name, "r") as f:
@@ -65,6 +66,19 @@ class OUTFile(object):
         self.dipole_moment = {"X": dipole_moment[0], "Y": dipole_moment[1], "Z": dipole_moment[2],
                               "Tot": dipole_moment[3]}
 
+        # read HOMO/LUMO
+        orb_s_index = [index for index, line in enumerate(self._strings) if line.startswith(" The electronic state")][
+                          -1] + 1
+        orb_e_index = [index for index, line in enumerate(self._strings) if
+                       line.startswith("          Condensed to atoms")][-1]
+        orbital_occ = list(map(float,
+                               sum([line.split("--")[1].split() for line in self._strings[orb_s_index:orb_e_index] if
+                                    "occ." in line], [])))
+        orbital_virt = list(map(float,
+                                sum([line.split("--")[1].split() for line in self._strings[orb_s_index:orb_e_index] if
+                                     "virt." in line], [])))
+        self.homo = orbital_occ[-1]
+        self.lumo = orbital_virt[0]
         return self
 
 
