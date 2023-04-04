@@ -4,6 +4,8 @@ import tokenize
 from collections.abc import Iterable
 from io import BytesIO
 
+float_ = lambda x: list(map(float, x))  # transform list[str] => list[float], e.g., ['1.2'] => [1.2]
+
 
 def sort_defaultdict(ddict):
     return {key: value for key, value in sorted(ddict.items(), key=lambda x: len(x[1]), reverse=True)}

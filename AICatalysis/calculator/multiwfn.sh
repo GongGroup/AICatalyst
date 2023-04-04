@@ -22,4 +22,10 @@ if [[ "$file" =~ "wfn" ]]; then
   fi
 elif [[ "$file" =~ "polar" ]]; then
   echo -e "200\n 7\n 1\n 0\n 0\n q\n" | /mnt/d/Multiwfn_3.8_dev/Multiwfn $file >$log
+elif [[ "$file" =~ "fchk" ]]; then
+  if [[ "$job" == "mulliken" ]]; then
+    echo -e "9\n 4\n 0\n 0\n q\n" | /mnt/d/Multiwfn_3.8_dev/Multiwfn $file >$log
+  elif [[ "$job" == "mayer" ]]; then
+    echo -e "9\n 1\n 0\n 0\n q\n" | /mnt/d/Multiwfn_3.8_dev/Multiwfn $file >$log
+  fi
 fi

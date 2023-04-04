@@ -10,7 +10,7 @@ from rdkit.Chem import GraphDescriptors
 
 from AICatalysis.calculator.gaussian import OUTFile, FCHKFile
 from AICatalysis.calculator.rbase import RMolecule
-from AICatalysis.common.utils import flatten
+from AICatalysis.common.utils import flatten, float_
 
 
 def charge_selector(charge):
@@ -482,6 +482,7 @@ class Descriptor(object):
         homo = self._out_gaussian.homo
         lumo = self._out_gaussian.lumo
 
+        # calculate Homo, Lumo
         out_file = Path(self.name)
         fchk_file = out_file.parent / (out_file.stem + ".fchk")
         if not Path(fchk_file).exists():
@@ -489,6 +490,7 @@ class Descriptor(object):
                     "LUMO": self._out_gaussian.lumo,
                     "AbsHardness": (self._out_gaussian.lumo - self._out_gaussian.homo) / 2}
 
+        # calculate Fukui-related
         fchk = FCHKFile(fchk_file).read()
 
         coeff_homo = fchk.coeff[self._out_gaussian.homo_index]
@@ -496,12 +498,53 @@ class Descriptor(object):
         Fukui_nucleophilic = np.sum(coeff_homo ** 2) / (1 - homo)
         Fukui_electrophilic = np.sum(coeff_lumo ** 2) / (lumo + 10)
         Fukui_one_electron = np.sum(np.kron(coeff_homo, coeff_lumo)) / (lumo - homo)
+
+        # calculate Mulliken Bond Order
+        cal_log = "log"
+        os.system(f"bash multiwfn.sh {fchk_file.as_posix()} {cal_log} -j mulliken")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+        os.remove(cal_log)
+
+        lns, lne = -1, 0
+        for index, line in enumerate(_content):
+            if line.startswith(' Bond orders with absolute value'):
+                lns = index
+            elif line.startswith(' If outputting bond order matrix'):
+                lne = index
+                break
+
+        bond_order = float_([line.split()[-1] for line in _content[lns + 1:lne - 1]])
+
+        # calculate Total and Free Valence
+        cal_log = "log"
+        os.system(f"bash multiwfn.sh {fchk_file.as_posix()} {cal_log} -j mayer")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+        os.remove(cal_log)
+
+        lns, lne = -1, 0
+        for index, line in enumerate(_content):
+            if line.startswith(' Total valences and free valences defined by Mayer'):
+                lns = index
+            elif line.startswith(' If outputting bond order matrix'):
+                lne = index
+                break
+        valence = [(line.split()[-2], line.split()[-1]) for line in _content[lns + 1:lne - 1]]
+        tot_valence, free_valence = list(map(list, zip(*valence)))
+        tot_valence, free_valence = float_(tot_valence), float_(free_valence)
+
         return {"HOMO": self._out_gaussian.homo,
                 "LUMO": self._out_gaussian.lumo,
                 "AbsHardness": (self._out_gaussian.lumo - self._out_gaussian.homo) / 2,
                 "FukuiNucleophilic": Fukui_nucleophilic,
                 "FukuiElectrophilic": Fukui_electrophilic,
-                "FukuiOneElectron": Fukui_one_electron}
+                "FukuiOneElectron": Fukui_one_electron,
+                "MullikenBondOrder": bond_order,
+                "TotValence": tot_valence,
+                "FreeValence": free_valence}
 
 
 if __name__ == '__main__':
