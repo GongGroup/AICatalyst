@@ -21,4 +21,5 @@ common/*.png
 *.mol
 *.out
 *.wfn
+*.fchk
 temp

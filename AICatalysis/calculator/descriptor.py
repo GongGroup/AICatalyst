@@ -4,10 +4,11 @@ import subprocess
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import pychem.cpsa
 from rdkit.Chem import GraphDescriptors
 
-from AICatalysis.calculator.gaussian import OUTFile
+from AICatalysis.calculator.gaussian import OUTFile, FCHKFile
 from AICatalysis.calculator.rbase import RMolecule
 from AICatalysis.common.utils import flatten
 
@@ -477,15 +478,33 @@ class Descriptor(object):
         return pychem.cpsa.GetCPSA()
 
     @property
-    def HOMO(self):
-        return self._out_gaussian.homo
+    def OrbRelated(self):
+        homo = self._out_gaussian.homo
+        lumo = self._out_gaussian.lumo
 
-    @property
-    def LUMO(self):
-        return self._out_gaussian.lumo
+        out_file = Path(self.name)
+        fchk_file = out_file.parent / (out_file.stem + ".fchk")
+        if not Path(fchk_file).exists():
+            return {"HOMO": self._out_gaussian.homo,
+                    "LUMO": self._out_gaussian.lumo,
+                    "AbsHardness": (self._out_gaussian.lumo - self._out_gaussian.homo) / 2}
+
+        fchk = FCHKFile(fchk_file).read()
+
+        coeff_homo = fchk.coeff[self._out_gaussian.homo_index]
+        coeff_lumo = fchk.coeff[self._out_gaussian.lumo_index]
+        Fukui_nucleophilic = np.sum(coeff_homo ** 2) / (1 - homo)
+        Fukui_electrophilic = np.sum(coeff_lumo ** 2) / (lumo + 10)
+        Fukui_one_electron = np.sum(np.kron(coeff_homo, coeff_lumo)) / (lumo - homo)
+        return {"HOMO": self._out_gaussian.homo,
+                "LUMO": self._out_gaussian.lumo,
+                "AbsHardness": (self._out_gaussian.lumo - self._out_gaussian.homo) / 2,
+                "FukuiNucleophilic": Fukui_nucleophilic,
+                "FukuiElectrophilic": Fukui_electrophilic,
+                "FukuiOneElectron": Fukui_one_electron}
 
 
 if __name__ == '__main__':
     m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
-    print(m_descriptor.CPSA)
+    print(m_descriptor.OrbRelated)
     pass

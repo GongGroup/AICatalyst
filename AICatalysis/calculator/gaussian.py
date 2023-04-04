@@ -1,6 +1,8 @@
 import subprocess
 from pathlib import Path
 
+import numpy as np
+
 from AICatalysis.common.constant import ChemInfo
 from AICatalysis.database.reaxys import Reaxys
 
@@ -36,6 +38,7 @@ class OUTFile(object):
         self.mulliken_charge = None
         self.dipole_moment = None
         self.homo, self.lumo = None, None
+        self.homo_index, self.lumo_index = None, None
 
     def read(self):
         with open(self.name, "r") as f:
@@ -77,8 +80,34 @@ class OUTFile(object):
         orbital_virt = list(map(float,
                                 sum([line.split("--")[1].split() for line in self._strings[orb_s_index:orb_e_index] if
                                      "virt." in line], [])))
-        self.homo = orbital_occ[-1]
-        self.lumo = orbital_virt[0]
+        self.homo, self.homo_index = orbital_occ[-1], len(orbital_occ) - 1
+        self.lumo, self.lumo_index = orbital_virt[0], len(orbital_occ)
+        return self
+
+
+class FCHKFile(object):
+    def __init__(self, name="result.fchk"):
+        self.name = name
+        self.coeff = None
+
+    def read(self):
+        with open(self.name, "r") as f:
+            self._strings = f.readlines()
+
+        # read Alpha MO coefficients
+        basis_num, lns, lne = None, -1, -1
+        for index, line in enumerate(self._strings):
+            if line.startswith("Number of basis functions"):
+                basis_num = int(line.split()[-1])
+            elif line.startswith("Alpha MO coefficients"):
+                lns = index
+            elif line.startswith("Orthonormal basis"):
+                lne = index
+                break
+        coeff = list(map(float, sum([line.split() for line in self._strings[lns + 1:lne]], [])))
+        coeff = np.array(coeff).reshape((basis_num, -1))
+        self.coeff = coeff
+
         return self
 
 
@@ -93,4 +122,6 @@ if __name__ == '__main__':
     # print()
     out = OUTFile("../database/chemical-gjf/Ac2O.out")
     out.read()
+    fchk = FCHKFile("../database/chemical-gjf/Ac2O.fchk")
+    fchk.read()
     pass
