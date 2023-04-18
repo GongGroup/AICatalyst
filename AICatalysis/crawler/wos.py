@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+import pandas as pd
 from pyquery import PyQuery
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
@@ -135,7 +136,8 @@ class WOSParser(object):
     Load database from htmls/ directory, parse title, url and doi field, output to a csv file
     """
 
-    def __init__(self, htmls_dir: str, datafile: Union[str, Path], with_url: bool = True, md5_flag: bool = True):
+    def __init__(self, htmls_dir: str, datafile: Union[str, Path], with_url: bool = True, md5_flag: bool = True,
+                 jcr: bool = True):
         """
         Initialize the WOSCrawler
 
@@ -148,6 +150,8 @@ class WOSParser(object):
         self.datafile = datafile
         self.with_url = with_url
         self.md5_flag = md5_flag
+        if jcr:
+            self.jcr = pd.read_excel(DataDir / "2021JCR.xlsx")
 
     def __call__(self):
         self.parse()
@@ -158,6 +162,8 @@ class WOSParser(object):
         urls = []
         dois = []
         years = []
+        journals = []
+        if_ = []
 
         for html_file in self.htmls_dir:
             page = html_file.name.split(".")[0].split("_")[1]
@@ -176,6 +182,8 @@ class WOSParser(object):
                     continue
                 doi = re.findall("KeyAID=(.*)&DestApp=DOI", url) if url is not None else None
                 doi = doi[0] if isinstance(doi, list) and len(doi) else None
+
+                # parse publish year
                 year = record('span[name]').text()
                 if not year:
                     year = record('span.value').text()  # e.g., Jun 2022 (在线发表) |
@@ -185,21 +193,27 @@ class WOSParser(object):
                     if re.match(year_re, item):
                         fin_year = item
                         break
+                year = int(fin_year)
 
+                # parse journal && IF
+                journal = record('app-jcr-overlay').text()
                 try:
-                    year = int(fin_year)
-                except:
-                    logger.info(f"{fin_year} : {title}")
+                    if_2022 = self.jcr[self.jcr['journal_name'].str.fullmatch(journal, case=False)]['if_2022'].values[0]
+                except IndexError:
+                    if_2022 = 0.
 
                 titles.append(title)
                 urls.append(url)
                 dois.append(doi)
                 years.append(year)
+                journals.append(journal)
+                if_.append(if_2022)
+
                 effective_count += 1
 
-            # logger.info(f"Page {page}, record_tot: {tot_count}, record_effective: {effective_count}")
+            logger.info(f"Page {page}, record_tot: {tot_count}, record_effective: {effective_count}")
 
-        # logger.info(f"Total titles: {len(titles)} urls: {len(urls)}")
+        logger.info(f"Total titles: {len(titles)} urls: {len(urls)}")
         exit()
         data = list(zip(titles, urls, dois))
 

@@ -22,4 +22,5 @@ common/*.png
 *.out
 *.wfn
 *.fchk
+*.xlsx
 temp
