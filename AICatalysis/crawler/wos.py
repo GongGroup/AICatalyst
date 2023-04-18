@@ -1,6 +1,7 @@
 import csv
 import hashlib
 import json
+import logging
 import random
 import re
 import time
@@ -12,11 +13,14 @@ from pyquery import PyQuery
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as ec
 
-from AICatalysis.common import ChromeDriver
-from AICatalysis.common import logger
+from AICatalysis.common.driver import ChromeDriver
+from AICatalysis.common.logger import init_root_logger
 
 WOSRoot = "https://www.webofscience.com/wos/alldb/basic-search"
 DataDir = Path("../../data")
+
+init_root_logger()
+logger = logging.getLogger(__name__)
 
 
 class WOSCrawler(object):
@@ -153,6 +157,7 @@ class WOSParser(object):
         titles = []
         urls = []
         dois = []
+        years = []
 
         for html_file in self.htmls_dir:
             page = html_file.name.split(".")[0].split("_")[1]
@@ -171,15 +176,31 @@ class WOSParser(object):
                     continue
                 doi = re.findall("KeyAID=(.*)&DestApp=DOI", url) if url is not None else None
                 doi = doi[0] if isinstance(doi, list) and len(doi) else None
+                year = record('span[name]').text()
+                if not year:
+                    year = record('span.value').text()  # e.g., Jun 2022 (在线发表) |
+                year_re = re.compile("\d{4}")
+                fin_year = ""
+                for item in re.split(" |-|\)", year):
+                    if re.match(year_re, item):
+                        fin_year = item
+                        break
+
+                try:
+                    year = int(fin_year)
+                except:
+                    logger.info(f"{fin_year} : {title}")
+
                 titles.append(title)
                 urls.append(url)
                 dois.append(doi)
+                years.append(year)
                 effective_count += 1
 
-            logger.info(f"Page {page}, record_tot: {tot_count}, record_effective: {effective_count}")
+            # logger.info(f"Page {page}, record_tot: {tot_count}, record_effective: {effective_count}")
 
-        logger.info(f"Total titles: {len(titles)} urls: {len(urls)}")
-
+        # logger.info(f"Total titles: {len(titles)} urls: {len(urls)}")
+        exit()
         data = list(zip(titles, urls, dois))
 
         if self.md5_flag:

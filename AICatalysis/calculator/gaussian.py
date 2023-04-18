@@ -39,6 +39,7 @@ class OUTFile(object):
         self.dipole_moment = None
         self.homo, self.lumo = None, None
         self.homo_index, self.lumo_index = None, None
+        self.energy = None
 
     def read(self):
         with open(self.name, "r") as f:
@@ -82,6 +83,16 @@ class OUTFile(object):
                                      "virt." in line], [])))
         self.homo, self.homo_index = orbital_occ[-1], len(orbital_occ) - 1
         self.lumo, self.lumo_index = orbital_virt[0], len(orbital_occ)
+
+        # read energy
+        out_s_index = [index for index, line in enumerate(self._strings) if
+                       line.startswith(' ----------------------------------------------------------------------')][-1]
+        out_e_index = [index for index, line in enumerate(self._strings) if line.endswith('@\n')][-1]
+        energy = "".join(self._strings[out_s_index:out_e_index + 1]).replace('\n', '').replace(' ', '').split('\\')
+        keywords = {'HF', 'ZeroPoint', 'Thermal', 'ETot', 'HTot', 'GTot'}
+        energy = [{line.split("=")[0]: float(line.split("=")[1])} for line in energy if line.split("=")[0] in keywords]
+        self.energy = energy
+
         return self
 
 

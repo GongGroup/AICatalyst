@@ -546,8 +546,12 @@ class Descriptor(object):
                 "TotValence": tot_valence,
                 "FreeValence": free_valence}
 
+    @property
+    def EnergyRelated(self):
+        return self._out_gaussian.energy
+
 
 if __name__ == '__main__':
-    m_descriptor = Descriptor("../database/chemical-gjf/CH3OH.out")
+    m_descriptor = Descriptor("../database/chemical-gjf/1-1p.out")
     print(m_descriptor.OrbRelated)
     pass

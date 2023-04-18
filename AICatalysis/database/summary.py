@@ -15,6 +15,7 @@ def get_pubs():
         except KeyError:
             continue
         pubs.append(parser.pub)
+    pass
 
 
 def plot_pubs():
@@ -35,4 +36,6 @@ def plot_pubs():
     plt.show()
 
 
-plot_pubs()
+if __name__ == '__main__':
+    get_pubs()
+    # plot_pubs()
