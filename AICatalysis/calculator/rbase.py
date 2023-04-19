@@ -218,6 +218,10 @@ class RMolecule(object):
         return Chem.rdmolops.GetAdjacencyMatrix(self._rmol)
 
     @property
+    def chiral_centers(self):
+        return Chem.FindMolChiralCenters(self._rmol)
+
+    @property
     def bonds(self):
 
         return [{"idx": bond.GetIdx(),
