@@ -50,6 +50,4 @@ class Ketcher(object):
 
 
 if __name__ == '__main__':
-    chemicals = OPSINCrawler.get_failures()
-    ketcher = Ketcher()
-    ketcher.get_smile(chemicals)
+    pass

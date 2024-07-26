@@ -318,25 +318,4 @@ class Reaxys(object):
 
 
 if __name__ == '__main__':
-    reaxys = Reaxys(FReaxysYield)
-    records = reaxys.records(transform=False)
-    # reactions = reaxys.reactions
-    # reaction_mapping = Reaxys.get_reaction_mapping()
-    catalyst_records = reaxys.catalyst_records(transform=False)
-
-    # name = 'toluene'
-    # special_catalyst = [reaction.catalyst for reaction in new_product_type[name]]
-    # special_records = [record for record in records if (name) in record.product and len(record.doi)]
-    # special_product = new_product_type[name]
-    # for key, value in new_product_type.items():
-    #     mol = Chem.MolFromSmiles(ChemInfo[key]['smiles'])
-    #     draw_svg(mol, file=DrawDir / f"{md5(key)}.svg")
-
-    # for key, value in reaction_mapping[1].items():
-    #     if len(value):
-    #         for item in value.most_common(1):
-    #             if item[1] >= 10:
-    #                 print(key, value.most_common(1))
-
-    # 090 finished
-    print()
+    pass

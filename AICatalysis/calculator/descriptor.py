@@ -1,412 +1,278 @@
-import math
+import json
 import os
+import re
 import subprocess
-from collections import Counter
+from functools import wraps
 from pathlib import Path
 
 import numpy as np
-import pychem.cpsa
-from rdkit.Chem import GraphDescriptors
+import pandas as pd
+from rdkit import Chem
+from rdkit.Chem import Descriptors
+from rdkit.ML.Descriptors import MoleculeDescriptors
 
 from AICatalysis.calculator.gaussian import OUTFile, FCHKFile
 from AICatalysis.calculator.rbase import RMolecule
-from AICatalysis.common.utils import flatten, float_
+from AICatalysis.calculator.smiles import SmilesFile
+from AICatalysis.common.constant import TotalDesDir, RdkitDesDir, MultiwinDesDir, DescriptorDataDir, \
+    ReactSmilesFile, PCAMulDesDataDir
+from AICatalysis.common.file import JsonIO
+from AICatalysis.common.utils import float_
 
 
-def charge_selector(charge):
-    def inner(func):
-        def wrapper(self, *args, **kargs):
-            if charge == "mulliken":
-                self._partial_charge = self.MullikenCharge
-            elif charge == "gasteiger":
-                self._partial_charge = self.GasteigerCharge
+def print_status(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        print(f"{Path(self.out_name).stem} has saved\n")
+        return result
 
-            return func(self, *args, **kargs)
-
-        return wrapper
-
-    return inner
+    return wrapper
 
 
 class Descriptor(object):
+    des_type = None
+    def __init__(self, out_name):
+        self.out_name = out_name
 
-    def __init__(self, name):
-        self.name = name
-        self._out_gaussian = OUTFile(name).read()
-        self._rmol = self._convert_rdkit()
-        self._convert_rdkit()
+    def calc_descriptor(self):
+        pass
+
+    @print_status
+    def write(self):
+        json_path = self.des_type / self.out_name.split('/')[-2] / (Path(self.out_name).stem + '.json')
+        if not os.path.exists(json_path):
+            JsonIO.write(self.calc_descriptor(), json_path)
+
+
+class RdkitDescriptor(Descriptor):
+    des_type = RdkitDesDir
+    def __init__(self, out_name, smiles=None):
+        super().__init__(out_name)
+        self.smiles = smiles
 
     def _convert_rdkit(self):
-        process = subprocess.Popen(f"obabel -ig16 {self.name} -osdf", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        content = process.stdout.read().decode(encoding='utf-8')
-        lines = content.splitlines()[:-4]
-        with open("temp.mol", "w") as f:
-            f.write("\n".join(lines))
-        _rmol, _ = RMolecule._from_mol_file("temp.mol")
+        if self.smiles is None:
+            process = subprocess.Popen(f"obabel -ig16 {self.out_name} -osdf", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            content = process.stdout.read().decode(encoding='utf-8')
+            lines = content.splitlines()[:-4]
+            with open("temp.mol", "w") as f:
+                f.write("\n".join(lines))
+            try:
+                _rmol, _ = RMolecule._from_mol_file("temp.mol")
+            except:
+                return None
+        else:
+            _rmol = RMolecule._from_smiles(self.smiles)
         rmol = RMolecule(_rmol, remove_H=False)
-
-        mulliken_charge = self._out_gaussian.mulliken_charge
-        for atom, charge in zip(rmol.atoms, mulliken_charge):
-            atom.mulliken_charge = charge
-
-        rmol.compute_gasteiger_charge()
 
         return rmol
 
-    @property
-    def Weight(self):
-        """
-        molecular weight and average atomic weight
+    def calc_descriptor(self):
+        self._rmol = self._convert_rdkit()
+        if self._rmol is None:
+            return None
+        nms = [x[0] for x in Descriptors._descList]
+        calc = MoleculeDescriptors.MolecularDescriptorCalculator(nms)
+        return dict(zip(nms, calc.CalcDescriptors(self._rmol._rmol)))
 
-        """
-        return self._rmol.weight
 
-    @property
-    def TAtoms(self):
-        """
-        total number of atoms in the molecule
+class SmilesDescriptor(Descriptor):
+    def __init__(self, out_name, smiles=None):
+        super().__init__(out_name)
+        self.smiles = smiles
 
-        """
-        return len(self._out_gaussian.input_atoms)
 
-    @property
-    def Atoms(self):
-        """
-        absolute numbers of atoms of certain chemical identity (C, H, O, N, F, etc.) in the molecule
+    def calc_descriptor(self):
+        if self.smiles is None:
+            process = subprocess.Popen(f"obabel -ig16 {self.out_name} -osdf", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            content = process.stdout.read().decode(encoding='utf-8')
+            lines = content.splitlines()[:-4]
+            with open("temp.mol", "w") as f:
+                f.write("\n".join(lines))
+            try:
+                _rmol, _ = RMolecule._from_mol_file("temp.mol")
+            except:
+                return None
+            smiles = Chem.MolToSmiles(_rmol._rmol)
+        else:
+            smiles = self.smiles
 
-        """
-        symbols = [atom[0] for atom in self._out_gaussian.input_atoms]
-        return Counter(symbols)
+        return smiles
 
-    @property
-    def TBonds(self):
-        """
-        total number of bonds in the molecule
+    def write(self):
+        return self.calc_descriptor()
 
-        """
-        _bonds = self._rmol.bonds
+class GaussianDescriptor(Descriptor):
 
-        return len(_bonds)
+    def __init__(self, out_name):
+        super().__init__(out_name)
+        self._out_gaussian = OUTFile(out_name).read()
 
-    @property
-    def Bonds(self):
-        """
-        absolute numbers of single, double, triple, aromatic or other bonds in the molecule
+class MultiwinDescriptor(Descriptor):
+    mod = ["WfnSurfESP", "WfnLength", "WfnSurfALIE", "OrbRelated", "EnergyRelated"]
+    des_type = MultiwinDesDir
 
-        """
+    def __init__(self, out_name):
+        super().__init__(out_name)
+        self.fchk_name = re.sub(r'\.out', '.fchk', re.sub('out/', 'fchk/',self.out_name))
 
-        _bonds_type = [_bond['bond_type'].name for _bond in self._rmol.bonds]
 
-        return Counter(_bonds_type)
+    def calc_descriptor(self):
+        self._out_gaussian = OUTFile(self.out_name).read()
+        des = {}
+        for mod_fun in self.mod:
+            des.update(getattr(self, mod_fun)())
+        return  des
 
-    @property
-    def Groups(self):
-        """
-        absolute and relative numbers of certain chemical groups and functionalities in the molecule
-
-        """
-        _groups = self._rmol.groups
-
-        return list(Counter(flatten(_groups)).keys())
-
-    @property
-    def Rings(self):
-        """
-        total number of rings, number of rings divided by the total number of atoms
-
-        """
-
-        return len(self._rmol.rings)
-
-    @property
-    def AromaticRings(self):
-        """
-        total and relative number of 6-atoms aromatic rings
-
-        """
-
-        return len(self._rmol.aromatic_rings)
-
-    @property
-    def WienerIndex(self):
-        """
-        Wiener Index (non-hydrogen atoms)
-
-            W = \frac{1}{2} \sum_{(i,j)}^{N_{SA}}d_{ij}
-
-        """
-        rmol = RMolecule(self._rmol._rmol, remove_H=True)
-
-        res = 0
-        for i in range(rmol._rmol.GetNumAtoms()):
-            for j in range(i + 1, rmol._rmol.GetNumAtoms()):
-                res += rmol.distance_matrix[i][j]
-
-        return res
-
-    @property
-    def ChiIndex(self):
-        """
-        Chi0 = \sum(\delta _i)^{-1/2}
-
-        Chi0v = \sum(\delta _i^v)^{-1/2}, \delta _i^v = Z_i^v-b_i
-                Z_i^v is number of valence electrons, b_i is number of H atoms bonded to i
-
-        Chi0n is similar to Chi0v, but use nVal instead of valence
-
-        Chi1 = \sum(\delta _i \delta _j)^{-1/2}
-
-        References:
-            https://doi.org/10.1002/9780470125793.ch9
-        """
-
-        rmol = RMolecule(self._rmol._rmol, remove_H=True)
-
-        _chi_index = {'chi0': GraphDescriptors.Chi0(rmol._rmol),
-                      'chi0v': GraphDescriptors.Chi0v(rmol._rmol),
-                      'chi0n': GraphDescriptors.Chi0n(rmol._rmol),
-                      'chi1': GraphDescriptors.Chi1(rmol._rmol),
-                      'chi1v': GraphDescriptors.Chi1v(rmol._rmol),
-                      'chi1n': GraphDescriptors.Chi1n(rmol._rmol),
-                      'chi2n': GraphDescriptors.Chi2n(rmol._rmol),
-                      'chi2v': GraphDescriptors.Chi2v(rmol._rmol),
-                      'chi3n': GraphDescriptors.Chi3n(rmol._rmol),
-                      'chi3v': GraphDescriptors.Chi3v(rmol._rmol),
-                      'chi4n': GraphDescriptors.Chi4n(rmol._rmol),  # GraphDescriptors.ChiNn_(rmol._rmol, n)
-                      'chi4v': GraphDescriptors.Chi4v(rmol._rmol)}  # GraphDescriptors.ChiNv_(rmol._rmol, n)
-
-        return _chi_index
-
-    @property
-    def BalabanIndex(self):
-        """
-        J=\frac{m}{\gamma +1}\sum_{(i,j)\in E(G)}(D_iD_j)^{-1/2}
-
-        """
-        rmol = RMolecule(self._rmol._rmol, remove_H=True)
-
-        return GraphDescriptors.BalabanJ(rmol._rmol)
-
-    @property
-    def KierShapeIndex(self):
-        """
-        Kappa1 = (A+\alpha)(A+\alpha-1)^2/(^1P+\alpha)^2
-        Kappa2 = (A+\alpha-1)(A+\alpha-2)^2/(^2P+\alpha)^2
-        Kappa3 = (A+\alpha-1)(A+\alpha-3)^2/(^3P+\alpha)^2      (A is odd)
-        Kappa3 = (A+\alpha-2)(A+\alpha-3)^2/(^3P+\alpha)^2      (A is even)
-
-        """
-
-        rmol = RMolecule(self._rmol._rmol, remove_H=True)
-
-        _kier_shape_index = {'kappa1': GraphDescriptors.Kappa1(rmol._rmol),
-                             'kappa2': GraphDescriptors.Kappa2(rmol._rmol),
-                             'kappa3': GraphDescriptors.Kappa3(rmol._rmol)}
-
-        return _kier_shape_index
-
-    @property
-    def KierFlexIndex(self):
-        """
-        \Phi =\frac{^1\kappa ^2\kappa}{N_{SA}}
-
-        """
-
-        rmol = RMolecule(self._rmol._rmol, remove_H=True)
-        N_SA = rmol.num_atoms
-
-        return self.KierShapeIndex['kappa1'] * self.KierShapeIndex['kappa2'] / N_SA
-
-    @property
-    def InfoContentIndex(self):
-        """
-        information content index
-
-        IC = -\sum_{i}p_i\cdot  log_2\,p_i
-        SIC = IC / log_2\,N
-        CIC = log_2\,N -IC
-        BIC = IC / log_2\,q
-
-        References:
-            https://doi.org/10.1002/jps.2600730403
-
-        """
-        N = self._rmol.num_atoms  # Number of atoms
-        q = len(self._rmol.bonds)  # Number of edges
-        p = [value / N for value in self._rmol.coordination_info.values()]  # number of type-i atom / N (coordination)
-
-        ic = -sum([item * math.log2(item) for item in p])  # Mean information content index
-        sic = ic / math.log2(N)  # Structural information content index
-        cic = math.log2(N) - ic  # Complementary information content index
-        bic = ic / math.log2(q)  # Bonding information content index
-
-        _info_content = {"ic": ic,
-                         "sic": sic,
-                         "cic": cic,
-                         "bic": bic}
-
-        return _info_content
-
-    @property
-    def TopologicalElectronicIndes(self):
-        """
-        T^E = \sum_{(i,j)}^{N_{SA}}\frac{|q_i-q_j|}{r_{ij}^2} (i = 1..N, j=i+1..N)
-
-        References:
-            https://doi.org/10.1016/S0021-9673(01)86894-1
-        """
-
-        _topo_elect = 0.
-        for i in range(self._rmol.num_atoms):
-            for j in range(i + 1, self._rmol.num_atoms):
-                _topo_elect += math.fabs(self._rmol.atoms[i].mulliken_charge - self._rmol.atoms[j].mulliken_charge) / \
-                               (self._rmol.distance_matrix_3d[i][j]) ** 2
-
-        return _topo_elect
-
-    @property
-    def WfnSurfVolume(self):
+    def WfnSurfESP(self):
         """
         Use Gaussian + Multiwfn method to calculate the molecule surface area && Volume
 
         References:
-            http://sobereva.com/487, http://sobereva.com/102
+            http://sobereva.com/487, http://sobereva.com/102, http://sobereva.com/159
 
         """
         cal_log = "log"
-        _surf_area = None  # (unit: Angstrom^2)
+        wfn_config = "config"
+        _esp_min, _esp_max = None, None
         _volume = None  # (unit: Angstrom^3)
+        _density = None #(unit: g/cm^3)
+        _surf_area, _pos_surf_area, _neg_surf_area = None, None, None  # (unit: Angstrom^2)
+        _elec_stat_pot, _pos_elec_stat_pot, _neg_elec_stat_pot = None, None, None # (unit: a. u.)
+        _esp_variance, _pos_esp_variance, _neg_esp_variance = None, None, None # (unit: a. u. ^2)
+        _balance_charge = None
+        _mol_polarity_index = None # (unit: eV)
+        _nonpolar_surf_area, _polar_surf_area  = None, None # (unit: Angstrom ^2)
+        _nonpolar_surf_area_percent, _polar_surf_area_percent = None, None
 
-        out_file = Path(self.name)
-        wfn_file = out_file.parent / (out_file.stem + ".wfn")
-        if not Path(wfn_file).exists():
-            return _surf_area
+        out_file = Path(self.out_name)
+        fchk_file = self.fchk_name
+        if not Path(fchk_file).exists():
+            return None
 
-        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log}")
+        with open(wfn_config, "w") as f:
+            f.writelines('12\n0\n-1\n-1\nq')
+
+        os.system(f"Multiwfn.exe {fchk_file} < {wfn_config} > {cal_log}")
+
+        with open(cal_log, "r") as f:
+            _content = f.readlines()
+
+        # os.remove(cal_log)
+        # os.remove(wfn_config)
+
+        for line in _content:
+            if line.startswith(' Global surface minimum:'):
+                _esp_min = float(line.split()[3])
+            elif line.startswith(' Global surface maximum:'):
+                _esp_max = float(line.split()[3])
+            elif line.startswith(' Volume:'):
+                try:
+                    _volume = float(line.split()[4])
+                except:
+                    _volume = format(line.split()[3].split('(')[1])
+            elif line.startswith(' Estimated density '):
+                _density = float(line.split()[8])
+            elif line.startswith(' Overall surface area'):
+                try:
+                    _surf_area = float(line.split()[6])
+                except:
+                    _surf_area = float(line.split()[5].split('(')[1])
+            elif line.startswith(' Positive surface area:'):
+                _pos_surf_area = float(line.split()[6])
+            elif line.startswith(' Negative surface area:'):
+                _neg_surf_area = float(line.split()[6])
+            elif line.startswith(' Overall average value:'):
+                _elec_stat_pot = float(line.split()[3])
+            elif line.startswith(' Positive average value:'):
+                _pos_elec_stat_pot = float(line.split()[3])
+            elif line.startswith(' Negative average value:'):
+                _neg_elec_stat_pot = float(line.split()[3])
+            elif line.startswith(' Overall variance (sigma^2_tot):'):
+                _esp_variance = float(line.split()[3])
+            elif line.startswith(' Positive variance:'):
+                _pos_esp_variance = float(line.split()[2])
+            elif line.startswith(' Negative variance:'):
+                _neg_esp_variance = float(line.split()[2])
+            elif line.startswith(' Balance of charges (nu):'):
+                _balance_charge = float(line.split()[4])
+            elif line.startswith(' Molecular polarity index (MPI):'):
+                _mol_polarity_index = float(line.split()[4])
+            elif line.startswith(' Nonpolar surface area'):
+                _nonpolar_surf_area = float(line.split()[7])
+                try:
+                    _nonpolar_surf_area_percent = float(line.split()[10])
+                except:
+                    _nonpolar_surf_area_percent = 100.0
+            elif line.startswith(' Polar surface area'):
+                _polar_surf_area = float(line.split()[7])
+                _polar_surf_area_percent = float(line.split()[10])
+                break
+
+        return {'esp_min': _esp_min, 'esp_max': _esp_max,
+                'volume': _volume, 'density': _density,
+                'surf_area': _surf_area, 'pos_surf_area': _pos_surf_area, 'neg_surf_area': _neg_surf_area,
+                'elec_stat_pot': _elec_stat_pot, 'pos_elec_stat_pot': _pos_elec_stat_pot, 'neg_elec_stat_pot': _neg_elec_stat_pot,
+                'esp_variance': _esp_variance, 'pos_esp_variance': _pos_esp_variance, 'neg_esp_variance': _neg_esp_variance,
+                'balance_charge': _balance_charge,
+                'mol_polarity_index': _mol_polarity_index,
+                'nonpolar_surf_area': _nonpolar_surf_area, 'polar_surf_area': _polar_surf_area,
+                'nonpolar_surf_area_percent': _nonpolar_surf_area_percent, 'polar_surf_area_percent': _polar_surf_area_percent}
+
+    def WfnLength(self):
+        """
+            References:
+            http://sobereva.com/426, http://sobereva.com/190
+
+        """
+        cal_log = "log"
+        wfn_config = "config"
+        _length_x, _length_y, _length_z = None, None, None
+        _radius = None
+
+        out_file = Path(self.out_name)
+        fchk_file = self.fchk_name
+
+        if not Path(fchk_file).exists():
+            return None
+
+        with open(wfn_config, "w") as f:
+            f.writelines("100\n21\nsize\n0\nq\n0\nq")
+
+        os.system(f"Multiwfn.exe {fchk_file} < {wfn_config} > {cal_log}")
 
         with open(cal_log, "r") as f:
             _content = f.readlines()
         os.remove(cal_log)
 
         for line in _content:
-            if line.startswith(' Volume:'):
-                _volume = float(line.split()[4])
-
-            if line.startswith(' Overall surface area'):
-                _surf_area = float(line.split()[6])
+            if line.startswith(' Radius of the system:'):
+                _radius = float(line.split()[4])
+            elif line.startswith(' Length of the three sides:'):
+                _length_x, _length_y, _length_z = [float(x) for x in line.split()[5:8]]
                 break
 
-        return {'surface area': _surf_area,
-                'volume': _volume}
+        return {'radius': _radius,
+                'length_x': _length_x,
+                'length_y': _length_y,
+                'length_z': _length_z}
 
-    @property
-    def SolAccMolSurfArea(self):
-        """
-        Solvent-accessible molecular surface area
-
-        """
-        return self._rmol.FreeSASA
-
-    @property
-    def Volume(self):
-        return self._rmol.volume
-
-    @property
-    def GravitationalIndex(self):
-        """
-        G = \sum_{(i,j)}^{N_{SA}}\frac{m_im_j}{r_{ij}^2} (i = 1..N, j=i+1..N)
-
-        """
-
-        _grav = 0.
-        for i in range(self._rmol.num_atoms):
-            for j in range(i + 1, self._rmol.num_atoms):
-                _grav += self._rmol.atoms[i].mass * self._rmol.atoms[j].mass / (
-                    self._rmol.distance_matrix_3d[i][j]) ** 2
-
-        return _grav
-
-    @property
-    def PMI(self):
-        """
-        Principal moments of inertia of a molecule
-
-        I_k = \sum_{i}m_ir_{ik}^2
-
-        """
-        return {"PMI1": self._rmol.PMI1,
-                "PMI2": self._rmol.PMI2,
-                "PMI3": self._rmol.PMI3}
-
-    @property
-    def ShadowArea(self):
-        pass
-        return
-
-    @property
-    def GasteigerCharge(self):
-        return [atom.gasteiger_charge for atom in self._rmol.atoms]
-
-    @property
-    def MullikenCharge(self):
-        return [atom.mulliken_charge for atom in self._rmol.atoms]
-
-    @property
-    @charge_selector(charge="mulliken")
-    def PolarityParam(self):
-
-        Q_max, Q_min = max(self._partial_charge), min(self._partial_charge)
-        Q_max_arg, Q_min_arg = self._partial_charge.index(Q_max), self._partial_charge.index(Q_min)
-        R_mm = self._rmol.distance_matrix_3d[Q_max_arg][Q_min_arg]
-
-        P = Q_max - Q_min
-        P1 = P / R_mm
-        P2 = P1 / R_mm
-
-        return {"P": P, "P1": P1, "P2": P2}
-
-    @property
-    def DipoleMoment(self):
-        return self._out_gaussian.dipole_moment
-
-    @property
-    def Polarizability(self):
+    def WfnSurfALIE(self):
         cal_log = "log"
-        _alpha = None
-        _beta = None
+        wfn_config = "config"
+        _ALIE = None # (unit: a. u.)
 
-        out_file = Path(self.name)
-        polar_out_file = out_file.parent / (out_file.stem + "_polar" + ".out")
-        if not Path(polar_out_file).exists():
-            return
+        out_file = Path(self.out_name)
+        fchk_file = self.fchk_name
 
-        os.system(f"bash multiwfn.sh {polar_out_file.as_posix()} {cal_log}")
+        if not Path(fchk_file).exists():
+            return None
 
-        with open(cal_log, "r") as f:
-            _content = f.readlines()
-        os.remove(cal_log)
+        with open(wfn_config, "w") as f:
+            f.writelines("12\n2\n2\n0\n-1\n-1\nq")
 
-        for line in _content:
-            if line.startswith(' Isotropic average polarizability:'):
-                _alpha = float(line.split()[3])
-
-            if line.startswith(' Magnitude of first hyperpolarizability:'):
-                _beta = float(line.split()[4])
-                break
-
-        return {"alpha": _alpha, "beta": _beta}
-
-    @property
-    def AveIonEnergy(self):
-        cal_log = "log"
-        _ALIE = None
-
-        out_file = Path(self.name)
-        wfn_file = out_file.parent / (out_file.stem + ".wfn")
-        if not Path(wfn_file).exists():
-            return
-
-        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log} -j ALIE")
+        os.system(f"Multiwfn.exe {fchk_file} < {wfn_config} > {cal_log}")
 
         with open(cal_log, "r") as f:
             _content = f.readlines()
@@ -417,74 +283,15 @@ class Descriptor(object):
                 _ALIE = float(line.split()[2])
                 break
 
-        return _ALIE
+        return {'ALIE': _ALIE}
 
-    @property
-    def ElectroStaticPotential(self):
-        cal_log = "log"
-        _min, _max, _variance, _balance, _polarity = None, None, None, None, None
-
-        out_file = Path(self.name)
-        wfn_file = out_file.parent / (out_file.stem + ".wfn")
-        if not Path(wfn_file).exists():
-            return
-
-        os.system(f"bash multiwfn.sh {wfn_file.as_posix()} {cal_log} -j ESP")
-
-        with open(cal_log, "r") as f:
-            _content = f.readlines()
-        os.remove(cal_log)
-
-        for line in _content:
-            if line.startswith(' Global surface minimum:'):
-                _min = float(line.split()[3])
-            elif line.startswith(' Global surface maximum:'):
-                _max = float(line.split()[3])
-            elif line.startswith(' Overall variance (sigma^2_tot):'):
-                _variance = float(line.split()[3])
-            elif line.startswith(' Balance of charges (nu):'):
-                _balance = float(line.split()[4])
-            elif line.startswith(' Molecular polarity index (MPI):'):
-                _polarity = float(line.split()[4])
-                break
-
-        return {"min": _min, "max": _max, "variance": _variance, 'balance': _balance, "polarity": _polarity}
-
-    @property
-    def CPSA(self):
-        """
-        Use `pychem` module to get various CPSA descriptors
-
-        temp file (MOPAC arc file format, e.g.):
-
-                          FINAL GEOMETRY OBTAINED                                    CHARGE
-         AM1 PRTCHAR
-
-
-          C    -0.34068787 +1  -1.32952465 +1   0.01731945 +1                        -0.2339
-
-        """
-        atoms = self._rmol.atoms
-        with open("temp", "w") as f:
-            f.write("          FINAL GEOMETRY OBTAINED                                    CHARGE\n")
-            f.write(" AM1 PRTCHAR\n")
-            f.write("\n")
-            f.write("\n")
-            for atom in atoms:
-                f.write(
-                    f"{atom.symbol}\t{atom.position[0]:>+.4f}\t1\t{atom.position[1]:>+.4f}\t1\t"
-                    f"{atom.position[2]:>+.4f}\t1\t{atom.mulliken_charge:>+.6f}\n")
-
-        return pychem.cpsa.GetCPSA()
-
-    @property
     def OrbRelated(self):
         homo = self._out_gaussian.homo
         lumo = self._out_gaussian.lumo
 
         # calculate Homo, Lumo
-        out_file = Path(self.name)
-        fchk_file = out_file.parent / (out_file.stem + ".fchk")
+        out_file = Path(self.out_name)
+        fchk_file = self.fchk_name
         if not Path(fchk_file).exists():
             return {"HOMO": self._out_gaussian.homo,
                     "LUMO": self._out_gaussian.lumo,
@@ -501,7 +308,12 @@ class Descriptor(object):
 
         # calculate Mulliken Bond Order
         cal_log = "log"
-        os.system(f"bash multiwfn.sh {fchk_file.as_posix()} {cal_log} -j mulliken")
+        wfn_config = "config"
+
+        with open(wfn_config, "w") as f:
+            f.writelines("9\n4\n0\n0\nq")
+
+        os.system(f"Multiwfn.exe {fchk_file} < {wfn_config} > {cal_log}")
 
         with open(cal_log, "r") as f:
             _content = f.readlines()
@@ -516,10 +328,13 @@ class Descriptor(object):
                 break
 
         bond_order = float_([line.split()[-1] for line in _content[lns + 1:lne - 1]])
+        avg_bond_order = sum(bond_order) / len(bond_order)
 
         # calculate Total and Free Valence
-        cal_log = "log"
-        os.system(f"bash multiwfn.sh {fchk_file.as_posix()} {cal_log} -j mayer")
+        with open(wfn_config, "w") as f:
+            f.writelines("9\n1\n0\n0\nq")
+
+        os.system(f"Multiwfn.exe {fchk_file} < {wfn_config} > {cal_log}")
 
         with open(cal_log, "r") as f:
             _content = f.readlines()
@@ -534,7 +349,8 @@ class Descriptor(object):
                 break
         valence = [(line.split()[-2], line.split()[-1]) for line in _content[lns + 1:lne - 1]]
         tot_valence, free_valence = list(map(list, zip(*valence)))
-        tot_valence, free_valence = float_(tot_valence), float_(free_valence)
+        avg_tot_valence, avg_free_valence = sum(float_(tot_valence)) / len(tot_valence), \
+                                            sum(float_(free_valence)) / len(free_valence)
 
         return {"HOMO": self._out_gaussian.homo,
                 "LUMO": self._out_gaussian.lumo,
@@ -542,16 +358,125 @@ class Descriptor(object):
                 "FukuiNucleophilic": Fukui_nucleophilic,
                 "FukuiElectrophilic": Fukui_electrophilic,
                 "FukuiOneElectron": Fukui_one_electron,
-                "MullikenBondOrder": bond_order,
-                "TotValence": tot_valence,
-                "FreeValence": free_valence}
+                "AvgMullikenBondOrder": avg_bond_order,
+                "TotValence": avg_tot_valence,
+                "FreeValence": avg_free_valence}
 
-    @property
+
     def EnergyRelated(self):
-        return self._out_gaussian.energy
+        """
+        total number of atoms in the molecule
+
+        """
+        return {"TAtom": len(self._out_gaussian.input_atoms)} | self._out_gaussian.energy
+
+class TotalDescriptor(Descriptor):
+    des_type = TotalDesDir
+
+    def __init__(self, out_name):
+        super().__init__(out_name)
+
+    def calc_descriptor(self):
+        rdkit_des_path = RdkitDesDir / self.out_name.split('/')[-2] / (Path(self.out_name).stem + '.json')
+        #如果没有对应的描述符文件，就生成一个
+        if not os.path.exists(rdkit_des_path):
+            reaction_smiles = SmilesFile(ReactSmilesFile)
+            if Path(self.out_name).stem in reaction_smiles.file_name.values:
+                smiles = reaction_smiles.smiles[reaction_smiles.file_name == Path(self.out_name).stem].values[0]
+                rdkit_descriptor = RdkitDescriptor(self.out_name, smiles=smiles)
+            else:
+                rdkit_descriptor = RdkitDescriptor(self.out_name)
+            rdkit_descriptor.write()
+        multiwin_des_path = MultiwinDesDir / self.out_name.split('/')[-2] / (Path(self.out_name).stem + '.json')
+        # 如果没有对应的描述符文件，就生成一个
+        if not os.path.exists(multiwin_des_path):
+            multiwin_descriptor = MultiwinDescriptor(self.out_name)
+            multiwin_descriptor.write()
+        try:
+            des = JsonIO.read(rdkit_des_path) | JsonIO.read(multiwin_des_path)
+        except TypeError:
+            #其中一类描述符为空
+            des = JsonIO.read(rdkit_des_path) if JsonIO.read(rdkit_des_path) else JsonIO.read(multiwin_des_path)
+        return des
+
+class DescriptorDatabase:
+    des_type = None
+    def __init__(self, chemical_type):
+        self.chemical_des_dir = self.des_type / chemical_type
+        self.data = self.read_json()
+        self.pca_data = self.pca()
+
+    def read_json(self):
+        data_dict = {}
+
+        for filename in os.listdir(self.chemical_des_dir):
+            if filename.endswith('.json'):
+                with open(os.path.join(self.chemical_des_dir, filename)) as f:
+                    data_dict[os.path.splitext(filename)[0]] = json.load(f)
+
+        try:
+            df = pd.DataFrame.from_dict(data_dict, orient='index')
+        except:
+            df = pd.DataFrame(data_dict).transpose()
+        df.loc['nan'] = np.zeros(df.shape[1])
+        df.fillna(0, inplace=True)
+        return df
+
+    def pca(self, thresh=0.9):
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.decomposition import PCA
+
+        scaler = StandardScaler()
+        self.data.iloc[:, :] = scaler.fit_transform(self.data.iloc[:, :])
+        pca = PCA()
+        pca.fit(self.data.values)
+        cumsum = np.cumsum(pca.explained_variance_ratio_)
+        d = np.argmax(cumsum >= thresh) + 1
+        pca = PCA(n_components=2)
+        return pd.DataFrame(pca.fit_transform(self.data), index=self.data.index)
+
+
+    def concat(self):
+        des_list = []
+        des_files = [os.path.join(self.chemical_des_dir, file) for file in os.listdir(self.chemical_des_dir)]
+        for des_file in des_files:
+            des_list.append(JsonIO.read(des_file))
+        return des_list
+
+    def update(self):
+        pass
+
+    def write_csv(self):
+        write_file = DescriptorDataDir / (self.chemical_des_dir.stem + '_' + self.des_type.stem + '.csv')
+        self.pca_data.to_csv(write_file)
+
+    def write_json(self):
+        for index, row in self.pca_data.iterrows():
+            json_data = row.to_json()
+            with open(PCAMulDesDataDir / self.chemical_des_dir.stem / f"{index}.json", "w") as file:
+                file.write(json_data)
+
+
+class RdkitDescriptorDatabase(DescriptorDatabase):
+    des_type = RdkitDesDir
+
+    def __init__(self, chemical_type):
+        super().__init__(chemical_type)
+
+
+class MultiwinDescriptorDatabase(DescriptorDatabase):
+    des_type = MultiwinDesDir
+
+    def __init__(self, chemical_type):
+        super().__init__(chemical_type)
+
+
+class TotalDescriptorDatabase(DescriptorDatabase):
+    des_type = TotalDesDir
+
+    def __init__(self, chemical_type):
+        super().__init__(chemical_type)
 
 
 if __name__ == '__main__':
-    m_descriptor = Descriptor("../database/chemical-gjf/1-1p.out")
-    print(m_descriptor.OrbRelated)
     pass

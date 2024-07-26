@@ -407,20 +407,4 @@ class CSVTableTransformer(FileIO):
 
 
 if __name__ == '__main__':
-    files = [file for file in Path("tcsv").iterdir() if file.suffix == ".csv"]
-    file = files[0]
-    print(file)
-    csvreader = CSVTableTransformer(file)
-    csvreader.parse()
-    species = csvreader.species
-    exit()
-    csvreader.write()
-    merged_results = csvreader.merge()
     pass
-
-# --*--exclude--*--
-# 02215d7edfcd500d46ee0fc005b9422a.csv
-# 0558c776679c8f021e1f74c348648d45.csv
-# 065f47cd7e8a3482f0a620c2fd3d7a87.csv
-# 155a9f614f863ec1f3fc1b094f7569e5.csv
-# 17a6965ceeefdf8e491c794ad96643c6.csv
