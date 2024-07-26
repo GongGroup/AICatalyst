@@ -8,7 +8,6 @@ from rdkit.Chem import AllChem, MolSurf, rdFreeSASA, Descriptors3D, rdPartialCha
 from rdkit.Chem import FragmentCatalog
 from rdkit.Chem import RDConfig
 
-from AICatalysis.common.constant import ElementInfo
 from AICatalysis.common.error import FileFormatError
 
 # close the rdkit warning
@@ -28,15 +27,6 @@ class RAtom(object):
 
     def __sub__(self, other):
         return np.array(self._rposition - other._rposition)
-
-    @property
-    def is_unsaturated(self):
-        try:
-            if self.explicit_valence < ElementInfo[f'Element {self.symbol}']['valence']:
-                return True
-        except KeyError:
-            print(self.symbol)
-        return False
 
     @property
     def order(self):
@@ -218,10 +208,6 @@ class RMolecule(object):
         return Chem.rdmolops.GetAdjacencyMatrix(self._rmol)
 
     @property
-    def chiral_centers(self):
-        return Chem.FindMolChiralCenters(self._rmol)
-
-    @property
     def bonds(self):
 
         return [{"idx": bond.GetIdx(),
@@ -363,9 +349,4 @@ class RMolecule(object):
 
 
 if __name__ == '__main__':
-    # smiles = "CC([O-])=O"
-    # smiles = '[H]C([H])([H])C(=O)OC(=O)C([H])([H])[H]'
-    smiles = 'C(C)(C)O'
-    rmol = RMolecule._from_smiles(smiles)
-    rmol = RMolecule(rmol, remove_H=False)
-    print()
+    pass

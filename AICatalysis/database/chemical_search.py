@@ -133,6 +133,4 @@ class SucReaxys:
         pprint.pprint(chem_counter.most_common(most_common))
 
 if __name__ == '__main__':
-    reaction = SucReaxys()
-    #reaction.search('N,N-diethyl-α-oxo-2-pyridineacetamide','product', save_img=False, show_inline=False)
-    reaction.counter('reagent')
+    pass

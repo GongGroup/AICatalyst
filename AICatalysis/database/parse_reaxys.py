@@ -54,25 +54,4 @@ def parse_RXD(RXD_config, cur_RXD):
 
 
 if __name__ == '__main__':
-    with open(FRXconfig, 'r') as f:
-        RX_config = json.load(f)
-
-    with open(FRXDconfig, 'r') as f:
-        RXD_config = json.load(f)
-
-    with open(FReaxysXML, 'r') as f:
-        xml_file = f.read()
-
-    reaction_etree = BeautifulSoup(xml_file, 'xml')
-    reaction_type_list = reaction_etree.find_all(name='reaction')
-
-    for reaction_type in reaction_type_list:
-
-        parse_RX(reaction_type, RX_config)
-
-        RXD_list = reaction_type.find_all('RXD')
-        for cur_RXD in RXD_list:
-            parse_RXD(RXD_config, cur_RXD)
-
-    with open(FReaxys, 'w') as f:
-        json.dump(data_react, f)
+    pass

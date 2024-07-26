@@ -1,10 +1,7 @@
 import inspect
 import os
 import time
-from collections import namedtuple
 from pathlib import Path
-
-from AICatalysis.common.file import JsonIO, YamlIO, QMIO
 
 PeriodicTable = [
     'H', 'D', 'He',
@@ -18,7 +15,11 @@ PeriodicTable = [
     'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
 ]
 
-Abbr = ['Ph', 'Bu', 'tBu', 't-Bu', 'Piv', 'Et', 'dba', 'dppf', 'bpy', 'TFA', 'allyl']
+ChemicalList = ['sub1', 'sub2', 'product', 'Pd_precursor', 'ligand_P',
+                 'base1', 'base2', 'add', 'oxidant', 'solvent1', 'solvent2', 'carbon_source',]
+ReactionList = ['sub1', 'sub2', 'product']
+ReagentList = ['Pd_precursor', 'ligand_P', 'base1', 'base2',
+                'add', 'oxidant','solvent1', 'solvent2','metal_carbonyl']
 
 DATE = time.strftime("%Y-%m-%d", time.localtime())
 
@@ -36,38 +37,42 @@ RESET = "\033[0m"
 CurrentDir = os.path.dirname(os.path.abspath(os.path.realpath(inspect.getfile(inspect.currentframe()))))
 SourceDir = os.path.dirname(CurrentDir)
 RootDir = os.path.dirname(SourceDir)
-LogDir = os.path.join(CurrentDir, f"{RootDir}/logs")
 
 # Directory constant here
-ChemDir = Path("../../chemical")
-DataDir = Path("../../data")
-DrawDir = Path("../../draw")
 Calculator = Path("../calculator")
+DatabaseDir = Path("../../database")
+
+ModelDataDir = DatabaseDir / "model_data"
+ReactDataDir = DatabaseDir / "reaction_data"
+StructDataDir = DatabaseDir / "struct_data"
+
+DescriptorDir_ = StructDataDir / "descriptor_data"
+TotalDesDir = DescriptorDir_ / "total_des"
+RdkitDesDir = DescriptorDir_ / "rdkit_des"
+GaussDesDir = DescriptorDir_ / "gaussian_des"
+MultiwinDesDir = DescriptorDir_ / "multiwin_des"
+DescriptorDataDir = DescriptorDir_ / "descriptor_database"
+PCATotalDesDataDir = DescriptorDir_ / "pca_total_des"
+PCARdkitDesDataDir = DescriptorDir_ / "pca_rdkit_des"
+PCAMulDesDataDir = DescriptorDir_ / "pca_multiwin_des"
+
+GaussianDataDir = StructDataDir / "gaussian_data"
+
+GaussianInDataDir = GaussianDataDir / "input"
+GaussianOutDataDir = GaussianDataDir / "output"
+
+SmilesDir = ReactDataDir / "smiles_dir"
 
 # file constant
-FChemical = ChemDir / "chemical.json"
-FFormula = ChemDir / "formula.json"
-FReaxys = ChemDir / "reaxys.json"
-FReactions = ChemDir / "reactions.json"
-FReaxysYield = ChemDir / "opsin_reaxys.json"
-FOpsinRecord = ChemDir / "opsin_record.json"
-FRXconfig = ChemDir / "RX_config.json"
-FRXDconfig = ChemDir / "RXD_config.json"
-FReaxysXML = ChemDir / "reaxys_xml.xml"
-FSucReaxys = ChemDir / "suc_reaxys.json"
+ReactionFile = ReactDataDir / "reaction_dataset.csv"
+NotFindFile = ReactDataDir / "not_find_file_list"
 
-MD5Name = DataDir / "md5_name.json"
+ModelData = ModelDataDir / "model_dataset.csv"
+
+ReactSmilesFile = ReactDataDir / "smiles"
+DefaultUpdateSmilesFile = SmilesDir / "smiles"
+
+EAconfig = ModelDir / "ea_config.json"
 
 Elements = Calculator / "element.yaml"
-Angle = Calculator / "angle.dat"
-FQM1 = Calculator / "QM1.dat"
-FQM2 = Calculator / "QM2.dat"
 
-# Variable constant
-ChemInfo = {item['name']: {key: value for key, value in item.items() if key != 'name'}
-            for item in JsonIO.read(FOpsinRecord)}
-ElementInfo = YamlIO.read(Elements)
-QM1 = QMIO.read1(FQM1)
-QM2 = QMIO.read2(FQM2)
-
-Table = namedtuple("Table", ("caption", "thead", "tbody", "footnote"))
